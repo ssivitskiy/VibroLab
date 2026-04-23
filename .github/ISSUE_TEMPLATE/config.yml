@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Вопрос / Дискуссия
+    url: https://github.com/ssivitskiy/VibroLab/discussions
+    about: Задать вопрос или обсудить идею

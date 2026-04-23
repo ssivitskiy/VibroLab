@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+        content="VibroLab — интерактивная система вибродиагностики редукторов и подшипников. SEU full dataset, Random Forest, 9 классов, browser inference и 3D симулятор.">
+  <meta name="author" content="VibroLab">
+  <meta property="og:title" content="VibroLab — Система вибродиагностики">
+  <meta property="og:description"
+        content="Интерактивная система вибродиагностики: данные, метод, результаты, browser inference и 3D симулятор на полном SEU Dataset.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#060a12">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <title>VibroLab — Система вибродиагностики</title>
+  <link rel="stylesheet" href="css/style.css?v=20260419-ux-pass-2">
+</head>
+<body data-mode="product">
+<a href="#page-home" class="skip-link">Перейти к содержанию</a>
+<div class="app-progress" aria-hidden="true"><span id="appProgressBar"></span></div>
+
+<header class="header" role="banner">
+  <div class="logo">VIBROLAB</div>
+  <nav class="nav" role="navigation">
+    <button class="nav-btn active" data-page="home" aria-current="page">ОБЗОР</button>
+    <button class="nav-btn" data-page="diag">АНАЛИЗ</button>
+    <button class="nav-btn" data-page="profile">ПРОФИЛЬ</button>
+    <a href="simulator.html" class="nav-btn"
+       style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">3D</a>
+    <button class="nav-btn" onclick="goHomeSection('section-conclusion')">ВЫВОДЫ</button>
+  </nav>
+  <button class="hamburger-menu" onclick="document.getElementById('mobileNav').classList.toggle('open'); this.textContent = this.textContent === '☰' ? '✕' : '☰'" aria-label="Меню">☰</button>
+  <div class="status">
+    <div class="status-live">
+      <div class="status-dot"></div>
+      <span class="mono" style="font-size:10px;color:var(--green);letter-spacing:1px">ONLINE</span>
+    </div>
+    <button class="profile-chip" id="headerProfileChip" type="button">АККАУНТ · ГОСТЬ</button>
+  </div>
+</header>
+
+<div class="mobile-nav" id="mobileNav">
+  <button class="nav-btn" data-page="home" onclick="goPage('home');document.getElementById('mobileNav').classList.remove('open');document.querySelector('.hamburger-menu').textContent='☰'">ОБЗОР</button>
+  <button class="nav-btn" data-page="diag" onclick="goPage('diag');document.getElementById('mobileNav').classList.remove('open');document.querySelector('.hamburger-menu').textContent='☰'">АНАЛИЗ</button>
+  <button class="nav-btn" data-page="profile" onclick="goPage('profile');document.getElementById('mobileNav').classList.remove('open');document.querySelector('.hamburger-menu').textContent='☰'">ПРОФИЛЬ</button>
+  <a href="simulator.html" class="nav-btn" style="text-decoration:none;display:flex;align-items:center;gap:8px">3D СИМУЛЯТОР</a>
+  <button class="nav-btn" onclick="goHomeSection('section-conclusion');document.getElementById('mobileNav').classList.remove('open');document.querySelector('.hamburger-menu').textContent='☰'">ВЫВОДЫ</button>
+</div>
+
+<section class="action-dock-shell" aria-label="Быстрые сценарии работы">
+  <div class="container action-dock">
+    <div class="action-dock-copy">
+      <div class="action-dock-kicker">БЫСТРЫЙ МАРШРУТ</div>
+      <p class="action-dock-text">Если вы впервые здесь, начните с виртуальной лаборатории: сначала поймите механику дефекта, потом проверьте себя на анализе и только затем сохраняйте кейс в журнал.</p>
+    </div>
+    <div class="action-dock-actions">
+      <button class="action-dock-btn" type="button" onclick="goHomeSection('section-quickstart')">КАК НАЧАТЬ</button>
+      <button class="action-dock-btn" type="button" onclick="goHomeSection('section-lab')">ВИРТУАЛЬНАЯ ЛАБА</button>
+      <button class="action-dock-btn action-dock-btn--primary" type="button" onclick="goPage('diag')">ПОПРОБОВАТЬ АНАЛИЗ</button>
+      <button class="action-dock-btn" type="button" onclick="goPage('profile')">СОХРАНИТЬ В ПРОФИЛЬ</button>
+      <a href="simulator.html?source=lab&amp;lab=intro_baseline" class="action-dock-btn action-dock-btn--link">ОТКРЫТЬ 3D ЛАБУ</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════
+     HOME
+     ══════════════════════════════════════════════════════════════ -->
+<div id="page-home">
+  <section class="hero">
+    <div class="hero-glow hero-glow-a"></div>
+    <div class="hero-glow hero-glow-b"></div>
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <div class="hero-subtitle">Explainable vibration analytics platform</div>
+        <div class="hero-pill-row">
+          <span class="hero-pill">SEU full dataset</span>
+          <span class="hero-pill">Browser inference</span>
+          <span class="hero-pill">3D simulator</span>
+        </div>
+        <h1 class="hero-title">VIBROLAB</h1>
+        <div class="hero-tagline">От вибросигнала к объяснимому диагнозу</div>
+        <p class="hero-desc">
+          Загружаете сигнал редуктора или подшипника — платформа считает признаки, строит FFT и сразу показывает
+          диагноз с пояснением. А если хочется разобраться глубже, можно сразу перейти в виртуальную лабораторию и увидеть,
+          как дефект проявляется в механике, сигнале и спектре. Всё работает в браузере, без установки.
+        </p>
+        <div class="hero-actions">
+          <button class="btn btn-primary btn-cta" onclick="goPage('diag')">
+            <span class="btn-cta-icon" aria-hidden="true">⚡</span>
+            ПОПРОБОВАТЬ АНАЛИЗ
+          </button>
+          <a href="simulator.html?source=lab&amp;lab=intro_baseline" class="btn btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px">
+            <span aria-hidden="true">🎮</span> ВИРТУАЛЬНАЯ ЛАБА
+          </a>
+          <button class="btn btn-ghost" onclick="goHomeSection('section-lab')">МАРШРУТ ИЗУЧЕНИЕ → ДИАГНОСТИКА</button>
+        </div>
+        <div class="hero-proof">
+          <div class="hero-proof-card">
+            <div class="hero-proof-label">ACCURACY</div>
+            <div class="hero-proof-value" id="heroAccValue">98.4%</div>
+            <div class="hero-proof-sub" id="heroSourceLine">SEU Full Dataset</div>
+          </div>
+          <div class="hero-proof-card">
+            <div class="hero-proof-label">КЛАССОВ</div>
+            <div class="hero-proof-value" id="heroClassValue">9</div>
+            <div class="hero-proof-sub">1 normal + 8 faults</div>
+          </div>
+          <div class="hero-proof-card">
+            <div class="hero-proof-label">СЭМПЛОВ</div>
+            <div class="hero-proof-value" id="heroSampleValue">7200</div>
+            <div class="hero-proof-sub">Balanced training set</div>
+          </div>
+        </div>
+        <div class="hero-trust">
+          <div class="hero-trust-item">До 80% отказов вращающегося оборудования связаны с подшипниками и зубчатыми передачами</div>
+          <div class="hero-trust-item">Модель показывает 98.4% accuracy на 9 классах реальных дефектов</div>
+          <div class="hero-trust-item">Весь диагностический контур доступен через браузер без серверного ML</div>
+        </div>
+        <div class="hero-command-grid">
+          <div class="hero-command-card">
+            <span class="hero-command-label">Inference contour</span>
+            <strong>Browser-side ML</strong>
+            <p>Классификация, признаки и визуализация работают прямо в клиенте без серверного ML-контура.</p>
+          </div>
+          <div class="hero-command-card">
+            <span class="hero-command-label">Production state</span>
+            <strong>Live + auto deploy</strong>
+            <p>Сервис уже развернут, обновляется из GitHub и готов к реальной демонстрации в браузере.</p>
+          </div>
+          <div class="hero-command-card">
+            <span class="hero-command-label">Engineering focus</span>
+            <strong>Explainable diagnosis</strong>
+            <p>Сигнал, FFT, compare mode и 3D-симулятор связаны в единый рабочий контур для инженера.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-stage">
+        <div class="hero-canvas-wrap">
+          <div class="hero-canvas-label">LIVE VIBRATION · 5120 Hz · SEU DDS</div>
+          <div class="hero-rec">● REC</div>
+          <canvas id="heroOsc" aria-label="Осциллограмма вибросигнала" style="width:100%;height:100%;display:block"></canvas>
+        </div>
+        <div class="hero-stage-stack">
+          <div class="hero-stage-card">
+            <div class="hero-stage-label">КЛЮЧЕВЫЕ ХАРАКТЕРИСТИКИ ПЛАТФОРМЫ</div>
+            <div class="hero-stage-kpis">
+              <div class="hero-stage-kpi">
+                <span>DATASET</span>
+                <strong id="heroModelSource">SEU Full Dataset</strong>
+              </div>
+              <div class="hero-stage-kpi">
+                <span>FEATURES</span>
+                <strong id="heroFeatureValue">53</strong>
+              </div>
+              <div class="hero-stage-kpi">
+                <span>CLASSES</span>
+                <strong id="heroClassValueStage">9</strong>
+              </div>
+              <div class="hero-stage-kpi">
+                <span>INFERENCE</span>
+                <strong>~2 ms</strong>
+              </div>
+            </div>
+          </div>
+          <div class="hero-stage-card">
+            <div class="hero-stage-label">КАК РАБОТАЕТ ПРОДУКТ</div>
+            <div class="hero-scenario-list">
+              <button class="hero-scenario" type="button" onclick="goHomeSection('section-problem')">
+                <div class="hero-scenario-top">
+                  <strong>Ценность для пользователя</strong>
+                  <span class="hero-scenario-badge">01</span>
+                </div>
+                <p>Система сокращает путь от сигнала до инженерного решения и делает диагностику доступной через браузер.</p>
+              </button>
+              <button class="hero-scenario" type="button" onclick="goHomeSection('section-dataset')">
+                <div class="hero-scenario-top">
+                  <strong>Источник и качество данных</strong>
+                  <span class="hero-scenario-badge hero-scenario-badge--warning">02</span>
+                </div>
+                <p>SEU Gearbox Dataset, канал CH6, сегментация по 2560 точек и 53 физически интерпретируемых признака.</p>
+              </button>
+              <button class="hero-scenario" type="button" onclick="goHomeSection('section-results')">
+                <div class="hero-scenario-top">
+                  <strong>Модель и точность</strong>
+                  <span class="hero-scenario-badge hero-scenario-badge--critical">03</span>
+                </div>
+                <p>Random Forest, кросс-валидация, confusion matrix и feature importance с привязкой к физике сигнала.</p>
+              </button>
+              <button class="hero-scenario" type="button" onclick="goPage('diag')">
+                <div class="hero-scenario-top">
+                  <strong>Анализ в браузере</strong>
+                  <span class="hero-scenario-badge hero-scenario-badge--warning">04</span>
+                </div>
+                <p>Загрузка реального файла, готовые кейсы, evidence-блок и понятный диагноз без внешнего ML-сервиса.</p>
+              </button>
+              <button class="hero-scenario" type="button" onclick="goPage('profile')">
+                <div class="hero-scenario-top">
+                  <strong>Профиль и история</strong>
+                  <span class="hero-scenario-badge">05</span>
+                </div>
+                <p>Сохранённые измерения, сравнение с baseline, alerts и единый рабочий кабинет для пользователя.</p>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--quickstart" id="section-quickstart">
+    <div class="container">
+      <div class="quickstart-header">
+        <div class="label">КАК НАЧАТЬ</div>
+        <h2 class="quickstart-title">Первый раз здесь? Разберётесь за пару минут</h2>
+        <p class="quickstart-lead">
+          VibroLab устроен как учебный стенд: попробуйте готовый кейс, потом загрузите свой сигнал и сохраните результат в кабинете.
+        </p>
+      </div>
+      <div class="quickstart-grid">
+        <button class="quickstart-card" type="button" onclick="goPage('diag')">
+          <span class="quickstart-num">01</span>
+          <strong class="quickstart-card-title">Запустите готовый кейс</strong>
+          <p class="quickstart-card-desc">Откроется страница анализа и сразу проиграется сигнал «отсутствие зуба» — увидите, как модель ставит диагноз.</p>
+          <span class="quickstart-cta">ПОПРОБОВАТЬ КЕЙС →</span>
+        </button>
+        <button class="quickstart-card" type="button" onclick="goPage('diag')">
+          <span class="quickstart-num">02</span>
+          <strong class="quickstart-card-title">Загрузите свой файл</strong>
+          <p class="quickstart-card-desc">Поддерживаются SEU TXT, WAV, CSV, MAT, NPY, UFF. После загрузки появятся временной сигнал, FFT, признаки и диагноз.</p>
+          <span class="quickstart-cta">К ЗАГРУЗКЕ →</span>
+        </button>
+        <button class="quickstart-card" type="button" onclick="goPage('profile')">
+          <span class="quickstart-num">03</span>
+          <strong class="quickstart-card-title">Сохраните результат</strong>
+          <p class="quickstart-card-desc">В профиле появится история сеансов, сравнение с эталоном и alerts — удобно вести лабораторный журнал.</p>
+          <span class="quickstart-cta">ОТКРЫТЬ ПРОФИЛЬ →</span>
+        </button>
+      </div>
+      <div class="quickstart-tips">
+        <div class="quickstart-tip">
+          <span class="quickstart-tip-icon" aria-hidden="true">💡</span>
+          <span>Данные не уходят на сервер — модель считает прямо в вашем браузере.</span>
+        </div>
+        <div class="quickstart-tip">
+          <span class="quickstart-tip-icon" aria-hidden="true">🎮</span>
+          <span>В <a href="simulator.html?source=lab&amp;lab=intro_baseline">виртуальной лаборатории</a> можно покрутить редуктор и увидеть, как дефект влияет на сигнал и FFT.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--lab" id="section-lab">
+    <div class="container">
+      <div class="lab-hub-head">
+        <div class="label">ВИРТУАЛЬНАЯ ЛАБОРАТОРИЯ</div>
+        <h2 class="lab-hub-title">Изучение и диагностика теперь собраны в один маршрут</h2>
+        <p class="lab-hub-lead">
+          VibroLab можно использовать как инженерную веб-лабораторию: сначала вы смотрите, как ведёт себя редуктор и как
+          меняются сигнал с FFT, а потом сразу проверяете ту же гипотезу на диагностике. Это помогает не просто увидеть
+          класс дефекта, а действительно понять его физику.
+        </p>
+      </div>
+
+      <div class="lab-hub-grid">
+        <article class="lab-card">
+          <div class="lab-card-top">
+            <span class="lab-card-badge">ЛАБА 01</span>
+            <span class="lab-card-tag">BASELINE</span>
+          </div>
+          <h3 class="lab-card-title">Норма как точка отсчёта</h3>
+          <p class="lab-card-desc">
+            Начните с исправного узла, чтобы увидеть, как выглядит спокойный сигнал, где находится GMF и почему baseline
+            нужен для всех следующих сравнений.
+          </p>
+          <div class="lab-card-points">
+            <div class="lab-card-point"><span>01</span>Смотрите чистую структуру сигнала без ударных событий.</div>
+            <div class="lab-card-point"><span>02</span>Покрутите скорость и посмотрите, как смещаются гармоники.</div>
+            <div class="lab-card-point"><span>03</span>После этого легче замечать реальные аномалии.</div>
+          </div>
+          <div class="lab-card-actions">
+            <a href="simulator.html?source=lab&amp;lab=intro_baseline" class="analysis-coach-action analysis-coach-action--primary">ОТКРЫТЬ В 3D</a>
+            <a href="index.html?page=diag&amp;demo=normal&amp;guide=virtual_lab" class="analysis-coach-action">ПРОВЕРИТЬ НА АНАЛИЗЕ</a>
+          </div>
+        </article>
+
+        <article class="lab-card">
+          <div class="lab-card-top">
+            <span class="lab-card-badge">ЛАБА 02</span>
+            <span class="lab-card-tag lab-card-tag--critical">GEAR FAULT</span>
+          </div>
+          <h3 class="lab-card-title">Скол и отсутствие зуба</h3>
+          <p class="lab-card-desc">
+            Контрастный сценарий для зубчатой передачи: видно, как ударный дефект ломает регулярность вращения и почему
+            спектр становится гораздо более жёстким и импульсным.
+          </p>
+          <div class="lab-card-points">
+            <div class="lab-card-point"><span>01</span>Сравните норму и дефект в режиме Compare.</div>
+            <div class="lab-card-point"><span>02</span>Включите Impact Replay, чтобы поймать момент удара.</div>
+            <div class="lab-card-point"><span>03</span>Закрепите вывод на диагностике тяжёлого кейса.</div>
+          </div>
+          <div class="lab-card-actions">
+            <a href="simulator.html?source=lab&amp;lab=gear_fault_path" class="analysis-coach-action analysis-coach-action--primary">ОТКРЫТЬ GEAR LAB</a>
+            <a href="index.html?page=diag&amp;demo=tooth_miss&amp;guide=compare_faults" class="analysis-coach-action">ПРОГНАТЬ ДИАГНОСТИКУ</a>
+          </div>
+        </article>
+
+        <article class="lab-card">
+          <div class="lab-card-top">
+            <span class="lab-card-badge">ЛАБА 03</span>
+            <span class="lab-card-tag lab-card-tag--warning">BEARING</span>
+          </div>
+          <h3 class="lab-card-title">Внутренняя обойма и модуляция</h3>
+          <p class="lab-card-desc">
+            Здесь акцент на подшипнике: паттерн уже другой, и главная ценность сценария в том, чтобы почувствовать
+            разницу между gear fault и bearing fault не по названию, а по характеру спектра.
+          </p>
+          <div class="lab-card-points">
+            <div class="lab-card-point"><span>01</span>Посмотрите, как меняется envelope при bearing defect.</div>
+            <div class="lab-card-point"><span>02</span>Сравните режим с нормой и зубчатым ударом.</div>
+            <div class="lab-card-point"><span>03</span>Проверьте себя на кейсе внутренней обоймы.</div>
+          </div>
+          <div class="lab-card-actions">
+            <a href="simulator.html?source=lab&amp;lab=bearing_fault_path" class="analysis-coach-action analysis-coach-action--primary">ОТКРЫТЬ BEARING LAB</a>
+            <a href="index.html?page=diag&amp;demo=inner_race&amp;guide=compare_faults" class="analysis-coach-action">СРАВНИТЬ НА АНАЛИЗЕ</a>
+          </div>
+        </article>
+
+        <article class="lab-card">
+          <div class="lab-card-top">
+            <span class="lab-card-badge">ЛАБА 04</span>
+            <span class="lab-card-tag">LOAD + SPEED</span>
+          </div>
+          <h3 class="lab-card-title">Скорость, нагрузка и деградация</h3>
+          <p class="lab-card-desc">
+            Сценарий для понимания динамики: не только какой дефект есть, но и как режим работы помогает его проявить или,
+            наоборот, скрыть на ранней стадии.
+          </p>
+          <div class="lab-card-points">
+            <div class="lab-card-point"><span>01</span>Меняйте скорость и нагрузку прямо в симуляторе.</div>
+            <div class="lab-card-point"><span>02</span>Запустите деградацию и проследите, как растёт severity.</div>
+            <div class="lab-card-point"><span>03</span>Потом переходите к своему файлу и ищите похожие признаки.</div>
+          </div>
+          <div class="lab-card-actions">
+            <a href="simulator.html?source=lab&amp;lab=load_sweep" class="analysis-coach-action analysis-coach-action--primary">ОТКРЫТЬ LOAD LAB</a>
+            <a href="index.html?page=diag&amp;guide=own_file" class="analysis-coach-action">ПЕРЕЙТИ К СВОЕМУ ФАЙЛУ</a>
+          </div>
+        </article>
+      </div>
+
+      <div class="lab-bridge">
+        <div class="lab-bridge-copy">
+          <div class="lab-bridge-kicker">КАК ЭТИМ ПОЛЬЗОВАТЬСЯ</div>
+          <h3 class="lab-bridge-title">Один цикл для объяснения, обучения и самопроверки</h3>
+          <p class="lab-bridge-lead">
+            Хороший рабочий маршрут теперь выглядит так: изучили дефект в 3D, увидели его след в сигнале и FFT, затем
+            вернулись в модуль анализа и подтвердили гипотезу на реальном или демонстрационном кейсе.
+          </p>
+        </div>
+        <div class="lab-bridge-flow">
+          <div class="lab-bridge-step"><span>01</span>Открыть лабораторный сценарий</div>
+          <div class="lab-bridge-step"><span>02</span>Сопоставить механику и спектр</div>
+          <div class="lab-bridge-step"><span>03</span>Прогнать кейс в диагностике</div>
+          <div class="lab-bridge-step"><span>04</span>Сохранить удачный разбор в профиль</div>
+        </div>
+        <div class="lab-bridge-actions">
+          <a href="simulator.html?source=lab&amp;lab=gear_fault_path" class="analysis-coach-action analysis-coach-action--primary">СТАРТОВАТЬ С GEAR LAB</a>
+          <button class="analysis-coach-action" type="button" onclick="goPage('diag')">ПЕРЕЙТИ К ДИАГНОСТИКЕ</button>
+          <button class="analysis-coach-action" type="button" onclick="goPage('profile')">ОТКРЫТЬ ЖУРНАЛ СЕАНСОВ</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="section-problem">
+    <div class="container">
+      <div class="label" style="margin-bottom:24px">Зачем нужен VibroLab</div>
+      <div class="thesis-grid">
+        <div class="card thesis-card">
+          <div class="card-title">ПРОБЛЕМА</div>
+          <p>
+            Редукторы и подшипники входят в число самых уязвимых узлов промышленного оборудования. По данным публикаций,
+            до 80% отказов вращающихся систем связаны именно с этими элементами. Ручной анализ спектров требует времени,
+            высокой квалификации и плохо масштабируется на большой парк техники.
+          </p>
+        </div>
+        <div class="card thesis-card">
+          <div class="card-title">ЦЕЛЬ</div>
+          <p>
+            VibroLab принимает сырой вибросигнал, возвращает диагноз с вероятностями по девяти классам дефектов
+            и делает это через обычный браузер без отдельного ML-клиента и ручной подготовки отчёта.
+          </p>
+        </div>
+        <div class="card thesis-card">
+          <div class="card-title">КЛЮЧЕВЫЕ ЗАДАЧИ</div>
+          <p>
+            Внутри платформы объединены данные, извлечение признаков, модель, browser inference, рабочий кабинет,
+            сравнение с эталоном, серверная история измерений и 3D-визуализация дефекта.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- METRICS -->
+  <section class="section" style="padding-top:0">
+    <div class="container">
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--cyan)" id="metAcc">—</div>
+          <div class="metric-label">ACCURACY</div>
+          <div class="metric-sub" id="metSource">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--green)" id="metF1">—</div>
+          <div class="metric-label">F1 SCORE</div>
+          <div class="metric-sub">Weighted avg</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--orange)" id="metClasses">9</div>
+          <div class="metric-label">КЛАССОВ</div>
+          <div class="metric-sub">1 normal + 8 faults</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--yellow)" id="metFeats">53</div>
+          <div class="metric-label">ПРИЗНАКОВ</div>
+          <div class="metric-sub">Time + Freq + Envelope</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" style="color:var(--purple)" id="metSamples">—</div>
+          <div class="metric-label">СЭМПЛОВ</div>
+          <div class="metric-sub">Balanced</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAULTS GRID -->
+  <section class="section">
+    <div class="container">
+      <div class="label" style="margin-bottom:32px">Какие классы дефектов распознаёт система</div>
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--muted);margin-bottom:12px">
+        ШЕСТЕРНИ
+      </div>
+      <div class="faults-grid">
+        <div class="fault-card">
+          <div class="fault-dot" style="background:var(--green)"></div>
+          <div class="name">НОРМА</div>
+          <div class="desc">Здоровая шестерня. Чистые гармоники GMF, стабильный периодический сигнал без модуляции.
+          </div>
+        </div>
+        <div class="fault-card">
+          <div class="fault-dot" style="background:var(--orange)"></div>
+          <div class="name">СКОЛ ЗУБА</div>
+          <div class="desc">Chipped tooth. Импульсные удары 1×/оборот, боковые полосы GMF±k·f<sub>rot</sub>. Повышенный
+            куртозис.
+          </div>
+        </div>
+        <div class="fault-card">
+          <div class="fault-dot" style="background:#f87171"></div>
+          <div class="name">ОТСУТСТВИЕ ЗУБА</div>
+          <div class="desc">Missing tooth. Сильнейшие удары, разрушение GMF-структуры, интенсивные боковые полосы.
+            Критический дефект!
+          </div>
+        </div>
+        <div class="fault-card">
+          <div class="fault-dot" style="background:var(--purple)"></div>
+          <div class="name">ТРЕЩИНА КОРНЯ</div>
+          <div class="desc">Root crack. Амплитудная модуляция вибрации на f<sub>rot</sub>. Характерный рисунок боковых
+            полос. Высокий риск разрушения.
+          </div>
+        </div>
+        <div class="fault-card">
+          <div class="fault-dot" style="background:var(--yellow)"></div>
+          <div class="name">ИЗНОС ПОВЕРХНОСТИ</div>
+          <div class="desc">Surface wear / питтинг. Широкополосный шум, субгармоники GMF/2 и GMF/3. Повышенный шумовой
+            пол.
+          </div>
+        </div>
+      </div>
+
+      <div style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--muted);margin:24px 0 12px">
+        ПОДШИПНИКИ
+      </div>
+      <div class="faults-grid">
+        <div class="fault-card">
+          <div class="fault-dot" style="background:var(--green)"></div>
+          <div class="name">НОРМА</div>
+          <div class="desc">Исправный подшипник. Низкий уровень вибрации, отсутствие характерных частот дефектов.</div>
+        </div>
+        <div class="fault-card">
+          <div class="fault-dot" style="background:#60a5fa"></div>
+          <div class="name">ДЕФЕКТ ШАРИКА</div>
+          <div class="desc">Ball fault. Характерная частота BSF = f<sub>rot</sub> × 2.1. Модуляция на частоте обоймы.
+          </div>
+        </div>
+        <div class="fault-card">
+          <div class="fault-dot" style="background:#f472b6"></div>
+          <div class="name">ВНУТРЕННЯЯ ОБОЙМА</div>
+          <div class="desc">Inner race fault. BPFI = f<sub>rot</sub> × 5.2. Амплитудная модуляция при прохождении зоны
+            нагрузки.
+          </div>
+        </div>
+        <div class="fault-card">
+          <div class="fault-dot" style="background:#fb7185"></div>
+          <div class="name">НАРУЖНАЯ ОБОЙМА</div>
+          <div class="desc">Outer race fault. BPFO = f<sub>rot</sub> × 3.5. Стационарный дефект, постоянная амплитуда
+            импульсов.
+          </div>
+        </div>
+        <div class="fault-card">
+          <div class="fault-dot" style="background:var(--yellow)"></div>
+          <div class="name">КОМБИНИРОВАННЫЙ</div>
+          <div class="desc">Combination fault. Множественные характерные частоты. Суперпозиция BPFO + BPFI + BSF.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DDS STAND -->
+  <section class="section" id="section-dataset">
+    <div class="container">
+      <div class="label" style="margin-bottom:32px">Источник данных · SEU Drivetrain Dynamic Simulator</div>
+      <div class="two-col" style="gap:32px;align-items:start">
+        <div>
+          <div class="card" style="margin-bottom:16px">
+          <div class="card-title">SEU GEARBOX DATASET И ПРОМЫШЛЕННЫЙ СТЕНД</div>
+          <div style="font-size:13px;color:var(--text);line-height:1.9">
+              Мы использовали открытый датасет Southeast University Gearbox Dataset, записанный на стенде
+              <strong style="color:var(--cyan)">SpectraQuest Drivetrain Diagnostics Simulator</strong>.<br><br>
+              Он включает:<br><br>
+              <span style="color:var(--green)">●</span> Электродвигатель с частотным преобразователем (20/30 Hz)<br>
+              <span style="color:var(--green)">●</span> Планетарный редуктор (Z<sub>sun</sub>=16,
+              Z<sub>ring</sub>=44)<br>
+              <span style="color:var(--green)">●</span> Параллельный одноступенчатый редуктор (Z₁=20, Z₂=40)<br>
+              <span style="color:var(--green)">●</span> Датчик крутящего момента<br>
+              <span style="color:var(--green)">●</span> Нагрузочный генератор (0V / 2V нагрузка)<br>
+              <span style="color:var(--green)">●</span> 8-канальная DAQ-система (5120 Hz / канал)
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">ПОДГОТОВКА ВЫБОРКИ</div>
+            <div style="font-size:12px;color:var(--text);line-height:1.8;font-family:var(--mono)">
+              <span style="color:var(--cyan)">CH 6:</span> акселерометр X параллельного редуктора<br>
+              <span style="color:var(--cyan)">Окно:</span> 2560 отсчётов = 0.5 секунды<br>
+              <span style="color:var(--cyan)">Overlap:</span> 50%<br>
+              <span style="color:var(--cyan)">Train set:</span> 7200 сегментов<br>
+              <span style="color:var(--cyan)">Балансировка:</span> 800 сегментов на класс<br><br>
+              <span style="color:var(--muted)">Такой split даёт честную метрику и одинаковую представленность всех девяти состояний.</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-title">8 КАНАЛОВ ВИБРАЦИИ</div>
+            <table style="width:100%;font-family:var(--mono);font-size:11px;border-collapse:collapse">
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:6px;color:var(--muted)">CH 1</td>
+                <td style="padding:6px;color:var(--text)">Motor vibration</td>
+                <td style="padding:6px;color:var(--muted)">Корпус мотора</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:6px;color:var(--muted)">CH 2</td>
+                <td style="padding:6px;color:var(--text)">Planetary X</td>
+                <td style="padding:6px;color:var(--muted)">Радиально</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:6px;color:var(--muted)">CH 3</td>
+                <td style="padding:6px;color:var(--text)">Planetary Y</td>
+                <td style="padding:6px;color:var(--muted)">Тангенциально</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:6px;color:var(--muted)">CH 4</td>
+                <td style="padding:6px;color:var(--text)">Planetary Z</td>
+                <td style="padding:6px;color:var(--muted)">Осево</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:6px;color:var(--muted)">CH 5</td>
+                <td style="padding:6px;color:var(--text)">Torque</td>
+                <td style="padding:6px;color:var(--muted)">Датчик момента</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border);background:rgba(0,229,255,.03)">
+                <td style="padding:6px;color:var(--cyan)">CH 6</td>
+                <td style="padding:6px;color:var(--cyan);font-weight:600">Parallel X</td>
+                <td style="padding:6px;color:var(--cyan)">★ Основной</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--border)">
+                <td style="padding:6px;color:var(--muted)">CH 7</td>
+                <td style="padding:6px;color:var(--text)">Parallel Y</td>
+                <td style="padding:6px;color:var(--muted)">Тангенциально</td>
+              </tr>
+              <tr>
+                <td style="padding:6px;color:var(--muted)">CH 8</td>
+                <td style="padding:6px;color:var(--text)">Parallel Z</td>
+                <td style="padding:6px;color:var(--muted)">Осево</td>
+              </tr>
+            </table>
+          </div>
+          <div class="formula-box">
+            <div class="tag">ПАРАМЕТРЫ DAQ</div>
+            <div class="formula-desc" style="margin-top:12px">
+              <b>Frequency Limit:</b> 2560 Hz<br>
+              <b>Spectral Lines:</b> 1024<br>
+              <b>Sample Rate:</b> 5120 Hz / канал<br>
+              <b>Режимы:</b> 20 Hz / 0V и 30 Hz / 2V<br>
+              <b>Записей:</b> около 1,000,000 точек/файл<br>
+              <b>Формат:</b> Tab-separated TXT, 8 колонок
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="section-method">
+    <div class="container">
+      <div class="label" style="margin-bottom:32px">Признаки, модель и архитектура решения</div>
+      <div class="pipeline">
+        <div class="pipe-step lit">
+          <div class="pipe-num">01</div>
+          <span class="pipe-icon" style="filter:none">📡</span>
+          <div class="pipe-title" style="color:var(--cyan)">СЫРЫЕ ДАННЫЕ</div>
+          <div class="pipe-desc">SEU DDS<br>CH6 акселерометр<br>2 режима</div>
+          <span class="pipe-arrow" style="opacity:1">›</span></div>
+        <div class="pipe-step lit">
+          <div class="pipe-num">02</div>
+          <span class="pipe-icon" style="filter:none">✂️</span>
+          <div class="pipe-title" style="color:var(--cyan)">СЕГМЕНТАЦИЯ</div>
+          <div class="pipe-desc">2560 точек<br>overlap 50%<br>7200 сегментов</div>
+          <span class="pipe-arrow" style="opacity:1">›</span></div>
+        <div class="pipe-step lit">
+          <div class="pipe-num">03</div>
+          <span class="pipe-icon" style="filter:none">🔬</span>
+          <div class="pipe-title" style="color:var(--cyan)">ПРИЗНАКИ</div>
+          <div class="pipe-desc">53 признака<br>time + freq + env<br>Hilbert envelope</div>
+          <span class="pipe-arrow" style="opacity:1">›</span></div>
+        <div class="pipe-step lit">
+          <div class="pipe-num">04</div>
+          <span class="pipe-icon" style="filter:none">🧠</span>
+          <div class="pipe-title" style="color:var(--cyan)">ОБУЧЕНИЕ</div>
+          <div class="pipe-desc">StandardScaler<br>RF 500 trees<br>5-fold CV</div>
+          <span class="pipe-arrow" style="opacity:1">›</span></div>
+        <div class="pipe-step lit">
+          <div class="pipe-num">05</div>
+          <span class="pipe-icon" style="filter:none">🌐</span>
+          <div class="pipe-title" style="color:var(--cyan)">WEB-INFERENCE</div>
+          <div class="pipe-desc">Экспорт в JSON<br>локально в браузере<br>~15 ms</div>
+        </div>
+      </div>
+
+      <div class="two-col" style="gap:24px;margin-top:24px">
+        <div class="card thesis-card">
+          <div class="card-title">ПОЧЕМУ ИМЕННО 53 ПРИЗНАКА</div>
+          <ul class="thesis-list">
+            <li>Во временной области используются RMS, peak, crest factor, kurtosis, skewness и другие статистики ударности сигнала.</li>
+            <li>В частотной области считаются гармоники GMF, боковые полосы, вращательные частоты и энергии в ключевых диапазонах.</li>
+            <li>Envelope-признаки через преобразование Гильберта позволяют выделять BPFO, BPFI и BSF для подшипниковых дефектов.</li>
+            <li>Такой набор признаков интерпретируем, устойчив к шуму и одинаково реализуем на Python и в браузере на JavaScript.</li>
+          </ul>
+        </div>
+        <div class="card thesis-card">
+          <div class="card-title">ПОЧЕМУ ВЫБРАН RANDOM FOREST</div>
+          <ul class="thesis-list">
+            <li>Модель устойчива к шуму и выбросам, что особенно важно для вибрационных сигналов.</li>
+            <li>Feature importance показывает, какие физические эффекты реально влияют на решение.</li>
+            <li>Сериализация в JSON позволяет выполнять inference без Python-рантайма и серверного ML.</li>
+            <li>На практике это даёт быстрый, прозрачный и воспроизводимый production-контур.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="two-col" style="gap:24px;margin-top:24px">
+        <div class="formula-box">
+          <div class="tag">ЧАСТОТЫ ЗАЦЕПЛЕНИЯ</div>
+          <div class="formula-big">GMF = n × z</div>
+          <div class="formula-desc" style="margin-top:8px">
+            <b>GMF</b> = Gear Mesh Frequency<br>
+            <b>n</b> = частота вращения (20 / 30 Hz)<br>
+            <b>z</b> = число зубьев шестерни (20)<br>
+            <b>GMF</b> = 400 Гц (при 20 Hz) / 600 Гц (при 30 Hz)<br><br>
+            <b>Боковые полосы:</b> f<sub>sb</sub> = GMF ± k·f<sub>rot</sub>
+          </div>
+        </div>
+        <div class="formula-box">
+          <div class="tag">ЧАСТОТЫ ПОДШИПНИКОВ</div>
+          <div class="formula-big">BPFO · BPFI · BSF</div>
+          <div class="formula-desc" style="margin-top:8px">
+            <b>BPFO</b> ≈ 3.5 × f<sub>rot</sub><br>
+            <b>BPFI</b> ≈ 5.2 × f<sub>rot</sub><br>
+            <b>BSF</b> ≈ 2.1 × f<sub>rot</sub><br><br>
+            Эти частоты используются как физическая основа для построения частотных признаков и интерпретации результата.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRAINING RESULTS -->
+  <section class="section" id="section-results">
+    <div class="container">
+      <div class="label" style="margin-bottom:32px">Результаты модели и их интерпретация</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:32px">
+        <div class="card" style="text-align:center;padding:24px">
+          <div style="font-size:42px;font-weight:800;color:var(--cyan);font-family:var(--mono)">98.4%</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">Accuracy на тестовой выборке</div>
+          <div style="font-size:10px;color:var(--text);margin-top:4px">20 файлов · 7200 сегментов · 9 классов</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px">уровень, сопоставимый с экспертной диагностикой</div>
+        </div>
+        <div class="card" style="text-align:center;padding:24px">
+          <div style="font-size:42px;font-weight:800;color:var(--green);font-family:var(--mono)">0.9841</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">F1-score (macro)</div>
+          <div style="font-size:10px;color:var(--text);margin-top:4px">равномерное качество по классам</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px">важно для balance по всем дефектам</div>
+        </div>
+        <div class="card" style="text-align:center;padding:24px">
+          <div style="font-size:42px;font-weight:800;color:var(--yellow);font-family:var(--mono)">98.47%</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">Cross-validation mean</div>
+          <div style="font-size:10px;color:var(--text);margin-top:4px">5-fold CV</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px">std ± 0.21%</div>
+        </div>
+        <div class="card" style="text-align:center;padding:24px">
+          <div style="font-size:42px;font-weight:800;color:var(--purple);font-family:var(--mono)">5760 / 1440</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">Train / Test split</div>
+          <div style="font-size:10px;color:var(--text);margin-top:4px">80 / 20 со стратификацией</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:2px">RF 500 деревьев · max_depth=30</div>
+        </div>
+      </div>
+
+      <div class="two-col" style="gap:24px;margin-top:24px">
+        <div class="card">
+          <div class="card-title">CONFUSION MATRIX</div>
+          <table class="cm-table" id="cmTable"></table>
+        </div>
+        <div class="card">
+          <div class="card-title">МЕТРИКИ ПО КЛАССАМ</div>
+          <div id="clsMetrics"></div>
+          <div class="formula-box" style="margin-top:24px">
+            <div class="tag">ПАРАМЕТРЫ МОДЕЛИ</div>
+            <div class="formula-desc" style="margin-top:8px" id="modelParams">Загрузка параметров модели…</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:24px">
+        <div class="card-title">FEATURE IMPORTANCES · TOP 15</div>
+        <div class="formula-desc" style="margin:10px 0 18px">
+          Топ признаков подтверждает физику процесса: модель опирается на вращательные компоненты, энергетику
+          низких и высоких частот и статистики ударности сигнала, а не на случайные корреляции.
+        </div>
+        <div id="fiBars"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="section-conclusion">
+    <div class="container">
+      <div class="label" style="margin-bottom:24px">Практическая ценность и развитие</div>
+      <div class="two-col" style="gap:24px;align-items:start">
+        <div class="card thesis-card">
+          <div class="card-title">ЧТО УЖЕ РАБОТАЕТ</div>
+          <ul class="thesis-list">
+            <li>Обучена модель с accuracy 98.4% и cross-validation 98.47 ± 0.21% на реальных лабораторных данных.</li>
+            <li>Реализованы 53 физически обоснованных признака одновременно на Python и JavaScript с проверенной идентичностью.</li>
+            <li>Собран браузерный inference без серверного ML: модель загружается один раз и работает локально у пользователя.</li>
+            <li>Создан 3D-симулятор редукторов с визуализацией дефектов, сигналов, FFT и real-time диагностикой.</li>
+            <li>Сервис развёрнут как production-контур с Docker, FastAPI, CI/CD и браузерным доступом.</li>
+          </ul>
+        </div>
+        <div class="card thesis-card">
+          <div class="card-title">ПРАКТИЧЕСКАЯ ЦЕННОСТЬ И РАЗВИТИЕ</div>
+          <ul class="thesis-list">
+            <li>Система уже показывает, как можно сократить время диагностики и снизить зависимость от ручного экспертного анализа.</li>
+            <li>Порог входа минимален: для демонстрации и анализа пользователю достаточно браузера и измеренного файла.</li>
+            <li>Следующий шаг — подключение онлайн-мониторинга через MQTT и работа с потоковыми измерениями.</li>
+            <li>В репозитории уже есть задел под прогнозирование остаточного ресурса, отчёты и накопление истории состояния.</li>
+            <li>Для промышленного внедрения следующим этапом станет валидация на эксплуатационных данных конкретного предприятия.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     DIAGNOSTICS
+     ══════════════════════════════════════════════════════════════ -->
+<div id="page-diag" style="display:none">
+  <section class="section" style="padding-top:80px">
+    <div class="container">
+      <div class="diag-hero">
+        <div class="diag-hero-badge">ШАГ 1 · ВЫБОР ИСТОЧНИКА</div>
+        <h2 class="diag-hero-title">Загрузите свой файл или запустите готовый кейс</h2>
+        <p class="diag-hero-lead">
+          Ниже два способа стартануть: слева — ваш файл, справа — три эталонных сигнала из SEU Dataset.
+          Результат появится сразу после выбора.
+        </p>
+      </div>
+
+      <div class="analysis-coach" id="analysisCoach" aria-live="polite">
+        <div class="analysis-coach-modes" role="tablist" aria-label="Режим помощи">
+          <button class="analysis-coach-mode is-active" type="button" data-guide-mode="first_time">Я впервые здесь</button>
+          <button class="analysis-coach-mode" type="button" data-guide-mode="own_file">У меня свой файл</button>
+          <button class="analysis-coach-mode" type="button" data-guide-mode="compare_faults">Хочу понять отличия дефектов</button>
+          <button class="analysis-coach-mode" type="button" data-guide-mode="virtual_lab">Хочу виртуальную лабораторию</button>
+        </div>
+        <div class="analysis-coach-panel">
+          <div class="analysis-coach-panel-top">
+            <div>
+              <div class="analysis-coach-kicker" id="analysisCoachKicker">РЕКОМЕНДОВАННЫЙ СЦЕНАРИЙ</div>
+              <h3 class="analysis-coach-title" id="analysisCoachTitle">Начните с готового кейса, чтобы понять интерфейс без риска ошибиться</h3>
+            </div>
+            <span class="analysis-coach-state" id="analysisCoachState">GUIDED</span>
+          </div>
+          <p class="analysis-coach-lead" id="analysisCoachLead">
+            Самый мягкий вход — открыть эталонный сигнал, посмотреть, как читается диагноз, и только потом переходить к своему файлу.
+          </p>
+          <div class="analysis-coach-steps" id="analysisCoachSteps"></div>
+          <div class="analysis-coach-tip" id="analysisCoachTip"></div>
+          <div class="analysis-coach-actions" id="analysisCoachActions"></div>
+        </div>
+      </div>
+
+      <div class="analysis-source-grid">
+        <div class="upload-zone" id="uploadZone" role="button" tabindex="0" aria-label="Загрузить файл для анализа">
+          <input type="file" id="uploadFileInput" accept=".wav,.csv,.tsv,.txt,.mat,.npy,.npz,.dat,.uff">
+          <span class="upload-badge">СВОЙ ФАЙЛ</span>
+          <span class="icon" aria-hidden="true">📁</span>
+          <div class="title">Перетащите файл или нажмите</div>
+          <div class="subtitle">SEU TXT, WAV, CSV, MAT, NPY, UFF — любой вибросигнал с частотой дискретизации ≥ 2 кГц</div>
+          <div class="upload-formats">
+            <span class="format-badge">SEU TXT</span><span class="format-badge">WAV</span><span
+            class="format-badge">CSV</span><span class="format-badge">MAT</span><span
+            class="format-badge">NPY</span><span class="format-badge">UFF</span>
+          </div>
+          <div class="upload-hint">Данные не уходят на сервер — всё считается у вас в браузере</div>
+        </div>
+
+        <div class="analysis-presets">
+          <div class="analysis-presets-head">
+            <span class="analysis-presets-badge" aria-hidden="true">ИЛИ</span>
+            <div>
+              <strong>Попробуйте готовый сигнал</strong>
+              <p>Синтетика, собранная по физике дефектов SEU. Хороший способ разобраться, как выглядит каждый класс.</p>
+            </div>
+          </div>
+          <button class="preset-card" type="button" data-demo-class="normal">
+            <div class="preset-card-top">
+              <strong>Норма</strong>
+              <span class="hero-scenario-badge">BASELINE</span>
+            </div>
+            <p>Исправный узел — чистые гармоники GMF, без модуляций. Точка отсчёта для сравнения.</p>
+          </button>
+          <button class="preset-card" type="button" data-demo-class="tooth_miss">
+            <div class="preset-card-top">
+              <strong>Отсутствие зуба</strong>
+              <span class="hero-scenario-badge hero-scenario-badge--critical">GEAR FAULT</span>
+            </div>
+            <p>Критический дефект зубчатой передачи — сильные импульсные удары и разрушение GMF-структуры.</p>
+          </button>
+          <button class="preset-card" type="button" data-demo-class="inner_race">
+            <div class="preset-card-top">
+              <strong>Дефект внутренней обоймы</strong>
+              <span class="hero-scenario-badge hero-scenario-badge--warning">BEARING</span>
+            </div>
+            <p>Дефект подшипника на BPFI — модуляция при прохождении зоны нагрузки.</p>
+          </button>
+        </div>
+      </div>
+
+      <details class="diag-more-demos">
+        <summary>
+          <strong>Ещё 7 тестовых сигналов</strong>
+          <span class="diag-more-hint">(скол зуба, трещина, износ, BPFO, BSF, комбинированный…)</span>
+        </summary>
+        <div class="fault-btns" id="faultBtns"></div>
+      </details>
+
+      <div class="pipeline">
+        <div class="pipe-step" id="ps1">
+          <div class="pipe-num">01</div>
+          <span class="pipe-icon">📡</span>
+          <div class="pipe-title">СИГНАЛ</div>
+          <div class="pipe-desc">Файл / датчик / демо</div>
+          <span class="pipe-arrow">›</span></div>
+        <div class="pipe-step" id="ps2">
+          <div class="pipe-num">02</div>
+          <span class="pipe-icon">🌊</span>
+          <div class="pipe-title">АНАЛИЗ</div>
+          <div class="pipe-desc">БПФ + огибающая</div>
+          <span class="pipe-arrow">›</span></div>
+        <div class="pipe-step" id="ps3">
+          <div class="pipe-num">03</div>
+          <span class="pipe-icon">🔬</span>
+          <div class="pipe-title">ПРИЗНАКИ</div>
+          <div class="pipe-desc">53 параметра</div>
+          <span class="pipe-arrow">›</span></div>
+        <div class="pipe-step" id="ps4">
+          <div class="pipe-num">04</div>
+          <span class="pipe-icon">🧠</span>
+          <div class="pipe-title">МОДЕЛЬ</div>
+          <div class="pipe-desc">Random Forest · 500 деревьев</div>
+          <span class="pipe-arrow">›</span></div>
+        <div class="pipe-step" id="ps5">
+          <div class="pipe-num">05</div>
+          <span class="pipe-icon">⚡</span>
+          <div class="pipe-title">ДИАГНОЗ</div>
+          <div class="pipe-desc">Класс + вероятности + интерпретация</div>
+        </div>
+      </div>
+
+      <div class="signal-grid">
+        <div class="signal-box">
+          <div class="signal-header"><span class="label" style="margin:0">Временная область</span><span class="mono"
+                                                                                                        id="sigStatus"
+                                                                                                        style="font-size:9px;color:var(--muted)">—</span>
+          </div>
+          <canvas class="signal-canvas" id="sigCanvas"></canvas>
+          <p id="sigDesc" style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6"></p>
+        </div>
+        <div class="signal-box">
+          <div class="signal-header"><span class="label" style="margin:0">Частотная область</span><span class="mono"
+                                                                                                        id="specStatus"
+                                                                                                        style="font-size:9px;color:var(--muted)">—</span>
+          </div>
+          <canvas class="signal-canvas" id="specCanvas"></canvas>
+          <p id="specDesc" style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6"></p>
+        </div>
+      </div>
+
+      <!-- ENVELOPE SPECTRUM -->
+      <div class="signal-grid" id="advancedSignals" style="display:none">
+        <div class="signal-box">
+          <div class="signal-header"><span class="label" style="margin:0">Спектрограмма</span><span class="mono"
+                                                                                                     id="spectrogramStatus"
+                                                                                                     style="font-size:9px;color:var(--muted)">—</span>
+          </div>
+          <canvas class="signal-canvas" id="spectrogramCanvas"></canvas>
+        </div>
+        <div class="signal-box">
+          <div class="signal-header"><span class="label" style="margin:0">Огибающая</span><span class="mono"
+                                                                                                 id="envStatus"
+                                                                                                 style="font-size:9px;color:var(--muted)">—</span>
+          </div>
+          <canvas class="signal-canvas" id="envCanvas"></canvas>
+        </div>
+      </div>
+
+      <!-- PRIMARY DIAGNOSIS -->
+      <div class="diagnosis-result" id="diagResult"></div>
+
+      <div class="workspace-empty workspace-empty--cta">
+        Сохраните результат в профиле или откройте его физическую интерпретацию в 3D-симуляторе.
+        <div class="workspace-actions">
+          <button class="btn btn-primary" type="button" onclick="goPage('profile')">ОТКРЫТЬ ПРОФИЛЬ</button>
+          <a href="simulator.html" class="btn" style="display:inline-flex;align-items:center;text-decoration:none">ОТКРЫТЬ 3D</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PROFILE
+     ══════════════════════════════════════════════════════════════ -->
+<div id="page-profile" style="display:none">
+  <section class="section" style="padding-top:80px">
+    <div class="container">
+      <div class="profile-command-shell">
+        <div class="profile-command-copy">
+          <div class="label" style="margin-bottom:8px">Личный кабинет</div>
+          <h2 class="diag-headline">Здесь живёт твой учебный журнал</h2>
+          <p class="diag-copy">
+            После входа сюда сохраняются сеансы анализа, сравнения с эталоном, alert-ы и журнал действий. Удобно возвращаться к тому, что уже разобрали на лабораторной.
+          </p>
+        </div>
+        <div class="profile-command-nav">
+          <button class="page-compass-link page-compass-link--primary" type="button" onclick="App.goPageSection('profile','authPanel')">↳ ВОЙТИ / АККАУНТ</button>
+          <button class="page-compass-link" type="button" onclick="App.goPageSection('profile','profileHealthPanel')">СВОДКА</button>
+          <button class="page-compass-link" type="button" onclick="App.goPageSection('profile','journalPanel')">ЖУРНАЛ</button>
+          <button class="page-compass-link" type="button" onclick="App.goPageSection('profile','analysisComparePanel')">СРАВНЕНИЕ</button>
+          <button class="page-compass-link" type="button" onclick="App.goPageSection('profile','monitoringPanel')">ИЗМЕРЕНИЯ</button>
+        </div>
+      </div>
+
+      <div class="profile-onboard" id="profileOnboard" aria-live="polite">
+        <div class="profile-onboard-copy">
+          <div class="profile-onboard-kicker" id="profileOnboardKicker">ПРОГРЕСС РАБОТЫ</div>
+          <h3 class="profile-onboard-title" id="profileOnboardTitle">Войдите, сохраните первый анализ и включите нормальный рабочий цикл</h3>
+          <p class="profile-onboard-lead" id="profileOnboardLead">
+            После этого кабинет станет по-настоящему полезным: появятся история, baseline, сравнение состояний и журнал действий.
+          </p>
+        </div>
+        <div class="profile-onboard-grid" id="profileOnboardSteps"></div>
+        <div class="profile-onboard-actions" id="profileOnboardActions"></div>
+      </div>
+
+      <div class="profile-health-shell" id="profileHealthPanel">
+        <div class="workspace-panel workspace-panel--profile-health">
+          <div class="workspace-panel-head">
+            <div>
+              <div class="card-title">СОСТОЯНИЕ СИСТЕМЫ</div>
+              <p class="workspace-copy">
+                Быстрый свод по сохранённым узлам: средний индекс здоровья, объекты с повышенным риском, записи после обслуживания и новые измерения.
+              </p>
+            </div>
+            <span class="workspace-badge">HEALTH</span>
+          </div>
+          <div class="profile-health-summary" id="profileHealthSummary"></div>
+        </div>
+
+        <div class="workspace-panel workspace-panel--profile-alerts">
+          <div class="workspace-panel-head">
+            <div>
+              <div class="card-title">ЧТО ТРЕБУЕТ ВНИМАНИЯ</div>
+              <p class="workspace-copy">
+                Приоритетные alert-ы подсказывают, какой узел открыть в журнале, что сравнить с эталоном и где нужен следующий шаг по обслуживанию.
+              </p>
+            </div>
+            <span class="workspace-badge">ALERTS</span>
+          </div>
+          <div class="profile-alert-toolbar">
+            <div class="profile-alert-toolbar-head">
+              <div class="profile-alert-status-row" id="profileAlertStatusSummary"></div>
+              <label class="workspace-field profile-alert-sort-field" id="profileAlertSortField">
+                <span>Порядок очереди</span>
+                <select id="profileAlertSortInput">
+                  <option value="priority">По приоритету</option>
+                  <option value="freshness">Сначала свежие</option>
+                  <option value="severity">По severity</option>
+                  <option value="status">По статусу</option>
+                </select>
+              </label>
+            </div>
+            <div class="profile-alert-filter-row" id="profileAlertFilterRow">
+              <button class="history-btn is-active" type="button" data-alert-filter="all">ВСЕ</button>
+              <button class="history-btn" type="button" data-alert-filter="active">АКТИВНЫЕ</button>
+              <button class="history-btn" type="button" data-alert-filter="new">NEW</button>
+              <button class="history-btn" type="button" data-alert-filter="acknowledged">ACKNOWLEDGED</button>
+              <button class="history-btn" type="button" data-alert-filter="in_progress">IN PROGRESS</button>
+              <button class="history-btn" type="button" data-alert-filter="resolved">RESOLVED</button>
+            </div>
+          </div>
+          <div class="workspace-empty" id="profileAlertEmpty">
+            <strong>Alert-лента включится, когда запустите серверный контур.</strong>
+            А пока можно потренироваться на странице <button type="button" class="workspace-inline-link" onclick="goPage('diag')">Анализ</button>.
+          </div>
+          <div class="profile-alert-list" id="profileAlertList"></div>
+        </div>
+      </div>
+
+      <div class="profile-main-grid">
+        <div class="profile-primary-stack">
+          <div class="workspace-panel workspace-panel--journal" id="journalPanel">
+            <div class="workspace-panel-head">
+              <div>
+                <div class="card-title">ЖУРНАЛ СОСТОЯНИЙ</div>
+                <p class="workspace-copy">
+                  Здесь фиксируются диагностические сеансы: состояние узла, комментарии инженера, baseline и переходы между стадиями.
+                </p>
+              </div>
+              <div class="workspace-stats" id="historyStats"></div>
+            </div>
+
+            <div class="workspace-form-grid workspace-form-grid--journal">
+              <label class="workspace-field">
+                <span>Узел / источник</span>
+                <input type="text" id="assetNameInput" placeholder="Gearbox A-01">
+              </label>
+              <label class="workspace-field">
+                <span>Стадия состояния</span>
+                <select id="sessionStateInput">
+                  <option value="healthy">Healthy</option>
+                  <option value="warning">Warning</option>
+                  <option value="service">Service</option>
+                  <option value="after_maintenance">After maintenance</option>
+                </select>
+              </label>
+              <label class="workspace-field">
+                <span>Статус работы</span>
+                <select id="workStatusInput">
+                  <option value="observe">Наблюдать</option>
+                  <option value="inspect">Проверить</option>
+                  <option value="repair">Ремонт</option>
+                  <option value="replaced">Заменено</option>
+                </select>
+              </label>
+            </div>
+
+            <label class="workspace-field workspace-field--stacked">
+              <span>Комментарий к записи</span>
+              <textarea id="sessionNoteInput" rows="3" placeholder="Например: зафиксирован рост ударных импульсов, нужна повторная проверка после обслуживания."></textarea>
+            </label>
+
+            <div class="workspace-form-grid workspace-form-grid--journal workspace-form-grid--notes">
+              <label class="workspace-field">
+                <span>Почему принято решение</span>
+                <textarea id="engineerReasonInput" rows="4" placeholder="Например: рост ударных импульсов и боковых полос вокруг GMF подтверждает переход в warning-stage."></textarea>
+              </label>
+              <label class="workspace-field">
+                <span>Что сделано дальше</span>
+                <textarea id="actionTakenInput" rows="4" placeholder="Например: назначен осмотр, выполнен ремонт, узел переведён в after maintenance."></textarea>
+              </label>
+            </div>
+
+            <div class="workspace-capture" id="captureSummary">
+              Запустите анализ, затем сохраните текущий результат в журнал состояний.
+            </div>
+
+            <div class="workspace-empty" id="historyEmpty">
+              <strong>История пока пуста.</strong>
+              Первая запись появится после того, как вы сохраните результат анализа — станет базой для сравнения состояний.
+              <div class="workspace-empty-actions">
+                <button class="btn btn-primary" type="button" onclick="goPage('diag')">⚡ К АНАЛИЗУ</button>
+              </div>
+            </div>
+            <div class="history-list" id="historyList"></div>
+
+          </div>
+
+          <div class="analysis-compare-panel" id="analysisComparePanel">
+            <div class="workspace-panel-head">
+              <div>
+                <div class="card-title">РЕЖИМ СРАВНЕНИЯ</div>
+                <p class="workspace-copy">Сравнение текущего анализа, эталонной записи и контрольных проверок после обслуживания.</p>
+              </div>
+              <span class="workspace-badge">EVIDENCE</span>
+            </div>
+            <div class="workspace-form-grid analysis-compare-grid">
+              <label class="workspace-field">
+                <span>Узел</span>
+                <select id="analysisCompareAssetSelect"></select>
+              </label>
+              <label class="workspace-field">
+                <span>Режим сравнения</span>
+                <select id="analysisCompareModeSelect">
+                  <option value="baseline_current">Эталон vs текущий анализ</option>
+                  <option value="baseline_saved">Эталон vs сохранённый сеанс</option>
+                  <option value="before_after">До vs после обслуживания</option>
+                </select>
+              </label>
+              <label class="workspace-field">
+                <span>Эталон</span>
+                <select id="analysisCompareReferenceSelect"></select>
+              </label>
+              <label class="workspace-field">
+                <span>Сравниваемая запись</span>
+                <select id="analysisCompareTargetSelect"></select>
+              </label>
+            </div>
+            <div class="analysis-compare-chip-row">
+              <button class="analysis-compare-chip" type="button" data-analysis-compare-preset="baseline_current">ЭТАЛОН VS ТЕКУЩИЙ</button>
+              <button class="analysis-compare-chip" type="button" data-analysis-compare-preset="baseline_saved">ЭТАЛОН VS ДЕФЕКТ</button>
+              <button class="analysis-compare-chip" type="button" data-analysis-compare-preset="before_after">ДО VS ПОСЛЕ</button>
+            </div>
+            <div class="analysis-compare-summary" id="analysisCompareSummary"></div>
+          </div>
+
+          <div class="workspace-panel monitoring-panel" id="monitoringPanel">
+            <div class="workspace-panel-head">
+              <div>
+                <div class="card-title">ЖУРНАЛ ИЗМЕРЕНИЙ</div>
+                <p class="workspace-copy">Реальные файлы и сенсорные записи, которые можно повторно открыть на странице анализа и использовать как основу для сравнения.</p>
+              </div>
+              <span class="workspace-badge">ИЗМЕРЕНИЯ</span>
+            </div>
+            <div class="workspace-stats" id="monitoringStats"></div>
+            <div class="workspace-empty" id="monitoringEmpty">
+              После входа в аккаунт можно загружать реальные файлы и открывать их снова на странице анализа.
+            </div>
+            <div class="monitoring-list" id="monitoringList"></div>
+          </div>
+        </div>
+
+        <div class="profile-secondary-stack">
+          <div class="workspace-panel workspace-panel--alert-log" id="profileAlertLogPanel">
+            <div class="workspace-panel-head">
+              <div>
+                <div class="card-title">УПРАВЛЕНИЕ ALERT-ОМ</div>
+                <p class="workspace-copy">
+                  Для выбранного alert-а можно подтвердить статус, перевести его в работу, закрыть после обслуживания и зафиксировать инженерное действие отдельной записью.
+                </p>
+              </div>
+              <span class="workspace-badge">STATUS</span>
+            </div>
+
+            <div class="profile-alert-log-summary" id="profileAlertLogSummary"></div>
+
+            <form class="profile-alert-log-form" id="profileAlertEventForm">
+              <div class="workspace-form-grid">
+                <label class="workspace-field">
+                  <span>Тип события</span>
+                  <select id="alertEventTypeInput">
+                    <option value="note">Комментарий</option>
+                    <option value="acknowledge">Подтверждение</option>
+                    <option value="work">Работа по alert-у</option>
+                    <option value="resolve">Закрытие</option>
+                  </select>
+                </label>
+                <label class="workspace-field">
+                  <span>Следующий статус</span>
+                  <select id="alertNextStatusInput">
+                    <option value="">Без смены статуса</option>
+                    <option value="new">New</option>
+                    <option value="acknowledged">Acknowledged</option>
+                    <option value="in_progress">In progress</option>
+                    <option value="resolved">Resolved</option>
+                  </select>
+                </label>
+              </div>
+              <label class="workspace-field workspace-field--stacked">
+                <span>Комментарий инженера / выполненное действие</span>
+                <textarea id="alertEventMessageInput" rows="3" placeholder="Например: alert подтверждён, узел отправлен в ремонт, назначена контрольная проверка после обслуживания."></textarea>
+              </label>
+              <div class="workspace-actions">
+                <button class="btn btn-primary" type="submit" id="alertEventSubmitBtn">СОХРАНИТЬ СОБЫТИЕ</button>
+                <button class="btn" type="button" id="alertOpenCompareBtn">ОТКРЫТЬ СРАВНЕНИЕ</button>
+                <button class="btn" type="button" id="alertOpenJournalBtn">К ЖУРНАЛУ</button>
+              </div>
+            </form>
+
+            <div class="workspace-empty" id="profileAlertLogEmpty">
+              Выберите alert из списка выше, чтобы увидеть его статус и историю действий.
+            </div>
+            <div class="profile-alert-event-list" id="profileAlertEventList"></div>
+          </div>
+
+          <div class="workspace-panel workspace-panel--profile" id="authPanel">
+          <div class="workspace-panel-head">
+            <div>
+              <div class="card-title">СЕРВЕРНЫЙ КАБИНЕТ</div>
+              <p class="workspace-copy">
+                Пользовательская сессия, перенос локальных записей и вход в общий серверный контур диагностики.
+              </p>
+            </div>
+            <span class="workspace-badge">FASTAPI</span>
+          </div>
+
+          <form class="workspace-form" id="authForm">
+            <div class="workspace-form-grid">
+              <label class="workspace-field">
+                <span>Имя пользователя</span>
+                <input type="text" id="authNameInput" placeholder="Степан Сивицкий" autocomplete="name">
+              </label>
+              <label class="workspace-field">
+                <span>Email</span>
+                <input type="email" id="authEmailInput" placeholder="engineer@vibrolab.ai" autocomplete="email">
+              </label>
+              <label class="workspace-field">
+                <span>Пароль</span>
+                <input type="password" id="authPasswordInput" minlength="8" placeholder="Не менее 8 символов" autocomplete="current-password">
+              </label>
+            </div>
+            <div class="workspace-actions">
+              <button class="btn btn-primary" type="submit" id="authSubmitBtn">СОЗДАТЬ АККАУНТ</button>
+              <button class="btn" type="button" id="authLoginBtn">ВОЙТИ</button>
+              <button class="btn" type="button" id="authImportBtn">ИМПОРТ ИЗ БРАУЗЕРА</button>
+              <button class="btn" type="button" id="authLogoutBtn">ВЫЙТИ</button>
+            </div>
+          </form>
+
+          <div class="workspace-summary" id="authSummary"></div>
+        </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="page-assets" data-legacy="true" style="display:none !important"></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     FOOTER
+     ══════════════════════════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="logo" style="font-size:22px">VIBROLAB</div>
+  <div class="footer-meta">
+    ПЛАТФОРМА ВИБРОДИАГНОСТИКИ ДЛЯ РЕДУКТОРОВ И ПОДШИПНИКОВ<br>
+    SEU FULL DATASET · 9 КЛАССОВ · RANDOM FOREST · BROWSER INFERENCE<br>
+    ВИБРОСИГНАЛ · FFT · ИСТОРИЯ ИЗМЕРЕНИЙ · 3D СИМУЛЯТОР
+  </div>
+</footer>
+
+<script src="js/config.js?v=20260410-fft-fix"></script>
+<script src="js/signal.js?v=20260410-fft-fix"></script>
+<script src="js/fft.js?v=20260410-fft-fix"></script>
+<script src="js/features.js?v=20260410-fft-fix"></script>
+<script src="js/model.js?v=20260410-fft-fix"></script>
+<script src="js/model_onnx.js?v=20260410-fft-fix"></script>
+<script src="js/converter.js?v=20260411-upload-window-fix-9"></script>
+<script src="js/sensor.js?v=20260410-fft-fix"></script>
+<script src="js/viz.js?v=20260410-fft-fix"></script>
+<script src="js/app.js?v=20260419-ux-pass-2"></script>
+<!-- Notification toast container -->
+<div id="toastContainer" class="toast-container"></div>
+</body>
+</html>

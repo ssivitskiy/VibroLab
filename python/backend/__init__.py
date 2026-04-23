@@ -1,0 +1,2 @@
+"""VibroLab backend package."""
+

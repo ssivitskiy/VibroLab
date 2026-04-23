@@ -1,0 +1,339 @@
+{
+  "version": "1.0.0-84abe76d2472",
+  "trained_at": "2026-04-06T12:14:07Z",
+  "model_hash": "84abe76d2472",
+  "source": "seu",
+  "dataset_scope": "combined",
+  "multichannel": false,
+  "n_channels": 1,
+  "accuracy": 0.984,
+  "f1": 0.9841,
+  "cv_mean": 0.9847,
+  "cv_std": 0.0021,
+  "n_features": 53,
+  "feature_names": [
+    "rms",
+    "peak",
+    "peak_to_peak",
+    "crest_factor",
+    "kurtosis",
+    "skewness",
+    "std",
+    "mean_abs",
+    "shape_factor",
+    "impulse_factor",
+    "gmf_1x",
+    "gmf_2x",
+    "gmf_3x",
+    "gmf_4x",
+    "gmf_5x",
+    "sb_plus_1",
+    "sb_minus_1",
+    "sb_plus_2",
+    "sb_minus_2",
+    "sb_plus_3",
+    "sb_minus_3",
+    "sb_plus_4",
+    "sb_minus_4",
+    "frot_1x",
+    "frot_2x",
+    "frot_3x",
+    "frot_4x",
+    "sub_gmf_2",
+    "sub_gmf_3",
+    "energy_low",
+    "energy_rot",
+    "energy_gmf",
+    "energy_gmf2",
+    "energy_high",
+    "energy_total",
+    "ratio_gmf_total",
+    "ratio_rot_total",
+    "ratio_high_total",
+    "sideband_ratio",
+    "gmf_2x_norm",
+    "gmf_3x_norm",
+    "sb_asym_1",
+    "sb_asym_2",
+    "ratio_low_total",
+    "ratio_gmf2_gmf",
+    "env_rms",
+    "env_peak",
+    "env_kurtosis",
+    "env_crest",
+    "env_frot_1x",
+    "env_frot_2x",
+    "env_frot_3x",
+    "env_mod_index"
+  ],
+  "classes": [
+    "ball_fault",
+    "combination",
+    "inner_race",
+    "normal",
+    "outer_race",
+    "root_crack",
+    "surface_wear",
+    "tooth_chip",
+    "tooth_miss"
+  ],
+  "class_labels_ru": {
+    "ball_fault": "Дефект шарика",
+    "combination": "Комбинированный дефект",
+    "inner_race": "Дефект внутренней обоймы",
+    "normal": "Норма",
+    "outer_race": "Дефект наружной обоймы",
+    "root_crack": "Трещина корня",
+    "surface_wear": "Износ поверхности",
+    "tooth_chip": "Скол зуба",
+    "tooth_miss": "Отсутствие зуба"
+  },
+  "confusion_matrix": [
+    [
+      160,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      160,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      157,
+      0,
+      0,
+      0,
+      0,
+      0,
+      3
+    ],
+    [
+      0,
+      2,
+      0,
+      158,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      160,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      1,
+      0,
+      0,
+      153,
+      0,
+      2,
+      4
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      159,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      156,
+      3
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      3,
+      1,
+      2,
+      154
+    ]
+  ],
+  "feature_importances": [
+    {
+      "name": "frot_1x",
+      "importance": 0.072191
+    },
+    {
+      "name": "energy_low",
+      "importance": 0.066241
+    },
+    {
+      "name": "energy_rot",
+      "importance": 0.054097
+    },
+    {
+      "name": "mean_abs",
+      "importance": 0.052393
+    },
+    {
+      "name": "energy_high",
+      "importance": 0.050518
+    },
+    {
+      "name": "frot_4x",
+      "importance": 0.049187
+    },
+    {
+      "name": "frot_3x",
+      "importance": 0.048783
+    },
+    {
+      "name": "std",
+      "importance": 0.043176
+    },
+    {
+      "name": "energy_gmf2",
+      "importance": 0.041488
+    },
+    {
+      "name": "ratio_low_total",
+      "importance": 0.040521
+    },
+    {
+      "name": "ratio_high_total",
+      "importance": 0.040349
+    },
+    {
+      "name": "ratio_rot_total",
+      "importance": 0.039821
+    },
+    {
+      "name": "rms",
+      "importance": 0.035767
+    },
+    {
+      "name": "sb_minus_2",
+      "importance": 0.035683
+    },
+    {
+      "name": "energy_total",
+      "importance": 0.034375
+    },
+    {
+      "name": "ratio_gmf2_gmf",
+      "importance": 0.026743
+    },
+    {
+      "name": "energy_gmf",
+      "importance": 0.026153
+    },
+    {
+      "name": "env_rms",
+      "importance": 0.021565
+    },
+    {
+      "name": "ratio_gmf_total",
+      "importance": 0.019985
+    },
+    {
+      "name": "sb_minus_3",
+      "importance": 0.018516
+    }
+  ],
+  "class_metrics": {
+    "ball_fault": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "combination": {
+      "precision": 0.9877,
+      "recall": 1.0,
+      "f1": 0.9938
+    },
+    "inner_race": {
+      "precision": 0.9937,
+      "recall": 0.9812,
+      "f1": 0.9874
+    },
+    "normal": {
+      "precision": 1.0,
+      "recall": 0.9875,
+      "f1": 0.9937
+    },
+    "outer_race": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "root_crack": {
+      "precision": 0.9808,
+      "recall": 0.9562,
+      "f1": 0.9684
+    },
+    "surface_wear": {
+      "precision": 0.9876,
+      "recall": 0.9938,
+      "f1": 0.9907
+    },
+    "tooth_chip": {
+      "precision": 0.975,
+      "recall": 0.975,
+      "f1": 0.975
+    },
+    "tooth_miss": {
+      "precision": 0.9333,
+      "recall": 0.9625,
+      "f1": 0.9477
+    }
+  },
+  "config": {
+    "fs": 5120,
+    "duration": 0.5,
+    "n_points": 2560,
+    "f_rot": 20.0,
+    "gmf": 400.0,
+    "z_pinion": 20,
+    "z_gear": 40
+  },
+  "model_params": {
+    "n_estimators": 500,
+    "max_depth": 30,
+    "min_samples_split": 4,
+    "min_samples_leaf": 2,
+    "random_state": 42
+  },
+  "train_size": 5760,
+  "test_size": 1440
+}

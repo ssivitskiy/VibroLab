@@ -1,0 +1,54 @@
+name: Backup Server
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: "Что бэкапим"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - runtime
+          - database
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          test -n "$DEPLOY_HOST"
+          test -n "$DEPLOY_USER"
+          test -n "$DEPLOY_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${DEPLOY_PORT:-22}" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Run backup over SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SCOPE: ${{ inputs.scope }}
+        run: |
+          test -n "$DEPLOY_PATH"
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "set -e; cd '${DEPLOY_PATH}'; \
+             case '${SCOPE}' in \
+               runtime) bash scripts/backup_runtime.sh '${DEPLOY_PATH}' ;; \
+               database) bash scripts/backup_database.sh '${DEPLOY_PATH}' ;; \
+               all) bash scripts/backup_runtime.sh '${DEPLOY_PATH}'; bash scripts/backup_database.sh '${DEPLOY_PATH}' ;; \
+               *) echo 'Unknown scope: ${SCOPE}' >&2; exit 1 ;; \
+             esac"

@@ -1,0 +1,58 @@
+name: Train Full Dataset Model
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "python/**"
+      - "web/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Train on full SEU dataset
+        run: |
+          cd python
+          python train.py data/ --combined
+          python export_model.py
+
+      - name: Verify model export
+        run: |
+          python3 -c "
+          import json
+          with open('web/model/rf_model.json') as f:
+              d = json.load(f)
+          print(f'Trees: {len(d[\"t\"])}, Features: {len(d[\"m\"])}')
+          with open('web/model/meta.json') as f:
+              m = json.load(f)
+          print(f'Accuracy: {m[\"accuracy\"]}, Source: {m[\"source\"]}, Scope: {m.get(\"dataset_scope\")}, Classes: {len(m[\"classes\"])}')
+          assert m['source'] == 'seu', 'Expected full SEU training'
+          assert m.get('dataset_scope') == 'combined', 'Expected combined full-dataset model'
+          assert len(m['classes']) >= 9, 'Expected combined class set'
+          assert m['accuracy'] > 0.9, 'Accuracy too low!'
+          print('✓ Model verified')
+          "
+
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-model
+          path: |
+            web/model/rf_model.json
+            web/model/meta.json

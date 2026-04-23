@@ -1,0 +1,17 @@
+Положите сюда CSV-файлы из SEU Gearbox Dataset (папка gearset/):
+
+  Health_20_0.csv
+  Health_30_2.csv
+  Chipped_20_0.csv
+  Chipped_30_2.csv
+  Miss_20_0.csv
+  Miss_30_2.csv
+  Root_20_0.csv
+  Root_30_2.csv
+  Surface_20_0.csv
+  Surface_30_2.csv
+
+Затем запустите:
+  cd python
+  python train.py data/
+  python export_model.py

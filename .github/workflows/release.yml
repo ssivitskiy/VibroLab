@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Train model
+        run: |
+          cd python
+          python train.py --synthetic
+          python export_model.py
+
+      - name: Package release
+        run: |
+          mkdir -p release
+          # Web dashboard (standalone)
+          cp -r web release/vibrolab-web
+          # Python pipeline
+          cp -r python release/vibrolab-python
+          rm -rf release/vibrolab-python/__pycache__
+          rm -rf release/vibrolab-python/models/*.pkl
+          rm -rf release/vibrolab-python/data/*.csv
+          # Zip
+          cd release
+          zip -r ../vibrolab-web-${{ github.ref_name }}.zip vibrolab-web/
+          zip -r ../vibrolab-python-${{ github.ref_name }}.zip vibrolab-python/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            vibrolab-web-${{ github.ref_name }}.zip
+            vibrolab-python-${{ github.ref_name }}.zip
