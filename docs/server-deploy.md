@@ -5,10 +5,10 @@
 
 ## Что происходит при каждом push в `main`
 
-1. GitHub Actions подключается к серверу по SSH.
-2. На сервере запускается [`scripts/deploy_server.sh`](../scripts/deploy_server.sh).
-3. Скрипт делает backup текущего `runtime/`.
-4. Подтягивает новую ревизию через `git pull --ff-only`.
+1. GitHub Actions checkout'ит текущий `main`.
+2. Подключается к серверу по SSH и синхронизирует рабочее дерево в `DEPLOY_PATH`.
+3. На сервере запускается [`scripts/deploy_server.sh`](../scripts/deploy_server.sh) с `SKIP_GIT_PULL=1`.
+4. Скрипт делает backup текущего `runtime/`.
 5. Пересобирает и перезапускает `web` через `docker compose up -d --build web`.
 6. Проверяет локальный healthcheck `http://127.0.0.1/api/health`.
 7. При ошибке откатывает код на предыдущий commit и поднимает сервис обратно.
@@ -18,7 +18,7 @@
 - установлен `git`
 - установлен `docker`
 - установлен `docker compose`
-- репозиторий уже один раз склонирован, например в `~/vibrolab`
+- на сервере есть каталог приложения, например `~/vibrolab`
 - для пользователя деплоя есть доступ к Docker
 
 ## GitHub Secrets

@@ -12,6 +12,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Configure SSH
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -56,17 +59,34 @@ jobs:
           echo "RESOLVED_DEPLOY_PORT=${resolved_port}" >> "$GITHUB_ENV"
           echo "Resolved SSH port: ${resolved_port}"
 
+      - name: Sync release to server
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          [ -n "${DEPLOY_PATH:-}" ] || { echo "::error::Missing DEPLOY_PATH secret"; exit 1; }
+          ssh -p "${RESOLVED_DEPLOY_PORT}" "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${DEPLOY_PATH}'"
+          rsync -az --delete \
+            --exclude '.git' \
+            --exclude 'runtime' \
+            --exclude '.DS_Store' \
+            -e "ssh -p ${RESOLVED_DEPLOY_PORT}" \
+            ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
+
       - name: Deploy over SSH
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          DEPLOY_BRANCH: ${{ secrets.DEPLOY_BRANCH }}
+          DEPLOY_SHA: ${{ github.sha }}
+          DEPLOY_BRANCH: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           [ -n "${DEPLOY_PATH:-}" ] || { echo "::error::Missing DEPLOY_PATH secret"; exit 1; }
           ssh -p "${RESOLVED_DEPLOY_PORT}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "export BRANCH='${DEPLOY_BRANCH:-main}'; bash '${DEPLOY_PATH}/scripts/deploy_server.sh' '${DEPLOY_PATH}'"
+            "export BRANCH='${DEPLOY_BRANCH:-main}' SKIP_GIT_PULL='1' DEPLOY_SHA='${DEPLOY_SHA}'; bash '${DEPLOY_PATH}/scripts/deploy_server.sh' '${DEPLOY_PATH}'"
 
       - name: Optional healthcheck over SSH
         env:

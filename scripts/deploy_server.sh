@@ -4,6 +4,8 @@ set -Eeuo pipefail
 
 APP_DIR="${1:-${APP_DIR:-$HOME/vibrolab}}"
 BRANCH="${BRANCH:-main}"
+SKIP_GIT_PULL="${SKIP_GIT_PULL:-0}"
+DEPLOY_SHA="${DEPLOY_SHA:-}"
 BACKUP_DIR="${BACKUP_DIR:-$HOME/vibrolab_backups}"
 DB_BACKUP_DIR="${DB_BACKUP_DIR:-$HOME/vibrolab_db_backups}"
 HEALTHCHECK_URL="${HEALTHCHECK_URL:-http://127.0.0.1/api/health}"
@@ -52,6 +54,7 @@ trap rollback_on_error ERR
 
 log "app dir: ${APP_DIR}"
 log "branch: ${BRANCH}"
+log "skip git pull: ${SKIP_GIT_PULL}"
 log "backup dir: ${BACKUP_DIR}"
 log "db backup dir: ${DB_BACKUP_DIR}"
 
@@ -66,12 +69,22 @@ log "Current revision: ${PREV_SHA}"
 log "Runtime backup created: ${BACKUP_ARCHIVE}"
 log "Database backup created: ${DB_BACKUP_FILE:-none}"
 
-git fetch --all --prune
-git checkout "${BRANCH}"
-git pull --ff-only origin "${BRANCH}"
+if [ "${SKIP_GIT_PULL}" = "1" ]; then
+  if [ -n "${DEPLOY_SHA}" ]; then
+    NEW_SHA="${DEPLOY_SHA:0:7}"
+  else
+    NEW_SHA="$(git rev-parse --short HEAD 2>/dev/null || echo uploaded)"
+  fi
+  log "Using uploaded working tree; skipping server-side git pull."
+  log "Target revision: ${NEW_SHA}"
+else
+  git fetch --all --prune
+  git checkout "${BRANCH}"
+  git pull --ff-only origin "${BRANCH}"
 
-NEW_SHA="$(git rev-parse --short HEAD)"
-log "Target revision: ${NEW_SHA}"
+  NEW_SHA="$(git rev-parse --short HEAD)"
+  log "Target revision: ${NEW_SHA}"
+fi
 
 docker compose up -d --build web
 
