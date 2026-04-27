@@ -8,6 +8,7 @@
 - основной контейнер: `web`
 - публичный endpoint: `http://<host>/`
 - health endpoint: `http://<host>/api/health`
+- текущий live-сервер `185.239.50.243` принимает deploy SSH на порту `2222`
 
 ## Backup policy
 

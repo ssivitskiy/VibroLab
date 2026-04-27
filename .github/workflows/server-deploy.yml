@@ -19,33 +19,62 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
-          test -n "$DEPLOY_HOST"
-          test -n "$DEPLOY_USER"
-          test -n "$DEPLOY_SSH_KEY"
+          set -euo pipefail
+          [ -n "${DEPLOY_HOST:-}" ] || { echo "::error::Missing DEPLOY_HOST secret"; exit 1; }
+          [ -n "${DEPLOY_USER:-}" ] || { echo "::error::Missing DEPLOY_USER secret"; exit 1; }
+          [ -n "${DEPLOY_SSH_KEY:-}" ] || { echo "::error::Missing DEPLOY_SSH_KEY secret"; exit 1; }
           install -m 700 -d ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p "${DEPLOY_PORT:-22}" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          : > ~/.ssh/known_hosts
+
+          candidate_ports=()
+          if [ -n "${DEPLOY_PORT:-}" ]; then
+            candidate_ports+=("${DEPLOY_PORT}")
+          fi
+          for port in 2222 22 443; do
+            case " ${candidate_ports[*]:-} " in
+              *" ${port} "*) ;;
+              *) candidate_ports+=("${port}") ;;
+            esac
+          done
+
+          resolved_port=""
+          for port in "${candidate_ports[@]}"; do
+            echo "Trying SSH keyscan on ${DEPLOY_HOST}:${port}"
+            if ssh-keyscan -T 5 -p "${port}" "${DEPLOY_HOST}" >> ~/.ssh/known_hosts 2>/dev/null; then
+              resolved_port="${port}"
+              break
+            fi
+          done
+
+          [ -n "${resolved_port}" ] || {
+            echo "::error::Unable to fetch SSH host key from ${DEPLOY_HOST}. Tried ports: ${candidate_ports[*]}";
+            exit 1;
+          }
+
+          echo "RESOLVED_DEPLOY_PORT=${resolved_port}" >> "$GITHUB_ENV"
+          echo "Resolved SSH port: ${resolved_port}"
 
       - name: Deploy over SSH
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_BRANCH: ${{ secrets.DEPLOY_BRANCH }}
         run: |
-          test -n "$DEPLOY_PATH"
-          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+          set -euo pipefail
+          [ -n "${DEPLOY_PATH:-}" ] || { echo "::error::Missing DEPLOY_PATH secret"; exit 1; }
+          ssh -p "${RESOLVED_DEPLOY_PORT}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
             "export BRANCH='${DEPLOY_BRANCH:-main}'; bash '${DEPLOY_PATH}/scripts/deploy_server.sh' '${DEPLOY_PATH}'"
 
       - name: Optional healthcheck over SSH
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_HEALTHCHECK_URL: ${{ secrets.DEPLOY_HEALTHCHECK_URL }}
         run: |
+          set -euo pipefail
           HEALTHCHECK_URL="${DEPLOY_HEALTHCHECK_URL:-http://127.0.0.1/api/health}"
-          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+          ssh -p "${RESOLVED_DEPLOY_PORT}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
             "curl --fail --silent --show-error --max-time 30 '${HEALTHCHECK_URL}'"
