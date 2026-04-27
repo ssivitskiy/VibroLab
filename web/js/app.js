@@ -20,6 +20,8 @@ const App = (() => {
   let alertStatusFilter = 'all';
   let alertSortMode = 'priority';
   let analysisGuideMode = 'first_time';
+  let activeStudyLabId = 'intro_baseline';
+  let studyLabState = null;
   let apiReady = false;
   let dashboardSummary = null;
   let selectedAssetId = null;
@@ -43,12 +45,14 @@ const App = (() => {
       section: params.get('section') || null,
       demo: params.get('demo') || null,
       guide: params.get('guide') || null,
+      lab: params.get('lab') || null,
     };
   })();
   const STORAGE_KEYS = {
     legacyAuth: 'vm_local_auth_v1',
     legacySessions: 'vm_local_sessions_v1',
     legacyImportDone: 'vm_server_import_done_v1',
+    studyLabs: 'vm_guided_labs_v1',
   };
   const API_BASE = '/api';
   const STORAGE_LIMITS = {
@@ -202,6 +206,139 @@ const App = (() => {
       nextStep: 'Передать кейс инженеру-диагносту для расширенного анализа.',
     },
   };
+  const STUDY_LABS = {
+    intro_baseline: {
+      id: 'intro_baseline',
+      badge: 'LAB 01',
+      track: 'BASELINE',
+      title: 'Норма как точка отсчёта',
+      lead: 'Стартовая лаборатория для знакомства с интерфейсом, baseline-сигналом и мягкой деградацией. Сначала формируем ощущение нормы, а потом проверяем себя на скрытом кейсе.',
+      objective: 'Научиться отличать чистый baseline от раннего поверхностного износа.',
+      checkpoints: [
+        {
+          id: 'open_normal',
+          label: 'Открыть эталонный кейс «Норма»',
+          note: 'Посмотрите временной сигнал, FFT и прочитайте объяснение без риска ошибиться.',
+          trigger: { type: 'demo', value: 'normal' },
+        },
+        {
+          id: 'open_baseline_lab',
+          label: 'Открыть 3D baseline lab',
+          note: 'Свяжите механику, сигнал и спектр, чтобы baseline стал точкой отсчёта.',
+          trigger: { type: 'sim_lab', value: 'intro_baseline' },
+        },
+        {
+          id: 'baseline_mystery_complete',
+          label: 'Разобрать скрытый кейс «Мягкая деградация»',
+          note: 'Сделайте гипотезу по сигналу и только потом откройте правильный ответ.',
+          trigger: { type: 'hidden_case', value: 'baseline_mystery' },
+        },
+      ],
+      actions: [
+        { kind: 'run-demo', value: 'normal', label: 'ЗАПУСТИТЬ BASELINE', tone: 'primary' },
+        { kind: 'open-lab', value: 'intro_baseline', label: 'ОТКРЫТЬ 3D LAB' },
+        { kind: 'run-hidden', value: 'baseline_mystery', label: 'СКРЫТЫЙ КЕЙС' },
+      ],
+      hiddenCase: {
+        id: 'baseline_mystery',
+        caseId: 'surface_wear',
+        title: 'Скрытый кейс: мягкая деградация',
+        note: 'Сигнал близок к healthy-сценарию, но поверхность уже начинает деградировать.',
+        hints: [
+          'Ищите рост широкополосной энергии и более шероховатый верхний диапазон.',
+          'Сравнивайте с baseline не по одному пику, а по общей текстуре спектра.',
+        ],
+      },
+    },
+    gear_fault_path: {
+      id: 'gear_fault_path',
+      badge: 'LAB 02',
+      track: 'GEAR',
+      title: 'Скол, трещина и отсутствие зуба',
+      lead: 'Контрастная лаборатория по gear faults: сначала изучаем тяжёлый ударный сценарий, затем ранний дефект и в конце проверяем себя на скрытом кейсе.',
+      objective: 'Понять разницу между локальным повреждением зуба и развивающимся разрушением.',
+      checkpoints: [
+        {
+          id: 'open_tooth_miss',
+          label: 'Прогнать кейс «Отсутствие зуба»',
+          note: 'Это самый жёсткий gear fault: увидите сильные удары и разрушение структуры GMF.',
+          trigger: { type: 'demo', value: 'tooth_miss' },
+        },
+        {
+          id: 'open_tooth_chip',
+          label: 'Сравнить со «Сколом зуба»',
+          note: 'Скол даёт более ранний и мягкий паттерн, чем полный missing-tooth сценарий.',
+          trigger: { type: 'demo', value: 'tooth_chip' },
+        },
+        {
+          id: 'gear_mystery_complete',
+          label: 'Решить скрытый gear-case',
+          note: 'Сделайте гипотезу без подсказки модели и проверьте, узнаёте ли вы модуляцию.',
+          trigger: { type: 'hidden_case', value: 'gear_mystery' },
+        },
+      ],
+      actions: [
+        { kind: 'run-demo', value: 'tooth_miss', label: 'КРИТИЧЕСКИЙ GEAR FAULT', tone: 'primary' },
+        { kind: 'run-demo', value: 'tooth_chip', label: 'РАННИЙ СКОЛ' },
+        { kind: 'open-lab', value: 'gear_fault_path', label: 'ОТКРЫТЬ GEAR LAB' },
+        { kind: 'run-hidden', value: 'gear_mystery', label: 'СКРЫТЫЙ КЕЙС' },
+      ],
+      hiddenCase: {
+        id: 'gear_mystery',
+        caseId: 'root_crack',
+        title: 'Скрытый кейс: развивающаяся трещина',
+        note: 'Здесь нет такого грубого удара, как при missing tooth, но модуляция уже выдаёт проблему.',
+        hints: [
+          'Смотрите не только на амплитуду ударов, но и на боковые полосы вокруг зацепления.',
+          'Подумайте, какой дефект изменяет жёсткость, а не просто выбивает один зуб.',
+        ],
+      },
+    },
+    bearing_fault_path: {
+      id: 'bearing_fault_path',
+      badge: 'LAB 03',
+      track: 'BEARING',
+      title: 'Подшипники и модуляция',
+      lead: 'Учебная ветка по bearing faults: сравниваем внутреннюю и наружную обойму, а затем решаем скрытый кейс по телу качения.',
+      objective: 'Научиться отделять bearing signature от зубчатых ударов и различать типы подшипниковых дефектов.',
+      checkpoints: [
+        {
+          id: 'open_inner_race',
+          label: 'Открыть кейс «Внутренняя обойма»',
+          note: 'Это хороший пример частых импульсов под нагрузкой и выраженной модуляции.',
+          trigger: { type: 'demo', value: 'inner_race' },
+        },
+        {
+          id: 'open_outer_race',
+          label: 'Сравнить с «Наружной обоймой»',
+          note: 'Стабильная повторяемость импульсов помогает увидеть разницу между BPFI и BPFO-паттернами.',
+          trigger: { type: 'demo', value: 'outer_race' },
+        },
+        {
+          id: 'bearing_mystery_complete',
+          label: 'Разобрать скрытый bearing-case',
+          note: 'Поймайте более мягкий дефект тела качения без раскрытия правильного класса.',
+          trigger: { type: 'hidden_case', value: 'bearing_mystery' },
+        },
+      ],
+      actions: [
+        { kind: 'run-demo', value: 'inner_race', label: 'ОТКРЫТЬ BPFI-КЕЙС', tone: 'primary' },
+        { kind: 'run-demo', value: 'outer_race', label: 'ОТКРЫТЬ BPFO-КЕЙС' },
+        { kind: 'open-lab', value: 'bearing_fault_path', label: 'ОТКРЫТЬ BEARING LAB' },
+        { kind: 'run-hidden', value: 'bearing_mystery', label: 'СКРЫТЫЙ КЕЙС' },
+      ],
+      hiddenCase: {
+        id: 'bearing_mystery',
+        caseId: 'ball_fault',
+        title: 'Скрытый кейс: дефект шарика',
+        note: 'Этот сценарий мягче обойм и проверяет, умеете ли вы видеть BSF-подпись без подсказки.',
+        hints: [
+          'Ищите более деликатный импульсный рисунок, чем у inner/outer race.',
+          'Спросите себя, какой bearing defect не сидит на фиксированной обойме.',
+        ],
+      },
+    },
+  };
   authState = normalizeAuth(null);
   sessionHistory = [];
 
@@ -240,6 +377,528 @@ const App = (() => {
     } catch (e) {
       console.warn('[APP] Storage write failed:', key, e);
       return false;
+    }
+  }
+
+  function buildStudyActionMarkup(action, className = 'student-lab-action') {
+    const toneClass = action.tone === 'primary' ? ` ${className}--primary` : '';
+    const attrs = [
+      `class="${className}${toneClass}"`,
+      'type="button"',
+      `data-study-action="${escapeHtml(action.kind)}"`,
+    ];
+    if (action.value != null) attrs.push(`data-study-value="${escapeHtml(action.value)}"`);
+    if (action.labId != null) attrs.push(`data-study-lab="${escapeHtml(action.labId)}"`);
+    return `<button ${attrs.join(' ')}>${escapeHtml(action.label)}</button>`;
+  }
+
+  function createDefaultStudyLabState() {
+    const checkpoints = {};
+    Object.keys(STUDY_LABS).forEach((labId) => {
+      checkpoints[labId] = {};
+    });
+    return {
+      activeLabId: 'intro_baseline',
+      checkpoints,
+      hiddenCases: {},
+    };
+  }
+
+  function normalizeStudyLabState(raw) {
+    const next = createDefaultStudyLabState();
+    const payload = raw && typeof raw === 'object' ? raw : {};
+    if (STUDY_LABS[payload.activeLabId]) next.activeLabId = payload.activeLabId;
+
+    Object.entries(payload.checkpoints || {}).forEach(([labId, records]) => {
+      if (!next.checkpoints[labId] || !records || typeof records !== 'object') return;
+      Object.entries(records).forEach(([checkpointId, value]) => {
+        if (!value) return;
+        next.checkpoints[labId][checkpointId] = typeof value === 'object'
+          ? value
+          : { doneAt: new Date().toISOString() };
+      });
+    });
+
+    Object.entries(payload.hiddenCases || {}).forEach(([challengeId, value]) => {
+      if (!value || typeof value !== 'object') return;
+      const owner = Object.values(STUDY_LABS).find((lab) => lab.hiddenCase?.id === challengeId);
+      if (!owner) return;
+      next.hiddenCases[challengeId] = {
+        startedAt: value.startedAt || null,
+        selectedAnswer: value.selectedAnswer || null,
+        submittedAnswer: value.submittedAnswer || null,
+        revealed: value.revealed === true,
+        correct: typeof value.correct === 'boolean' ? value.correct : null,
+        revealedAt: value.revealedAt || null,
+        actualClass: value.actualClass || owner.hiddenCase.caseId,
+      };
+    });
+
+    return next;
+  }
+
+  function loadStudyLabState() {
+    studyLabState = normalizeStudyLabState(readStorage(STORAGE_KEYS.studyLabs, createDefaultStudyLabState()));
+    activeStudyLabId = initialRoute.lab && STUDY_LABS[initialRoute.lab]
+      ? initialRoute.lab
+      : (studyLabState.activeLabId || 'intro_baseline');
+    studyLabState.activeLabId = activeStudyLabId;
+  }
+
+  function saveStudyLabState() {
+    if (!studyLabState) studyLabState = createDefaultStudyLabState();
+    studyLabState.activeLabId = activeStudyLabId;
+    writeStorage(STORAGE_KEYS.studyLabs, studyLabState);
+  }
+
+  function getStudyLab(labId = activeStudyLabId) {
+    return STUDY_LABS[labId] || STUDY_LABS.intro_baseline;
+  }
+
+  function getStudyLabList() {
+    return Object.values(STUDY_LABS);
+  }
+
+  function findLabByHiddenCaseId(challengeId) {
+    return getStudyLabList().find((lab) => lab.hiddenCase?.id === challengeId) || null;
+  }
+
+  function getHiddenCaseState(challengeId) {
+    return studyLabState?.hiddenCases?.[challengeId] || null;
+  }
+
+  function getCurrentHiddenCaseContext() {
+    const challengeId = currentDiagnosis?.input?.hiddenCaseId || currentInputContext?.hiddenCaseId;
+    if (!challengeId) return null;
+    const lab = findLabByHiddenCaseId(challengeId);
+    if (!lab) return null;
+    return {
+      lab,
+      challenge: lab.hiddenCase,
+      state: getHiddenCaseState(challengeId),
+    };
+  }
+
+  function isHiddenCasePending() {
+    const context = getCurrentHiddenCaseContext();
+    return !!(context && !context.state?.revealed);
+  }
+
+  function getStudyLabCheckpointEntry(labId, checkpointId) {
+    return studyLabState?.checkpoints?.[labId]?.[checkpointId] || null;
+  }
+
+  function isStudyLabCheckpointDone(labId, checkpointId) {
+    return !!getStudyLabCheckpointEntry(labId, checkpointId);
+  }
+
+  function getStudyLabProgress(labId) {
+    const lab = getStudyLab(labId);
+    const total = lab.checkpoints.length;
+    const completed = lab.checkpoints.filter((checkpoint) => isStudyLabCheckpointDone(lab.id, checkpoint.id)).length;
+    return {
+      total,
+      completed,
+      percent: total ? Math.round((completed / total) * 100) : 0,
+      isComplete: total > 0 && completed === total,
+    };
+  }
+
+  function getNextStudyLabCheckpoint(labId) {
+    const lab = getStudyLab(labId);
+    return lab.checkpoints.find((checkpoint) => !isStudyLabCheckpointDone(lab.id, checkpoint.id)) || null;
+  }
+
+  function countSolvedHiddenCases() {
+    return getStudyLabList().filter((lab) => !!getHiddenCaseState(lab.hiddenCase.id)?.revealed).length;
+  }
+
+  function countCorrectHiddenCases() {
+    return getStudyLabList().filter((lab) => getHiddenCaseState(lab.hiddenCase.id)?.correct === true).length;
+  }
+
+  function setActiveStudyLab(labId, options = {}) {
+    if (!STUDY_LABS[labId]) return;
+    activeStudyLabId = labId;
+    if (!studyLabState) studyLabState = createDefaultStudyLabState();
+    saveStudyLabState();
+    if (!options.keepGuideMode) analysisGuideMode = 'guided_labs';
+    renderStudyLabShell();
+    renderAnalysisCoach();
+    if (options.scroll) {
+      window.setTimeout(() => el('studentLabShell')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+    }
+  }
+
+  function markStudyLabCheckpoint(labId, checkpointId, meta = {}) {
+    const lab = getStudyLab(labId);
+    const checkpoint = lab.checkpoints.find((item) => item.id === checkpointId);
+    if (!checkpoint) return;
+    if (!studyLabState) studyLabState = createDefaultStudyLabState();
+    const wasDone = isStudyLabCheckpointDone(labId, checkpointId);
+    const wasLabComplete = getStudyLabProgress(labId).isComplete;
+    studyLabState.checkpoints[labId][checkpointId] = {
+      ...(getStudyLabCheckpointEntry(labId, checkpointId) || {}),
+      doneAt: getStudyLabCheckpointEntry(labId, checkpointId)?.doneAt || new Date().toISOString(),
+      ...meta,
+    };
+    saveStudyLabState();
+    if (!wasDone) {
+      toast('Чекпоинт закрыт', `${lab.badge} · ${checkpoint.label}`, 'success');
+    }
+    if (!wasLabComplete && getStudyLabProgress(labId).isComplete) {
+      toast('Лаборатория завершена', `${lab.title} полностью закрыта. Можно переходить к следующему треку.`, 'success');
+    }
+    renderStudyLabShell();
+    renderAnalysisCoach();
+  }
+
+  function markStudyLabCheckpointsByTrigger(type, value, meta = {}) {
+    getStudyLabList().forEach((lab) => {
+      lab.checkpoints.forEach((checkpoint) => {
+        if (checkpoint.trigger?.type === type && checkpoint.trigger?.value === value) {
+          markStudyLabCheckpoint(lab.id, checkpoint.id, meta);
+        }
+      });
+    });
+  }
+
+  function renderStudyLabShell() {
+    const summaryNode = el('studentLabSummary');
+    const catalogNode = el('studentLabCatalog');
+    const detailNode = el('studentLabDetail');
+    if (!summaryNode || !catalogNode || !detailNode) return;
+
+    if (!studyLabState) loadStudyLabState();
+
+    const labs = getStudyLabList();
+    const totalCheckpoints = labs.reduce((sum, lab) => sum + lab.checkpoints.length, 0);
+    const completedCheckpoints = labs.reduce((sum, lab) => sum + getStudyLabProgress(lab.id).completed, 0);
+    const completedLabs = labs.filter((lab) => getStudyLabProgress(lab.id).isComplete).length;
+
+    summaryNode.innerHTML = `
+      <div class="student-lab-summary-card">
+        <span>GUIDED LABS</span>
+        <strong>${completedLabs}/${labs.length}</strong>
+        <small>закрыто полностью</small>
+      </div>
+      <div class="student-lab-summary-card student-lab-summary-card--accent">
+        <span>CHECKPOINTS</span>
+        <strong>${completedCheckpoints}/${totalCheckpoints}</strong>
+        <small>пройдено шагов</small>
+      </div>
+      <div class="student-lab-summary-card">
+        <span>СКРЫТЫЕ КЕЙСЫ</span>
+        <strong>${countSolvedHiddenCases()}/${labs.length}</strong>
+        <small>${countCorrectHiddenCases()} с верной гипотезой</small>
+      </div>
+    `;
+
+    catalogNode.innerHTML = labs.map((lab) => {
+      const progress = getStudyLabProgress(lab.id);
+      const nextCheckpoint = getNextStudyLabCheckpoint(lab.id);
+      return `
+        <button class="student-lab-card ${lab.id === activeStudyLabId ? 'is-active' : ''}" type="button" data-study-lab-select="${escapeHtml(lab.id)}">
+          <div class="student-lab-card-top">
+            <span class="student-lab-card-badge">${escapeHtml(lab.badge)}</span>
+            <span class="student-lab-card-track">${escapeHtml(lab.track)}</span>
+          </div>
+          <strong>${escapeHtml(lab.title)}</strong>
+          <p>${escapeHtml(lab.objective)}</p>
+          <div class="student-lab-card-progress">
+            <span style="width:${progress.percent}%"></span>
+          </div>
+          <div class="student-lab-card-meta">
+            <span>${progress.completed}/${progress.total} шагов</span>
+            <span>${escapeHtml(progress.isComplete ? 'ГОТОВО' : (nextCheckpoint ? nextCheckpoint.label : 'В ПРОЦЕССЕ'))}</span>
+          </div>
+        </button>
+      `;
+    }).join('');
+
+    const lab = getStudyLab(activeStudyLabId);
+    const progress = getStudyLabProgress(lab.id);
+    const nextCheckpoint = getNextStudyLabCheckpoint(lab.id);
+    const hiddenState = getHiddenCaseState(lab.hiddenCase.id);
+    const hiddenStatus = hiddenState?.revealed
+      ? (hiddenState.correct === true ? 'ГИПОТЕЗА ВЕРНА' : hiddenState.correct === false ? 'ОТВЕТ ОТКРЫТ' : 'ОТВЕТ ПОКАЗАН')
+      : hiddenState?.startedAt
+        ? 'КЕЙС В ПРОЦЕССЕ'
+        : 'НЕ НАЧАТ';
+    const hiddenTone = hiddenState?.correct === true ? 'good' : hiddenState?.revealed ? 'warning' : 'info';
+    const selectedAnswerLabel = hiddenState?.selectedAnswer ? (VM.RU[hiddenState.selectedAnswer] || hiddenState.selectedAnswer) : '—';
+    const actualAnswerLabel = hiddenState?.revealed ? (VM.RU[lab.hiddenCase.caseId] || lab.hiddenCase.caseId) : 'скрыт';
+
+    detailNode.innerHTML = `
+      <div class="student-lab-detail-head">
+        <div>
+          <div class="student-lab-detail-kicker">${escapeHtml(lab.badge)} · ${escapeHtml(lab.track)}</div>
+          <h3 class="student-lab-detail-title">${escapeHtml(lab.title)}</h3>
+        </div>
+        <span class="student-lab-detail-state">${progress.percent}%</span>
+      </div>
+      <p class="student-lab-detail-lead">${escapeHtml(lab.lead)}</p>
+      <div class="student-lab-detail-goal">
+        <span>ЗАДАЧА ЛАБЫ</span>
+        <strong>${escapeHtml(lab.objective)}</strong>
+      </div>
+      <div class="student-lab-progressbar"><span style="width:${progress.percent}%"></span></div>
+      <div class="student-lab-checkpoints">
+        ${lab.checkpoints.map((checkpoint, index) => {
+          const entry = getStudyLabCheckpointEntry(lab.id, checkpoint.id);
+          return `
+            <article class="student-lab-checkpoint ${entry ? 'is-complete' : ''}">
+              <span class="student-lab-checkpoint-index">${entry ? '✓' : String(index + 1).padStart(2, '0')}</span>
+              <div class="student-lab-checkpoint-copy">
+                <strong>${escapeHtml(checkpoint.label)}</strong>
+                <p>${escapeHtml(checkpoint.note)}</p>
+              </div>
+            </article>
+          `;
+        }).join('')}
+      </div>
+      <div class="student-lab-actions">
+        ${lab.actions.map((action) => buildStudyActionMarkup({ ...action, labId: lab.id })).join('')}
+      </div>
+      <div class="student-lab-hidden student-lab-hidden--${hiddenTone}">
+        <div class="student-lab-hidden-head">
+          <div>
+            <div class="student-lab-hidden-kicker">СКРЫТЫЙ КЕЙС</div>
+            <strong>${escapeHtml(lab.hiddenCase.title)}</strong>
+          </div>
+          <span class="student-lab-hidden-state">${escapeHtml(hiddenStatus)}</span>
+        </div>
+        <p class="student-lab-hidden-note">${escapeHtml(lab.hiddenCase.note)}</p>
+        <div class="student-lab-hidden-hints">
+          ${lab.hiddenCase.hints.map((hint) => `<span class="student-lab-hidden-hint">${escapeHtml(hint)}</span>`).join('')}
+        </div>
+        <div class="student-lab-hidden-meta">
+          <span>Ваша гипотеза: <strong>${escapeHtml(selectedAnswerLabel)}</strong></span>
+          <span>Правильный ответ: <strong>${escapeHtml(actualAnswerLabel)}</strong></span>
+        </div>
+        <div class="student-lab-hidden-actions">
+          ${buildStudyActionMarkup({ kind: 'run-hidden', value: lab.hiddenCase.id, labId: lab.id, label: hiddenState?.startedAt ? 'ПЕРЕЗАПУСТИТЬ КЕЙС' : 'СТАРТОВАТЬ КЕЙС', tone: 'primary' })}
+        </div>
+      </div>
+      <div class="student-lab-next-step">
+        <span>СЛЕДУЮЩИЙ ШАГ</span>
+        <strong>${escapeHtml(nextCheckpoint ? nextCheckpoint.label : 'Лаба закрыта. Можно переходить к следующему маршруту.')}</strong>
+      </div>
+    `;
+  }
+
+  function startHiddenCase(challengeId, options = {}) {
+    const owner = findLabByHiddenCaseId(challengeId) || getStudyLab(activeStudyLabId);
+    const challenge = owner?.hiddenCase;
+    if (!owner || !challenge || challenge.id !== challengeId) return;
+    if (!studyLabState) studyLabState = createDefaultStudyLabState();
+    activeStudyLabId = owner.id;
+    studyLabState.hiddenCases[challengeId] = {
+      startedAt: new Date().toISOString(),
+      selectedAnswer: null,
+      submittedAnswer: null,
+      revealed: false,
+      correct: null,
+      revealedAt: null,
+      actualClass: challenge.caseId,
+    };
+    saveStudyLabState();
+    analysisGuideMode = 'hidden_cases';
+    renderStudyLabShell();
+    renderAnalysisCoach();
+    goPage('diag');
+    window.setTimeout(() => runDemo(challenge.caseId, {
+      hiddenCase: {
+        challengeId,
+        labId: owner.id,
+        title: challenge.title,
+      },
+      reset: options.reset === true,
+    }), 220);
+  }
+
+  function selectHiddenCaseAnswer(answer) {
+    const context = getCurrentHiddenCaseContext();
+    if (!context || context.state?.revealed) return;
+    if (!studyLabState) studyLabState = createDefaultStudyLabState();
+    studyLabState.hiddenCases[context.challenge.id] = {
+      ...(context.state || {}),
+      startedAt: context.state?.startedAt || new Date().toISOString(),
+      selectedAnswer: answer,
+      actualClass: context.challenge.caseId,
+      revealed: false,
+    };
+    saveStudyLabState();
+    renderStudyLabShell();
+    rerenderCurrentDiagnosis();
+  }
+
+  function revealHiddenCaseAnswer(challengeId) {
+    const owner = findLabByHiddenCaseId(challengeId);
+    const challenge = owner?.hiddenCase;
+    if (!challenge) return;
+    if (!studyLabState) studyLabState = createDefaultStudyLabState();
+    const previous = getHiddenCaseState(challengeId) || {};
+    studyLabState.hiddenCases[challengeId] = {
+      ...previous,
+      startedAt: previous.startedAt || new Date().toISOString(),
+      revealed: true,
+      correct: previous.selectedAnswer ? previous.selectedAnswer === challenge.caseId : null,
+      revealedAt: new Date().toISOString(),
+      actualClass: challenge.caseId,
+    };
+    saveStudyLabState();
+    renderStudyLabShell();
+    rerenderCurrentDiagnosis({ includeAdvanced: true });
+    renderAnalysisCoach();
+  }
+
+  function submitHiddenCaseAnswer(challengeId) {
+    const owner = findLabByHiddenCaseId(challengeId);
+    const challenge = owner?.hiddenCase;
+    const state = getHiddenCaseState(challengeId);
+    if (!challenge || !state?.selectedAnswer) {
+      toast('Нужна гипотеза', 'Сначала выберите класс, который считаете наиболее вероятным.', 'warning');
+      return;
+    }
+    if (!studyLabState) studyLabState = createDefaultStudyLabState();
+    const correct = state.selectedAnswer === challenge.caseId;
+    studyLabState.hiddenCases[challengeId] = {
+      ...state,
+      submittedAnswer: state.selectedAnswer,
+      revealed: true,
+      correct,
+      revealedAt: new Date().toISOString(),
+      actualClass: challenge.caseId,
+    };
+    saveStudyLabState();
+    markStudyLabCheckpointsByTrigger('hidden_case', challengeId, {
+      correct,
+      submittedAnswer: state.selectedAnswer,
+    });
+    toast(
+      correct ? 'Гипотеза подтверждена' : 'Гипотеза проверена',
+      correct
+        ? `Скрытый кейс решён верно: ${VM.RU[challenge.caseId] || challenge.caseId}.`
+        : `Правильный ответ: ${VM.RU[challenge.caseId] || challenge.caseId}. Теперь сравните ваш ход мысли с объяснением модели.`,
+      correct ? 'success' : 'info'
+    );
+    renderStudyLabShell();
+    rerenderCurrentDiagnosis({ includeAdvanced: true });
+    renderAnalysisCoach();
+  }
+
+  function buildHiddenCaseDiagnosisMarkup(cls) {
+    const context = getCurrentHiddenCaseContext();
+    if (!context) return '';
+    const selectedAnswer = context.state?.selectedAnswer || null;
+    return `
+      <div class="hidden-case-shell">
+        <div class="hidden-case-head">
+          <div>
+            <div class="hidden-case-kicker">${escapeHtml(context.lab.badge)} · СКРЫТЫЙ КЕЙС</div>
+            <h3 class="hidden-case-title">${escapeHtml(context.challenge.title)}</h3>
+          </div>
+          <span class="hidden-case-state">MYSTERY</span>
+        </div>
+        <p class="hidden-case-lead">${escapeHtml(context.challenge.note)}</p>
+        <div class="hidden-case-hints">
+          ${context.challenge.hints.map((hint) => `<span class="hidden-case-hint">${escapeHtml(hint)}</span>`).join('')}
+        </div>
+        <div class="hidden-case-lock">
+          Диагноз, вероятности и объяснение модели скрыты до проверки гипотезы. Опирайтесь на временной сигнал и FFT выше.
+        </div>
+        <div class="hidden-guess-shell">
+          <div class="label" style="margin-bottom:10px">ВАША ГИПОТЕЗА</div>
+          <div class="hidden-guess-grid">
+            ${VM.CLASSES.map((candidate) => `
+              <button
+                class="hidden-guess-btn ${selectedAnswer === candidate ? 'is-active' : ''}"
+                type="button"
+                data-hidden-guess="${escapeHtml(candidate)}"
+              >
+                <span class="dot" style="background:${VM.COLORS[candidate]}"></span>
+                ${escapeHtml(VM.RU[candidate] || candidate)}
+              </button>
+            `).join('')}
+          </div>
+          <div class="hidden-guess-actions">
+            <button class="btn btn-primary" type="button" data-study-action="submit-hidden" data-study-value="${escapeHtml(context.challenge.id)}">ПРОВЕРИТЬ ГИПОТЕЗУ</button>
+            <button class="btn" type="button" data-study-action="reveal-hidden" data-study-value="${escapeHtml(context.challenge.id)}">ПОКАЗАТЬ ОТВЕТ</button>
+          </div>
+          <div class="hidden-guess-note">
+            ${selectedAnswer
+              ? `Вы выбрали: ${escapeHtml(VM.RU[selectedAnswer] || selectedAnswer)}.`
+              : 'Сначала выберите один класс и зафиксируйте свою гипотезу.'}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildHiddenCaseResultBanner() {
+    const context = getCurrentHiddenCaseContext();
+    if (!context || !context.state?.revealed) return '';
+    const selected = context.state.submittedAnswer || context.state.selectedAnswer;
+    const actual = context.challenge.caseId;
+    const tone = context.state.correct === true ? 'good' : 'warning';
+    let copy = `Правильный ответ: ${VM.RU[actual] || actual}.`;
+    if (selected) {
+      copy = context.state.correct === true
+        ? `Гипотеза подтверждена: ${VM.RU[selected] || selected}.`
+        : `Вы выбрали ${VM.RU[selected] || selected}, а правильный ответ — ${VM.RU[actual] || actual}.`;
+    }
+    return `
+      <div class="hidden-case-result hidden-case-result--${tone}">
+        <div>
+          <div class="hidden-case-result-kicker">${escapeHtml(context.lab.badge)} · РАЗБОР СКРЫТОГО КЕЙСА</div>
+          <strong>${escapeHtml(copy)}</strong>
+        </div>
+        <button class="student-lab-action" type="button" data-study-action="run-hidden" data-study-value="${escapeHtml(context.challenge.id)}" data-study-lab="${escapeHtml(context.lab.id)}">ПОВТОРИТЬ КЕЙС</button>
+      </div>
+    `;
+  }
+
+  function rerenderCurrentDiagnosis(options = {}) {
+    if (!currentDiagnosis) return;
+    const signal = currentSignalData?.data || currentDiagnosis.signalData || [];
+    showDiagnosis(
+      currentDiagnosis.cls,
+      currentDiagnosis.probabilities || { [currentDiagnosis.cls]: currentDiagnosis.confidence || 1 },
+      VM.COLORS[currentDiagnosis.cls],
+      signal,
+      currentDiagnosis.features || null
+    );
+    if (options.includeAdvanced && !isHiddenCasePending()) {
+      showAdvancedDiagnosis(signal, currentDiagnosis.features || null, currentDiagnosis);
+    }
+  }
+
+  function runStudyAction(kind, dataset = {}) {
+    const labId = dataset.studyLab || activeStudyLabId;
+    if (labId && STUDY_LABS[labId]) activeStudyLabId = labId;
+    switch (kind) {
+      case 'run-demo':
+        setActiveStudyLab(activeStudyLabId, { keepGuideMode: false });
+        runScenario(dataset.studyValue || 'normal');
+        break;
+      case 'open-lab':
+        setActiveStudyLab(activeStudyLabId, { keepGuideMode: false });
+        markStudyLabCheckpointsByTrigger('sim_lab', dataset.studyValue || activeStudyLabId);
+        openLabScenario(dataset.studyValue || activeStudyLabId);
+        break;
+      case 'run-hidden':
+        setActiveStudyLab(activeStudyLabId, { keepGuideMode: true });
+        startHiddenCase(dataset.studyValue);
+        break;
+      case 'submit-hidden':
+        submitHiddenCaseAnswer(dataset.studyValue);
+        break;
+      case 'reveal-hidden':
+        revealHiddenCaseAnswer(dataset.studyValue);
+        break;
+      default:
+        break;
     }
   }
 
@@ -1107,6 +1766,9 @@ const App = (() => {
       case 'lab':
         openLabScenario(dataset.uxValue || 'intro_baseline');
         break;
+      case 'hidden-case':
+        startHiddenCase(dataset.uxValue || getStudyLab(activeStudyLabId).hiddenCase.id);
+        break;
       case 'page':
         goPage(dataset.uxValue || 'home');
         break;
@@ -1134,6 +1796,28 @@ const App = (() => {
   }
 
   function buildAnalysisGuideConfig() {
+    const activeLab = getStudyLab(activeStudyLabId);
+    const activeLabProgress = getStudyLabProgress(activeLab.id);
+    const activeHidden = getCurrentHiddenCaseContext();
+
+    if (activeHidden && !activeHidden.state?.revealed) {
+      return {
+        kicker: 'СКРЫТЫЙ КЕЙС АКТИВЕН',
+        state: 'MYSTERY',
+        title: activeHidden.challenge.title,
+        lead: 'Сейчас ответ модели намеренно скрыт. Посмотрите на временной сигнал и FFT, сформулируйте гипотезу и только потом открывайте правильный ответ.',
+        steps: [
+          { label: 'СИГНАЛ', title: 'Сначала изучите временную область', note: 'Ищите импульсы, модуляцию и общую «жёсткость» сигнала.' },
+          { label: 'FFT', title: 'Проверьте спектр', note: 'Смотрите на GMF, боковые полосы, broad-band noise и bearing signatures.' },
+          { label: 'ГИПОТЕЗА', title: 'Выберите класс ниже', note: 'После фиксации ответа VibroLab раскроет диагноз и объяснение модели.' },
+        ],
+        tip: `Лаба ${activeHidden.lab.badge}: чекпоинт закроется после проверки гипотезы, а не после простого открытия ответа.`,
+        actions: [
+          { kind: 'scroll', value: 'diagResult', label: 'ПЕРЕЙТИ К ОТВЕТУ', tone: 'primary' },
+        ],
+      };
+    }
+
     if (currentDiagnosis) {
       const diagnosisName = VM.RU[currentDiagnosis.cls] || currentDiagnosis.cls;
       return {
@@ -1202,6 +1886,46 @@ const App = (() => {
         actions: [
           { kind: 'demo', value: 'normal', label: 'ЗАПУСТИТЬ КЕЙС «НОРМА»', tone: 'primary' },
           { kind: 'demo', value: 'tooth_miss', label: 'ПОКАЗАТЬ КРИТИЧЕСКИЙ ДЕФЕКТ' },
+        ],
+      },
+      guided_labs: {
+        kicker: 'GUIDED LABS',
+        state: `${activeLabProgress.completed}/${activeLabProgress.total}`,
+        title: activeLab.title,
+        lead: activeLab.lead,
+        steps: activeLab.checkpoints.map((checkpoint) => ({
+          label: isStudyLabCheckpointDone(activeLab.id, checkpoint.id) ? '✓ DONE' : 'STEP',
+          title: checkpoint.label,
+          note: checkpoint.note,
+        })),
+        tip: getNextStudyLabCheckpoint(activeLab.id)
+          ? `Следующий шаг: ${getNextStudyLabCheckpoint(activeLab.id).label}.`
+          : 'Все чекпоинты закрыты. Можно переходить к следующей лаборатории или повторить скрытый кейс.',
+        actions: [
+          {
+            kind: activeLab.actions[0]?.kind === 'run-demo' ? 'demo' : 'lab',
+            value: activeLab.actions[0]?.value || 'normal',
+            label: activeLab.actions[0]?.label || 'СТАРТОВАТЬ ЛАБУ',
+            tone: 'primary',
+          },
+          { kind: 'hidden-case', value: activeLab.hiddenCase.id, label: 'СКРЫТЫЙ КЕЙС' },
+          { kind: 'scroll', value: 'studentLabShell', label: 'ОТКРЫТЬ ПРОГРЕСС' },
+        ],
+      },
+      hidden_cases: {
+        kicker: 'SELF-CHECK',
+        state: `${countSolvedHiddenCases()}/${getStudyLabList().length}`,
+        title: `Скрытые кейсы · ${activeLab.hiddenCase.title}`,
+        lead: 'Это режим самопроверки: VibroLab сначала показывает вам только сигнал и спектр, а ответ модели раскрывает только после гипотезы.',
+        steps: [
+          { label: '01', title: 'Запустите mystery-case', note: 'Берите кейс из активной лаборатории, чтобы не прыгать между разными физическими механизмами.' },
+          { label: '02', title: 'Зафиксируйте свою гипотезу', note: 'Это важная часть учебного цикла: сначала собственное объяснение, потом модель.' },
+          { label: '03', title: 'Сравните ответ и объяснение', note: 'После reveal-а посмотрите, где именно модель и ваша логика совпали или разошлись.' },
+        ],
+        tip: 'Даже неверная гипотеза полезна: она помогает увидеть, какие паттерны вы пока путаете между собой.',
+        actions: [
+          { kind: 'hidden-case', value: activeLab.hiddenCase.id, label: 'СТАРТОВАТЬ СКРЫТЫЙ КЕЙС', tone: 'primary' },
+          { kind: 'scroll', value: 'studentLabShell', label: 'К СПИСКУ ЛАБ' },
         ],
       },
       own_file: {
@@ -2136,6 +2860,7 @@ const App = (() => {
   }
 
   function openLabScenario(labId = 'intro_baseline') {
+    markStudyLabCheckpointsByTrigger('sim_lab', labId);
     window.open(buildLabLaunchUrl(labId), '_blank', 'noopener,noreferrer');
   }
 
@@ -3531,12 +4256,14 @@ const App = (() => {
     currentDiagnosis = payload;
     renderCaptureSummary();
     renderAnalysisComparePanel();
+    renderStudyLabShell();
   }
 
   function clearCurrentDiagnosis() {
     currentDiagnosis = null;
     renderCaptureSummary();
     renderAnalysisComparePanel();
+    renderStudyLabShell();
   }
 
   function buildSessionRecord() {
@@ -4117,9 +4844,9 @@ const App = (() => {
     });
   }
 
-  function runScenario(cls) {
+  function runScenario(cls, options = {}) {
     goPage('diag');
-    window.setTimeout(() => runDemo(cls), 220);
+    window.setTimeout(() => runDemo(cls, options), 220);
   }
 
   function setupScenarioLinks() {
@@ -4203,6 +4930,7 @@ const App = (() => {
     });
     window.scrollTo({top:0,behavior:'smooth'});
     window.setTimeout(updateViewportChrome, 80);
+    renderStudyLabShell();
     renderAnalysisCoach();
     renderProfileOnboard();
   }
@@ -4239,10 +4967,15 @@ const App = (() => {
   function applyInitialRoute() {
     if (initialRouteApplied) return;
     initialRouteApplied = true;
-    if (!initialRoute.page && !initialRoute.section && !initialRoute.demo && !initialRoute.guide) return;
+    if (!initialRoute.page && !initialRoute.section && !initialRoute.demo && !initialRoute.guide && !initialRoute.lab) return;
 
     if (initialRoute.guide) {
       analysisGuideMode = initialRoute.guide;
+    }
+    if (initialRoute.lab && STUDY_LABS[initialRoute.lab]) {
+      activeStudyLabId = initialRoute.lab;
+      if (studyLabState) saveStudyLabState();
+      renderStudyLabShell();
     }
 
     const targetPage = initialRoute.page || (initialRoute.demo || initialRoute.guide ? 'diag' : 'home');
@@ -4287,20 +5020,28 @@ const App = (() => {
   }
 
   // ═══ DEMO ═══
-  function runDemo(cls) {
+  function runDemo(cls, options = {}) {
     if(diagLocked) return;
     diagLocked = true;
     if(currentStop) currentStop();
     clearCurrentDiagnosis();
     currentSourceFile = null;
     const demoCase = typeof DemoCases !== 'undefined' ? DemoCases.get(cls) : null;
+    const hiddenMeta = options.hiddenCase || null;
     currentInputContext = {
-      type: 'demo',
+      type: hiddenMeta ? 'hidden_case' : 'demo',
       scenario: cls,
-      label: demoCase ? `SEU Demo · ${VM.RU[cls] || cls}` : `Demo · ${VM.RU[cls] || cls}`,
+      label: hiddenMeta
+        ? `Mystery case · ${hiddenMeta.title || 'Hidden case'}`
+        : (demoCase ? `SEU Demo · ${VM.RU[cls] || cls}` : `Demo · ${VM.RU[cls] || cls}`),
       sourceFile: demoCase?.source_file || null,
       measurementId: null,
+      hiddenCaseId: hiddenMeta?.challengeId || null,
+      hiddenLabId: hiddenMeta?.labId || null,
     };
+    if (!hiddenMeta) {
+      markStudyLabCheckpointsByTrigger('demo', cls);
+    }
     activateScenarioCards(cls);
     document.querySelectorAll('.fault-btn').forEach(b=>b.classList.toggle('active',b.dataset.cls===cls));
     litPipeline(0);
@@ -4592,6 +5333,8 @@ const App = (() => {
     d.style.border = `2px solid ${color}`; d.style.background = color + '0a';
     const confidence = probs[cls] || 0;
     const playbook = getPlaybook(cls);
+    const hiddenContext = getCurrentHiddenCaseContext();
+    const hideAnswer = !!(hiddenContext && !hiddenContext.state?.revealed);
     const sourceLabel = meta ? VM.sourceLabel(meta) : 'Browser inference';
     const engineeringAssessment = buildEngineeringAssessment(signal, cls);
     const engineeringHtml = buildEngineeringEvidenceMarkup(engineeringAssessment);
@@ -4599,6 +5342,23 @@ const App = (() => {
       .filter(c => c !== cls)
       .sort((a, b) => (probs[b] || 0) - (probs[a] || 0))
       .slice(0, 2);
+
+    if (hideAnswer) {
+      d.innerHTML = buildHiddenCaseDiagnosisMarkup(cls);
+      d.classList.add('show');
+      updateCurrentDiagnosis({
+        cls,
+        confidence,
+        probabilities: { ...probs },
+        sourceLabel,
+        input: { ...currentInputContext },
+        playbook,
+        signalData: compactSignal(signal || currentSignalData?.data || []),
+        sampleRate: currentSignalData?.sampleRate || VM.FS,
+        features: Array.isArray(features) ? [...features] : features || null,
+      });
+      return;
+    }
 
     // --- OOD detection badge ---
     let oodHtml = '';
@@ -4711,7 +5471,7 @@ const App = (() => {
       } catch (e) { console.warn('[APP] ONNX comparison failed:', e); }
     }
 
-    d.innerHTML = `<div class="diag-shell">
+    d.innerHTML = `${buildHiddenCaseResultBanner()}<div class="diag-shell">
       <div class="diag-main-panel">
         <div class="diag-badge-row">
           <span class="diag-badge diag-badge--${playbook.tone}">${playbook.badge}</span>
@@ -4779,8 +5539,7 @@ const App = (() => {
           </div>
         </div>
       </div>
-    </div>
-    ${shapHtml}${rulHtml}${multiModelHtml}`;
+    </div>${shapHtml}${rulHtml}${multiModelHtml}`;
     d.classList.add('show');
     renderEngineeringVisuals(signal, cls, color, engineeringAssessment);
     updateCurrentDiagnosis({
@@ -4792,6 +5551,7 @@ const App = (() => {
       playbook,
       signalData: compactSignal(signal || currentSignalData?.data || []),
       sampleRate: currentSignalData?.sampleRate || VM.FS,
+      features: Array.isArray(features) ? [...features] : features || null,
     });
   }
 
@@ -4805,6 +5565,7 @@ const App = (() => {
   async function showAdvancedDiagnosis(signal, features, rfResult) {
     const d = el('diagResult');
     if (!d) return;
+    if (isHiddenCasePending()) return;
 
     let onnxResult = null;
     if (typeof ModelONNX !== 'undefined' && ModelONNX.diagnoseAdvanced) {
@@ -5204,6 +5965,7 @@ const App = (() => {
   // ═══ INIT ═══
   async function init() {
     document.body.dataset.page = document.body.dataset.page || 'home';
+    loadStudyLabState();
     document.querySelectorAll('.nav-btn').forEach(b => {
       if (b.dataset.page) b.addEventListener('click', () => goPage(b.dataset.page));
     });
@@ -5214,6 +5976,21 @@ const App = (() => {
       });
     });
     document.addEventListener('click', (event) => {
+      const labSelectNode = event.target.closest('[data-study-lab-select]');
+      if (labSelectNode) {
+        setActiveStudyLab(labSelectNode.dataset.studyLabSelect, { scroll: false });
+        return;
+      }
+      const studyActionNode = event.target.closest('[data-study-action]');
+      if (studyActionNode) {
+        runStudyAction(studyActionNode.dataset.studyAction, studyActionNode.dataset);
+        return;
+      }
+      const hiddenGuessNode = event.target.closest('[data-hidden-guess]');
+      if (hiddenGuessNode) {
+        selectHiddenCaseAnswer(hiddenGuessNode.dataset.hiddenGuess);
+        return;
+      }
       const actionNode = event.target.closest('[data-ux-action]');
       if (!actionNode) return;
       runUxAction(actionNode.dataset.uxAction, actionNode.dataset);
@@ -5233,6 +6010,7 @@ const App = (() => {
     } catch(e) { console.log('[APP] No meta.json'); }
 
     buildFaultBtns();
+    renderStudyLabShell();
     buildModel();
     setupScenarioLinks();
     initRevealSystem();

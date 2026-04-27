@@ -1184,6 +1184,8 @@
   let currentLabScenario = null;
   let replayUntil = 0, replayCooldownUntil = 0;
   let gbxGrp = null, stageObjs = [], brgs = [], sparks = null, markers = [], oilM = null;
+  let hoverMesh = null, hoverInfo = null, hoverIndicator = null;
+  let pointerMoved = false, pointerDownX = 0, pointerDownY = 0;
   let healthySigBuf = null, healthyFftBuf = null, envHealthyBuf = null;
   const REPLAY_DURATION = 1.45;
   const REPLAY_COOLDOWN = 2.6;
@@ -1197,6 +1199,184 @@
     if (envMap) mat.envMap = envMap;
     mat.envMapIntensity = intensity ?? mat.envMapIntensity ?? 1.2;
     return mat;
+  }
+
+  const PROC_TEX = {};
+
+  function mkCanvasTexture(key, size, painter, {repeat = [1, 1], color = false} = {}) {
+    if (PROC_TEX[key]) return PROC_TEX[key];
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    painter(ctx, size);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(repeat[0], repeat[1]);
+    tex.anisotropy = 8;
+    if (color) tex.encoding = THREE.sRGBEncoding;
+    PROC_TEX[key] = tex;
+    return tex;
+  }
+
+  function useTexture(key, opts = {}) {
+    return mkCanvasTexture(key, opts.size || 256, opts.painter, opts).clone();
+  }
+
+  function brushedMetalTexture(key, tintA, tintB) {
+    return useTexture(key, {
+      color: true,
+      repeat: [6, 2],
+      painter: (ctx, size) => {
+        const g = ctx.createLinearGradient(0, 0, size, size);
+        g.addColorStop(0, tintA);
+        g.addColorStop(1, tintB);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, size, size);
+        for (let i = 0; i < size * 1.45; i++) {
+          const alpha = 0.008 + Math.random() * 0.016;
+          const shade = 180 + Math.floor(Math.random() * 60);
+          ctx.strokeStyle = `rgba(${shade},${shade + 8},${shade + 22},${alpha})`;
+          ctx.lineWidth = 0.8 + Math.random() * 0.8;
+          const y = Math.random() * size;
+          ctx.beginPath();
+          ctx.moveTo(-12, y);
+          ctx.lineTo(size + 12, y + (Math.random() - 0.5) * 7);
+          ctx.stroke();
+        }
+        for (let i = 0; i < 48; i++) {
+          ctx.fillStyle = `rgba(255,255,255,${0.006 + Math.random() * 0.012})`;
+          ctx.fillRect(Math.random() * size, Math.random() * size, 1 + Math.random() * 2, 1 + Math.random() * 2);
+        }
+      }
+    });
+  }
+
+  function roughnessTexture(key, low = 52, high = 168) {
+    return useTexture(key, {
+      repeat: [6, 3],
+      painter: (ctx, size) => {
+        const img = ctx.createImageData(size, size);
+        for (let i = 0; i < img.data.length; i += 4) {
+          const shade = low + Math.floor(Math.random() * (high - low));
+          img.data[i] = shade;
+          img.data[i + 1] = shade;
+          img.data[i + 2] = shade;
+          img.data[i + 3] = 255;
+        }
+        ctx.putImageData(img, 0, 0);
+        for (let i = 0; i < size * 0.55; i++) {
+          const a = 0.02 + Math.random() * 0.035;
+          ctx.strokeStyle = `rgba(255,255,255,${a})`;
+          ctx.lineWidth = 0.4 + Math.random() * 0.55;
+          const x = Math.random() * size;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x + (Math.random() - 0.5) * 8, size);
+          ctx.stroke();
+        }
+      }
+    });
+  }
+
+  function castTexture(key, tintA, tintB) {
+    return useTexture(key, {
+      color: true,
+      repeat: [4, 4],
+      painter: (ctx, size) => {
+        const g = ctx.createLinearGradient(0, 0, size, size);
+        g.addColorStop(0, tintA);
+        g.addColorStop(1, tintB);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, size, size);
+        for (let i = 0; i < size * 8; i++) {
+          const shade = 20 + Math.floor(Math.random() * 50);
+          const alpha = 0.02 + Math.random() * 0.035;
+          ctx.fillStyle = `rgba(${shade},${shade + 12},${shade + 20},${alpha})`;
+          const r = 1 + Math.random() * 3.2;
+          ctx.beginPath();
+          ctx.arc(Math.random() * size, Math.random() * size, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        for (let i = 0; i < size * 2; i++) {
+          ctx.strokeStyle = `rgba(255,255,255,${0.01 + Math.random() * 0.02})`;
+          ctx.lineWidth = 1;
+          const x = Math.random() * size;
+          const y = Math.random() * size;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + (Math.random() - 0.5) * 16, y + (Math.random() - 0.5) * 16);
+          ctx.stroke();
+        }
+      }
+    });
+  }
+
+  function floorTexture(key) {
+    return useTexture(key, {
+      color: true,
+      repeat: [8, 8],
+      painter: (ctx, size) => {
+        const g = ctx.createLinearGradient(0, 0, 0, size);
+        g.addColorStop(0, '#0d1522');
+        g.addColorStop(1, '#080d15');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, size, size);
+        ctx.strokeStyle = 'rgba(96,165,250,0.08)';
+        ctx.lineWidth = 2;
+        const step = size / 4;
+        for (let i = 0; i <= 4; i++) {
+          ctx.beginPath();
+          ctx.moveTo(i * step, 0);
+          ctx.lineTo(i * step, size);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(0, i * step);
+          ctx.lineTo(size, i * step);
+          ctx.stroke();
+        }
+        for (let i = 0; i < size * 2.2; i++) {
+          ctx.strokeStyle = `rgba(255,255,255,${0.012 + Math.random() * 0.02})`;
+          ctx.lineWidth = 0.8 + Math.random();
+          const x = Math.random() * size;
+          const y = Math.random() * size;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + (Math.random() - 0.5) * 22, y + (Math.random() - 0.5) * 22);
+          ctx.stroke();
+        }
+      }
+    });
+  }
+
+  function oilTexture(key) {
+    return useTexture(key, {
+      color: true,
+      repeat: [3, 2],
+      painter: (ctx, size) => {
+        const g = ctx.createLinearGradient(0, 0, size, size);
+        g.addColorStop(0, '#7a5717');
+        g.addColorStop(0.5, '#c08f32');
+        g.addColorStop(1, '#4d3410');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, size, size);
+        for (let i = 0; i < 18; i++) {
+          ctx.fillStyle = `rgba(255,220,140,${0.04 + Math.random() * 0.05})`;
+          ctx.beginPath();
+          ctx.ellipse(
+            Math.random() * size,
+            Math.random() * size,
+            18 + Math.random() * 42,
+            8 + Math.random() * 22,
+            Math.random() * Math.PI,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+        }
+      }
+    });
   }
 
   const MM = (c, m, r, extra = {}) => {
@@ -1219,6 +1399,10 @@
       color: c,
       metalness: 0.96,
       roughness: 0.16,
+      map: brushedMetalTexture('metal-color', '#8092aa', '#6b7c93'),
+      roughnessMap: roughnessTexture('metal-rough', 44, 124),
+      bumpMap: roughnessTexture('metal-bump', 88, 158),
+      bumpScale: 0.012,
       clearcoat: 0.55,
       clearcoatRoughness: 0.2,
       envIntensity: 1.85,
@@ -1228,6 +1412,10 @@
       color: c,
       metalness: 0.88,
       roughness: 0.28,
+      map: brushedMetalTexture('steel-color', '#53677d', '#334453'),
+      roughnessMap: roughnessTexture('steel-rough', 52, 146),
+      bumpMap: roughnessTexture('steel-bump', 96, 172),
+      bumpScale: 0.009,
       clearcoat: 0.35,
       clearcoatRoughness: 0.3,
       envIntensity: 1.45,
@@ -1237,12 +1425,20 @@
       color: c,
       metalness: 0.46,
       roughness: 0.78,
+      map: castTexture('cast-color', '#314053', '#1d2735'),
+      roughnessMap: roughnessTexture('cast-rough', 98, 194),
+      bumpMap: roughnessTexture('cast-bump', 82, 156),
+      bumpScale: 0.02,
       clearcoat: 0.12,
       clearcoatRoughness: 0.55,
       envIntensity: 0.95,
       ...extra
     }),
     coated: (c = 0x151c25, extra = {}) => MM(c, 0.18, 0.88, {
+      map: castTexture('coat-color', '#182230', '#0d141d'),
+      roughnessMap: roughnessTexture('coat-rough', 124, 214),
+      bumpMap: roughnessTexture('coat-bump', 94, 164),
+      bumpScale: 0.01,
       envIntensity: 0.45,
       ...extra
     }),
@@ -1264,6 +1460,8 @@
       color: c,
       metalness: 0.08,
       roughness: 0.1,
+      map: oilTexture('oil-color'),
+      roughnessMap: roughnessTexture('oil-rough', 28, 108),
       transmission: 0.15,
       thickness: 0.3,
       transparent: true,
@@ -1286,6 +1484,10 @@
       color: c,
       metalness: 0.4,
       roughness: 0.74,
+      map: castTexture('housing-color', '#334355', '#212d3b'),
+      roughnessMap: roughnessTexture('housing-rough', 114, 188),
+      bumpMap: roughnessTexture('housing-bump', 98, 176),
+      bumpScale: 0.018,
       clearcoat: 0.16,
       clearcoatRoughness: 0.5,
       transparent: true,
@@ -1565,6 +1767,36 @@
     animateCameraTo(getFaultFocusPose(target, faultId));
   }
 
+  function estimateWorldRadius(obj) {
+    if (!obj) return 1;
+    const box = new THREE.Box3().setFromObject(obj.userData?.hitGroup || obj);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    return Math.max(0.45, Math.min(3.2, size.length() * 0.32));
+  }
+
+  function focusInspectableObject(obj, kind = 'gear') {
+    if (!obj || camDrag) return;
+    const target = new THREE.Vector3();
+    (obj.userData?.hitGroup || obj).getWorldPosition(target);
+    const radius = estimateWorldRadius(obj);
+    animateCameraTo({
+      th: camTh + (kind === 'bearing' ? 0.22 : 0.34),
+      ph: kind === 'bearing' ? 0.44 : 0.36,
+      dist: Math.max(6.4, Math.min(14, radius * (kind === 'bearing' ? 6.4 : 5.4))),
+      look: target.clone().add(new THREE.Vector3(0, kind === 'bearing' ? 0.05 : 0.12, 0)),
+      dur: 780
+    });
+  }
+
+  function setHoverMesh(obj, info = null) {
+    hoverMesh = obj || null;
+    hoverInfo = info || null;
+    if (!hoverIndicator) return;
+    hoverIndicator.visible = !!hoverMesh;
+    if (!hoverMesh) hoverIndicator.material.opacity = 0;
+  }
+
   function camPreset(view) {
     const presets = {
       front:  { th: 0.04,       ph: 0.08, dist: 16.5, look: new THREE.Vector3(0, 0.25, 0), dur: 850 },
@@ -1790,7 +2022,7 @@
     // ── Bloom post-processing ──
     composer = new THREE.EffectComposer(ren);
     composer.addPass(new THREE.RenderPass(sc, cam));
-    const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(W, H), 0.24, 0.72, 0.9);
+    const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(W, H), 0.28, 0.78, 0.88);
     composer.addPass(bloomPass);
 
     // ── Lighting (enhanced) ──
@@ -1823,10 +2055,14 @@
     const topAccent = new THREE.PointLight(0x91b4ff, 0.32, 28);
     topAccent.position.set(0, 10, 0);
     sc.add(topAccent);
+    const edgeGlow = new THREE.PointLight(0x1bd5ff, 0.18, 16);
+    edgeGlow.position.set(-7, 1.6, 7);
+    sc.add(edgeGlow);
 
     // ── Floor (reflective) ──
     const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(8.4, 9.1, 0.18, 56), MAT.darkSteel(0x111825, {
-      roughness: 0.36,
+      roughness: 0.34,
+      bumpScale: 0.014,
       envIntensity: 1.25
     }));
     pedestal.position.y = -4.92;
@@ -1836,6 +2072,10 @@
       color: 0x0a111c,
       metalness: 0.52,
       roughness: 0.26,
+      map: floorTexture('floor-color'),
+      roughnessMap: roughnessTexture('floor-rough', 42, 126),
+      bumpMap: roughnessTexture('floor-bump', 84, 152),
+      bumpScale: 0.012,
       clearcoat: 0.72,
       clearcoatRoughness: 0.14,
       envIntensity: 1.18
@@ -1867,6 +2107,19 @@
     }));
     sparks.userData = {vel: new Float32Array(spc * 3), life: new Float32Array(spc), colors: sca};
     sc.add(sparks);
+    hoverIndicator = new THREE.Mesh(
+      new THREE.RingGeometry(0.94, 1, 48),
+      new THREE.MeshBasicMaterial({
+        color: 0x2fdcff,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      })
+    );
+    hoverIndicator.renderOrder = 8;
+    hoverIndicator.visible = false;
+    sc.add(hoverIndicator);
 
     // ── Camera orbit controls (enhanced: inertia, pinch, double-click reset) ──
     const updateCam = () => {
@@ -1879,6 +2132,8 @@
       camDrag = true;
       camPx = e.clientX; camPy = e.clientY;
       camVTh = 0; camVPh = 0;
+      pointerDownX = e.clientX; pointerDownY = e.clientY;
+      pointerMoved = false;
       camAutoRotate = false; camLastInteract = sT;
     };
     window.onmouseup = () => { camDrag = false; camLastInteract = sT; };
@@ -1888,6 +2143,7 @@
         updateTooltip(e);
       } else {
         const dx = (e.clientX - camPx) * .005, dy = (e.clientY - camPy) * .005;
+        if (Math.abs(e.clientX - pointerDownX) > 6 || Math.abs(e.clientY - pointerDownY) > 6) pointerMoved = true;
         camTh += dx; camPh = Math.max(-.4, Math.min(1.4, camPh + dy));
         camVTh = dx; camVPh = dy;
         camPx = e.clientX; camPy = e.clientY;
@@ -1907,6 +2163,14 @@
       camVTh = 0; camVPh = 0;
       updateCam();
     };
+    ren.domElement.onclick = () => {
+      if (pointerMoved || !hoverMesh) {
+        pointerMoved = false;
+        return;
+      }
+      focusInspectableObject(hoverMesh, hoverInfo?.kind || hoverMesh.userData.inspectKind || 'gear');
+      pointerMoved = false;
+    };
 
     // Touch (single-finger rotate + two-finger pinch zoom)
     ren.domElement.ontouchstart = e => {
@@ -1918,6 +2182,8 @@
         camDrag = true;
         camPx = e.touches[0].clientX; camPy = e.touches[0].clientY;
         camVTh = 0; camVPh = 0;
+        pointerDownX = e.touches[0].clientX; pointerDownY = e.touches[0].clientY;
+        pointerMoved = false;
       }
     };
     ren.domElement.ontouchend = e => {
@@ -1934,6 +2200,7 @@
         updateCam();
       } else if (camDrag && e.touches.length === 1) {
         const dx = (e.touches[0].clientX - camPx) * .005, dy = (e.touches[0].clientY - camPy) * .005;
+        if (Math.abs(e.touches[0].clientX - pointerDownX) > 8 || Math.abs(e.touches[0].clientY - pointerDownY) > 8) pointerMoved = true;
         camTh += dx; camPh = Math.max(-.4, Math.min(1.4, camPh + dy));
         camVTh = dx; camVPh = dy;
         camPx = e.touches[0].clientX; camPy = e.touches[0].clientY;
@@ -2015,17 +2282,62 @@
     });
     geo.translate(0, 0, -fW / 2);
     geo.computeVertexNormals();
-    const gearMat = MAT.machined(col, {roughness: 0.18});
+    const gearMat = MAT.machined(col, {
+      roughness: 0.17,
+      clearcoat: 0.64,
+      clearcoatRoughness: 0.14,
+      bumpScale: 0.015
+    });
     const mesh = new THREE.Mesh(geo, gearMat);
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     grp.add(mesh);
+    const faceRingMat = MAT.darkSteel(0x62758a, {roughness: 0.3, clearcoat: 0.42, opacity: 0.96, transparent: true});
+    const faceRingGeo = new THREE.RingGeometry(bore * 1.72, rR * 0.9, 48);
+    const frontRing = new THREE.Mesh(faceRingGeo, faceRingMat);
+    frontRing.position.z = fW / 2 + .004;
+    frontRing.receiveShadow = true;
+    grp.add(frontRing);
+    const rearRing = frontRing.clone();
+    rearRing.position.z = -fW / 2 - .004;
+    grp.add(rearRing);
     // Edge rings (polished chamfer)
     grp.add(new THREE.Mesh(new THREE.TorusGeometry(oR - .015, .022, 8, z * 2), MAT.machined(0x9aabbb, {roughness: 0.08, clearcoat: 0.9})).translateZ(fW / 2));
     grp.add(new THREE.Mesh(new THREE.TorusGeometry(oR - .015, .022, 8, z * 2), MAT.machined(0x9aabbb, {roughness: 0.08, clearcoat: 0.9})).translateZ(-fW / 2));
+    grp.add(new THREE.Mesh(new THREE.TorusGeometry(Math.max(bore * 2.05, rR * 0.78), .014, 6, 40), MAT.machined(0xb8c8d8, {
+      roughness: 0.06,
+      clearcoat: 0.94
+    })).translateZ(fW / 2 + .015));
+    grp.add(new THREE.Mesh(new THREE.TorusGeometry(Math.max(bore * 2.05, rR * 0.78), .014, 6, 40), MAT.machined(0xb8c8d8, {
+      roughness: 0.06,
+      clearcoat: 0.94
+    })).translateZ(-fW / 2 - .015));
     // Hub boss (machined finish)
     grp.add(new THREE.Mesh(new THREE.CylinderGeometry(bore * 1.5, bore * 1.5, .06, 16), MAT.darkSteel(0x73869a, {roughness: 0.15})).rotateX(Math.PI / 2).translateY(fW / 2 + .03));
     grp.add(new THREE.Mesh(new THREE.CylinderGeometry(bore * 1.5, bore * 1.5, .06, 16), MAT.darkSteel(0x73869a, {roughness: 0.15})).rotateX(Math.PI / 2).translateY(-fW / 2 - .03));
+    const sleeve = new THREE.Mesh(
+      new THREE.CylinderGeometry(bore * 0.92, bore * 0.92, fW + .18, 20),
+      MAT.darkSteel(0x58697d, {roughness: 0.12, clearcoat: 0.52})
+    );
+    sleeve.rotation.x = Math.PI / 2;
+    grp.add(sleeve);
+    const boltCount = Math.min(8, Math.max(4, Math.round(z / 8)));
+    const boltR = Math.max(bore * 2.15, rR * 0.58);
+    for (let i = 0; i < boltCount; i++) {
+      const a = i / boltCount * Math.PI * 2;
+      const bx = boltR * Math.cos(a);
+      const by = boltR * Math.sin(a);
+      const head = new THREE.Mesh(
+        new THREE.CylinderGeometry(.038, .038, .04, 6),
+        MAT.darkSteel(0x8da0b3, {roughness: 0.11, clearcoat: 0.56})
+      );
+      head.rotation.x = Math.PI / 2;
+      head.position.set(bx, by, fW / 2 + .03);
+      grp.add(head);
+      const rearHead = head.clone();
+      rearHead.position.z = -fW / 2 - .03;
+      grp.add(rearHead);
+    }
     grp.userData = {...grp.userData, z, pR, oR, rR, fW, col, mesh, bore};
     return grp;
   }
@@ -2034,9 +2346,17 @@
     const g = new THREE.Group();
     tagRole(g, 'bearing');
     // Outer race (polished steel)
-    g.add(new THREE.Mesh(new THREE.TorusGeometry(oR, w * .24, 16, 48), MAT.machined(0xa2b3c4, {roughness: 0.07, clearcoat: 0.82})));
+    const outerRace = new THREE.Mesh(new THREE.TorusGeometry(oR, w * .24, 16, 48), MAT.machined(0xa2b3c4, {
+      roughness: 0.07,
+      clearcoat: 0.82
+    }));
+    g.add(outerRace);
     // Inner race
-    g.add(new THREE.Mesh(new THREE.TorusGeometry(iR + (oR - iR) * .18, w * .18, 16, 48), MAT.darkSteel(0x8f9eb0, {roughness: 0.1, clearcoat: 0.65})));
+    const innerRace = new THREE.Mesh(new THREE.TorusGeometry(iR + (oR - iR) * .18, w * .18, 16, 48), MAT.darkSteel(0x8f9eb0, {
+      roughness: 0.1,
+      clearcoat: 0.65
+    }));
+    g.add(innerRace);
     // Chrome balls
     const bR2 = (oR - iR) * .19, tR = (iR + oR) / 2, nB = Math.max(5, Math.round(tR * 10)), bM = MAT.machined(0xeef4ff, {roughness: 0.02, clearcoat: 1, envIntensity: 2.1});
     for (let i = 0; i < nB; i++) {
@@ -2045,12 +2365,29 @@
       b.userData = {ba: a, tr: tR};
       g.add(b)
     }
+    const cage = new THREE.Mesh(
+      new THREE.TorusGeometry(tR, w * .085, 8, 48),
+      MAT.brass(0xa2874b, {roughness: 0.46, clearcoat: 0.18, envIntensity: 1})
+    );
+    cage.scale.set(1, 1, 0.9);
+    g.add(cage);
     // Seals
     g.add(new THREE.Mesh(new THREE.TorusGeometry(tR, w * .055, 6, 32), MAT.coated(0x111318)).translateZ(w * .34));
     g.add(new THREE.Mesh(new THREE.TorusGeometry(tR, w * .055, 6, 32), MAT.coated(0x111318)).translateZ(-w * .34));
     // Retaining ring
     g.add(new THREE.Mesh(new THREE.TorusGeometry(oR + .01, .012, 4, 32), MAT.darkSteel(0x4a5a6d, {roughness: 0.26})).translateZ(w * .38));
-    g.userData = {...g.userData, iR, oR, w};
+    for (let i = 0; i < 4; i++) {
+      const a = i / 4 * Math.PI * 2 + Math.PI / 4;
+      const latch = new THREE.Mesh(
+        new THREE.BoxGeometry(w * .11, w * .32, w * .08),
+        MAT.darkSteel(0x6d7e91, {roughness: 0.18})
+      );
+      latch.position.set((oR + w * .04) * Math.cos(a), (oR + w * .04) * Math.sin(a), w * 0.02);
+      latch.rotation.z = a;
+      g.add(latch);
+    }
+    outerRace.userData = {...outerRace.userData, inspectKind: 'bearing', hitGroup: g};
+    g.userData = {...g.userData, iR, oR, w, hitMesh: outerRace};
     g.position.set(x, y, z);
     brgs.push(g);
     gbxGrp.add(g);
@@ -2067,8 +2404,13 @@
     const sG = new THREE.CylinderGeometry(r * 1.25, r * 1.25, .08, 20);
     g.add(new THREE.Mesh(sG, m).rotateX(Math.PI / 2).translateY(len * .22));
     g.add(new THREE.Mesh(sG.clone(), m).rotateX(Math.PI / 2).translateY(-len * .22));
+    const collarGeo = new THREE.CylinderGeometry(r * 1.12, r * 1.12, .06, 20);
+    g.add(new THREE.Mesh(collarGeo, MAT.machined(0x8b9caf, {roughness: 0.08, clearcoat: 0.88})).rotateX(Math.PI / 2).translateY(len * .38));
+    g.add(new THREE.Mesh(collarGeo.clone(), MAT.machined(0x8b9caf, {roughness: 0.08, clearcoat: 0.88})).rotateX(Math.PI / 2).translateY(-len * .38));
     // Oil seal groove
     g.add(new THREE.Mesh(new THREE.TorusGeometry(r + .01, .015, 6, 20), MAT.coated(0x20232a, {roughness: 0.92})).translateZ(0));
+    g.add(new THREE.Mesh(new THREE.TorusGeometry(r + .005, .008, 6, 20), MAT.coated(0x171c26, {roughness: 0.96})).translateY(len * .34));
+    g.add(new THREE.Mesh(new THREE.TorusGeometry(r + .005, .008, 6, 20), MAT.coated(0x171c26, {roughness: 0.96})).translateY(-len * .34));
     g.position.copy(pos);
     gbxGrp.add(g);
     return g;
@@ -2094,6 +2436,7 @@
   // GEARBOX BUILD + EXPLODE MAP
   // ═════════════════════════════════════════════════════════
   function clearScene() {
+    setHoverMesh(null);
     if (gbxGrp) {
       sc.remove(gbxGrp);
       gbxGrp = null
@@ -2269,6 +2612,20 @@
     hMesh.rotation.x = Math.PI / 2;
     gbxGrp.add(hMesh);
     regPart(hMesh, [0, -5, 0], 'Корпус');
+    const frontFlange = tagRole(new THREE.Mesh(new THREE.TorusGeometry(ringR + .76, .06, 8, 56), MAT.cast(0x435467, {
+      roughness: 0.62,
+      clearcoat: 0.08
+    })), 'housing');
+    frontFlange.position.z = 1.55;
+    gbxGrp.add(frontFlange);
+    const rearFlange = frontFlange.clone();
+    rearFlange.position.z = -1.55;
+    gbxGrp.add(rearFlange);
+    [-1, 1].forEach(side => {
+      const foot = tagRole(new THREE.Mesh(new THREE.BoxGeometry(1.4, .14, .9), MAT.cast(0x2c394a, {roughness: 0.76})), 'housing');
+      foot.position.set(side * (ringR * 0.7), -ringR - .58, 0);
+      gbxGrp.add(foot);
+    });
     oilM = tagRole(new THREE.Mesh(new THREE.BoxGeometry(ringR * 2, .01, 2.2), MAT.oil(0xa97a23, {
       opacity: 0.38
     })), 'oil');
@@ -2339,6 +2696,18 @@
     hSide.position.x = -3.5;
     gbxGrp.add(hSide);
     regPart(hSide, [-5, 0, 0], 'Боковина');
+    const hSideR = tagRole(new THREE.Mesh(new THREE.PlaneGeometry(4.5, 6), hM.clone()), 'housing');
+    hSideR.rotation.y = -Math.PI / 2;
+    hSideR.position.x = 3.5;
+    gbxGrp.add(hSideR);
+    regPart(hSideR, [5, 0, 0], 'Боковина');
+    const wormCap = tagRole(new THREE.Mesh(new THREE.BoxGeometry(2.1, .1, 1.1), MAT.darkSteel(0x506276, {
+      roughness: 0.28,
+      clearcoat: 0.42
+    })), 'housing');
+    wormCap.position.set(0, 3.05, 0);
+    gbxGrp.add(wormCap);
+    regPart(wormCap, [0, 5, 0], 'Крышка осмотра');
     oilM = tagRole(new THREE.Mesh(new THREE.BoxGeometry(5.5, .01, 3.5), MAT.oil(0xa67820, {
       opacity: 0.39
     })), 'oil');
@@ -2399,9 +2768,13 @@
     const fll = tagRole(new THREE.Mesh(new THREE.BoxGeometry(.15, h + .7, .15), flangeMt), 'housing');
     fll.position.set(-(w + 1) / 2 - .05, 0, d / 2 + .15);
     gbxGrp.add(fll);
+    const flr = tagRole(new THREE.Mesh(new THREE.BoxGeometry(.15, h + .7, .15), flangeMt), 'housing');
+    flr.position.set((w + 1) / 2 + .05, 0, d / 2 + .15);
+    gbxGrp.add(flr);
     regPart(flt, [0, 5, 3], 'Фланец верх');
     regPart(flb, [0, -4, 3], 'Фланец низ');
     regPart(fll, [-5, 0, 3], 'Фланец бок');
+    regPart(flr, [5, 0, 3], 'Фланец бок');
     // Bolts
     const bm = MAT.darkSteel(0x5f7084, {roughness: 0.18, clearcoat: 0.58});
     const bx = w / 2 * .9, by = h / 2 * .85, bz = -d / 2 - .28;
@@ -2412,6 +2785,17 @@
       bolt.position.set(x, y, bz);
       gbxGrp.add(bolt);
       regPart(bolt, [0, 0, -3], 'Болт')
+    });
+    const ribMat = MAT.cast(0x2f3c4d, {roughness: 0.76, clearcoat: 0.06});
+    [-w * .24, 0, w * .24].forEach(x => {
+      const rib = tagRole(new THREE.Mesh(new THREE.BoxGeometry(.16, h * .82, .24), ribMat), 'housing');
+      rib.position.set(x, 0, -d / 2 - .23);
+      gbxGrp.add(rib);
+    });
+    [-d * .23, d * .23].forEach(z => {
+      const rib = tagRole(new THREE.Mesh(new THREE.BoxGeometry(w * .68, .16, .22), ribMat), 'housing');
+      rib.position.set(0, -h / 2 - .03, z);
+      gbxGrp.add(rib);
     });
     // Feet with bolt holes
     const fm = MAT.cast(0x2a3545, {roughness: 0.7});
@@ -2424,6 +2808,30 @@
       gbxGrp.add(ft);
       regPart(ft, [0, -4, 0], 'Опора')
     });
+    [-w * .28, w * .28].forEach(x => {
+      const lug = tagRole(new THREE.Group(), 'housing');
+      lug.add(new THREE.Mesh(new THREE.TorusGeometry(.15, .035, 8, 18), MAT.darkSteel(0x75879b, {roughness: 0.18, clearcoat: 0.44})).rotateX(Math.PI / 2));
+      lug.add(new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .18, 10), MAT.cast(0x354456, {roughness: 0.72})).translateY(-.11));
+      lug.position.set(x, h / 2 + .34, -d * 0.18);
+      gbxGrp.add(lug);
+      regPart(lug, [0, 5, 1], 'Проушина');
+    });
+    const hatch = tagRole(new THREE.Group(), 'housing');
+    hatch.add(new THREE.Mesh(new THREE.BoxGeometry(w * .34, .05, d * .2), MAT.darkSteel(0x53677b, {
+      roughness: 0.24,
+      clearcoat: 0.38
+    })));
+    for (let ix = -1; ix <= 1; ix += 2) {
+      for (let iz = -1; iz <= 1; iz += 2) {
+        const screw = new THREE.Mesh(new THREE.CylinderGeometry(.03, .03, .025, 6), bm);
+        screw.rotation.z = Math.PI / 2;
+        screw.position.set(ix * w * .12, .03, iz * d * .07);
+        hatch.add(screw);
+      }
+    }
+    hatch.position.set(0, h / 2 + .13, -d * 0.12);
+    gbxGrp.add(hatch);
+    regPart(hatch, [0, 5, 0], 'Сервисный люк');
     // Sight glass
     const sg = tagRole(new THREE.Group(), 'housing');
     sg.add(new THREE.Mesh(new THREE.CylinderGeometry(.15, .15, .06, 16), MAT.glass(0xaedfff, {
@@ -3760,6 +4168,22 @@
       const pulse = base + base * 0.6 * Math.sin(phase);
       h.material.opacity = pulse * (1 - explodeT);
     });
+    if (hoverIndicator) {
+      if (hoverMesh) {
+        const anchor = hoverMesh.userData?.hitGroup || hoverMesh;
+        const world = new THREE.Vector3();
+        anchor.getWorldPosition(world);
+        hoverIndicator.visible = true;
+        hoverIndicator.position.copy(world);
+        hoverIndicator.position.y += hoverInfo?.kind === 'bearing' ? 0.04 : 0.1;
+        hoverIndicator.quaternion.copy(cam.quaternion);
+        hoverIndicator.scale.setScalar(estimateWorldRadius(hoverMesh) * (1.28 + 0.04 * Math.sin(sT * 5.4)));
+        hoverIndicator.material.opacity = (0.1 + 0.05 * Math.sin(sT * 6.5)) * (1 - explodeT * 0.4);
+      } else {
+        hoverIndicator.material.opacity += (0 - hoverIndicator.material.opacity) * 0.18;
+        if (hoverIndicator.material.opacity < 0.01) hoverIndicator.visible = false;
+      }
+    }
     composer.render();
     sigBuf = genSig(sT);
     if (compareMode) {
@@ -4602,19 +5026,29 @@ pre{background:#f5f5f5;padding:10px;border-radius:4px;font-size:10px;line-height
   const ttMouse = new THREE.Vector2();
   const tooltipEl = document.getElementById('tooltip');
 
-  function getGearMeshes() {
+  function getInspectableMeshes() {
     const meshes = [];
     stageObjs.forEach((so, i) => {
       if (so.g1 && so.g1.userData.mesh) {
         so.g1.userData.mesh.userData.si = i;
         so.g1.userData.mesh.userData.gt = 'pinion';
+        so.g1.userData.mesh.userData.inspectKind = 'gear';
         meshes.push(so.g1.userData.mesh);
       }
       if (so.g2 && so.g2.userData.mesh) {
         so.g2.userData.mesh.userData.si = i;
         so.g2.userData.mesh.userData.gt = 'wheel';
+        so.g2.userData.mesh.userData.inspectKind = 'gear';
         meshes.push(so.g2.userData.mesh);
       }
+      (so.brg || []).forEach((bg, bi) => {
+        const hit = bg?.userData?.hitMesh;
+        if (!hit) return;
+        hit.userData.si = i;
+        hit.userData.bi = bi;
+        hit.userData.inspectKind = 'bearing';
+        meshes.push(hit);
+      });
     });
     return meshes;
   }
@@ -4625,54 +5059,73 @@ pre{background:#f5f5f5;padding:10px;border-radius:4px;font-size:10px;line-height
     ttMouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     ttMouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     ttRay.setFromCamera(ttMouse, cam);
-    const meshes = getGearMeshes();
+    const meshes = getInspectableMeshes();
     const hits = ttRay.intersectObjects(meshes, false);
     if (hits.length > 0) {
       const hit = hits[0].object;
       const idx = hit.userData.si;
       const stg = stages[idx];
       if (!stg) { hideTooltip(); return; }
-      const r = stg.z2 / stg.z1;
-      let cum = 1;
-      for (let j = 0; j <= idx; j++) cum *= stages[j].z2 / stages[j].z1;
-      const fR = spd / cum;
-      const gmf = fR * stg.z1;
-      const isPinion = hit.userData.gt === 'pinion';
-      const gearFR = isPinion ? fR * r : fR;
-      const temp = (40 + ld * 0.35 + (stg.fault !== 'normal' ? 15 : 0) + spd * 0.2).toFixed(0);
       const f = FAULTS.find(x => x.id === stg.fault);
-      tooltipEl.querySelector('.tt-title').textContent =
-        (isPinion ? 'Шестерня' : 'Колесо') + ' — Ступень ' + (idx + 1);
-      // Compute vibration RMS from signal buffer
       const sigSlice = sigBuf.slice(0, 128);
       const rmsVal = Math.sqrt(sigSlice.reduce((s, v) => s + v * v, 0) / sigSlice.length);
       const peakVal = Math.max(...Array.from(sigSlice).map(v => Math.abs(v)));
       const crestFactor = peakVal / (rmsVal || 0.001);
       const vibLevel = rmsVal < 0.1 ? 'Низкий' : rmsVal < 0.3 ? 'Средний' : rmsVal < 0.6 ? 'Высокий' : 'Критический';
       const vibColor = rmsVal < 0.1 ? 'var(--green)' : rmsVal < 0.3 ? 'var(--yellow)' : rmsVal < 0.6 ? 'var(--orange)' : 'var(--red)';
-
-      tooltipEl.querySelector('.tt-body').innerHTML =
-        `<div class="tt-row"><span class="tt-label">Зубья Z</span><span class="tt-val">${isPinion ? stg.z1 : stg.z2}</span></div>` +
-        `<div class="tt-row"><span class="tt-label">f вращения</span><span class="tt-val">${gearFR.toFixed(1)} Hz</span></div>` +
-        `<div class="tt-row"><span class="tt-label">RPM</span><span class="tt-val">${Math.round(gearFR * 60)}</span></div>` +
-        `<div class="tt-row"><span class="tt-label">GMF</span><span class="tt-val">${gmf.toFixed(0)} Hz</span></div>` +
-        `<div class="tt-row"><span class="tt-label">Передат. i</span><span class="tt-val">${r.toFixed(2)}</span></div>` +
-        `<div class="tt-row"><span class="tt-label">Темп.</span><span class="tt-val" style="color:${+temp > 65 ? 'var(--red)' : +temp > 50 ? 'var(--orange)' : 'var(--green)'}">${temp}°C</span></div>` +
-        `<div class="tt-row"><span class="tt-label">RMS вибр.</span><span class="tt-val" style="color:${vibColor}">${rmsVal.toFixed(3)}</span></div>` +
-        `<div class="tt-row"><span class="tt-label">Крест-ф.</span><span class="tt-val">${crestFactor.toFixed(1)}</span></div>` +
-        `<div class="tt-row"><span class="tt-label">Вибрация</span><span class="tt-val" style="color:${vibColor}">${vibLevel}</span></div>` +
-        `<div class="tt-state" style="color:${f.c}">● ${f.label}</div>`;
+      const inspectKind = hit.userData.inspectKind || 'gear';
+      setHoverMesh(hit, {kind: inspectKind, stageIndex: idx});
+      if (inspectKind === 'bearing') {
+        const bpfo = (spd * 3.1 / (idx + 1)).toFixed(1);
+        const bpfi = (spd * 4.2 / (idx + 1)).toFixed(1);
+        const temp = (36 + ld * 0.28 + (['ball', 'inner', 'outer'].includes(stg.fault) ? 18 : 7) + spd * 0.14).toFixed(0);
+        tooltipEl.querySelector('.tt-title').textContent = 'Подшипник — Ступень ' + (idx + 1);
+        tooltipEl.querySelector('.tt-body').innerHTML =
+          `<div class="tt-row"><span class="tt-label">Тип</span><span class="tt-val">Опора вала</span></div>` +
+          `<div class="tt-row"><span class="tt-label">BPFI</span><span class="tt-val">${bpfi} Hz</span></div>` +
+          `<div class="tt-row"><span class="tt-label">BPFO</span><span class="tt-val">${bpfo} Hz</span></div>` +
+          `<div class="tt-row"><span class="tt-label">Темп.</span><span class="tt-val" style="color:${+temp > 68 ? 'var(--red)' : +temp > 54 ? 'var(--orange)' : 'var(--green)'}">${temp}°C</span></div>` +
+          `<div class="tt-row"><span class="tt-label">RMS вибр.</span><span class="tt-val" style="color:${vibColor}">${rmsVal.toFixed(3)}</span></div>` +
+          `<div class="tt-row"><span class="tt-label">Крест-ф.</span><span class="tt-val">${crestFactor.toFixed(1)}</span></div>` +
+          `<div class="tt-row"><span class="tt-label">Нагрузка</span><span class="tt-val">${ld}%</span></div>` +
+          `<div class="tt-state" style="color:${f.c}">● ${f.label}</div>` +
+          `<div class="tt-row"><span class="tt-label">Клик</span><span class="tt-val">Фокус камеры</span></div>`;
+      } else {
+        const r = stg.z2 / stg.z1;
+        let cum = 1;
+        for (let j = 0; j <= idx; j++) cum *= stages[j].z2 / stages[j].z1;
+        const fR = spd / cum;
+        const gmf = fR * stg.z1;
+        const isPinion = hit.userData.gt === 'pinion';
+        const gearFR = isPinion ? fR * r : fR;
+        const temp = (40 + ld * 0.35 + (stg.fault !== 'normal' ? 15 : 0) + spd * 0.2).toFixed(0);
+        tooltipEl.querySelector('.tt-title').textContent =
+          (isPinion ? 'Шестерня' : 'Колесо') + ' — Ступень ' + (idx + 1);
+        tooltipEl.querySelector('.tt-body').innerHTML =
+          `<div class="tt-row"><span class="tt-label">Зубья Z</span><span class="tt-val">${isPinion ? stg.z1 : stg.z2}</span></div>` +
+          `<div class="tt-row"><span class="tt-label">f вращения</span><span class="tt-val">${gearFR.toFixed(1)} Hz</span></div>` +
+          `<div class="tt-row"><span class="tt-label">RPM</span><span class="tt-val">${Math.round(gearFR * 60)}</span></div>` +
+          `<div class="tt-row"><span class="tt-label">GMF</span><span class="tt-val">${gmf.toFixed(0)} Hz</span></div>` +
+          `<div class="tt-row"><span class="tt-label">Передат. i</span><span class="tt-val">${r.toFixed(2)}</span></div>` +
+          `<div class="tt-row"><span class="tt-label">Темп.</span><span class="tt-val" style="color:${+temp > 65 ? 'var(--red)' : +temp > 50 ? 'var(--orange)' : 'var(--green)'}">${temp}°C</span></div>` +
+          `<div class="tt-row"><span class="tt-label">RMS вибр.</span><span class="tt-val" style="color:${vibColor}">${rmsVal.toFixed(3)}</span></div>` +
+          `<div class="tt-row"><span class="tt-label">Крест-ф.</span><span class="tt-val">${crestFactor.toFixed(1)}</span></div>` +
+          `<div class="tt-row"><span class="tt-label">Вибрация</span><span class="tt-val" style="color:${vibColor}">${vibLevel}</span></div>` +
+          `<div class="tt-state" style="color:${f.c}">● ${f.label}</div>` +
+          `<div class="tt-row"><span class="tt-label">Клик</span><span class="tt-val">Фокус камеры</span></div>`;
+      }
       const tx = e.clientX - rect.left + 15, ty = e.clientY - rect.top - 10;
       tooltipEl.style.left = Math.min(tx, rect.width - 230) + 'px';
       tooltipEl.style.top = Math.max(ty, 5) + 'px';
       tooltipEl.classList.add('show');
-      ren.domElement.style.cursor = 'crosshair';
+      ren.domElement.style.cursor = 'pointer';
     } else {
       hideTooltip();
     }
   }
 
   function hideTooltip() {
+    setHoverMesh(null);
     if (tooltipEl) tooltipEl.classList.remove('show');
     if (ren && !camDrag) ren.domElement.style.cursor = 'grab';
   }

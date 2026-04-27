@@ -281,7 +281,7 @@
           </div>
           <div class="lab-card-actions">
             <a href="simulator.html?source=lab&amp;lab=intro_baseline" class="analysis-coach-action analysis-coach-action--primary">ОТКРЫТЬ В 3D</a>
-            <a href="index.html?page=diag&amp;demo=normal&amp;guide=virtual_lab" class="analysis-coach-action">ПРОВЕРИТЬ НА АНАЛИЗЕ</a>
+            <a href="index.html?page=diag&amp;demo=normal&amp;guide=guided_labs&amp;lab=intro_baseline" class="analysis-coach-action">ПРОВЕРИТЬ НА АНАЛИЗЕ</a>
           </div>
         </article>
 
@@ -302,7 +302,7 @@
           </div>
           <div class="lab-card-actions">
             <a href="simulator.html?source=lab&amp;lab=gear_fault_path" class="analysis-coach-action analysis-coach-action--primary">ОТКРЫТЬ GEAR LAB</a>
-            <a href="index.html?page=diag&amp;demo=tooth_miss&amp;guide=compare_faults" class="analysis-coach-action">ПРОГНАТЬ ДИАГНОСТИКУ</a>
+            <a href="index.html?page=diag&amp;demo=tooth_miss&amp;guide=guided_labs&amp;lab=gear_fault_path" class="analysis-coach-action">ПРОГНАТЬ ДИАГНОСТИКУ</a>
           </div>
         </article>
 
@@ -323,7 +323,7 @@
           </div>
           <div class="lab-card-actions">
             <a href="simulator.html?source=lab&amp;lab=bearing_fault_path" class="analysis-coach-action analysis-coach-action--primary">ОТКРЫТЬ BEARING LAB</a>
-            <a href="index.html?page=diag&amp;demo=inner_race&amp;guide=compare_faults" class="analysis-coach-action">СРАВНИТЬ НА АНАЛИЗЕ</a>
+            <a href="index.html?page=diag&amp;demo=inner_race&amp;guide=guided_labs&amp;lab=bearing_fault_path" class="analysis-coach-action">СРАВНИТЬ НА АНАЛИЗЕ</a>
           </div>
         </article>
 
@@ -800,6 +800,8 @@
       <div class="analysis-coach" id="analysisCoach" aria-live="polite">
         <div class="analysis-coach-modes" role="tablist" aria-label="Режим помощи">
           <button class="analysis-coach-mode is-active" type="button" data-guide-mode="first_time">Я впервые здесь</button>
+          <button class="analysis-coach-mode" type="button" data-guide-mode="guided_labs">Хочу guided labs</button>
+          <button class="analysis-coach-mode" type="button" data-guide-mode="hidden_cases">Хочу скрытые кейсы</button>
           <button class="analysis-coach-mode" type="button" data-guide-mode="own_file">У меня свой файл</button>
           <button class="analysis-coach-mode" type="button" data-guide-mode="compare_faults">Хочу понять отличия дефектов</button>
           <button class="analysis-coach-mode" type="button" data-guide-mode="virtual_lab">Хочу виртуальную лабораторию</button>
@@ -818,6 +820,14 @@
           <div class="analysis-coach-steps" id="analysisCoachSteps"></div>
           <div class="analysis-coach-tip" id="analysisCoachTip"></div>
           <div class="analysis-coach-actions" id="analysisCoachActions"></div>
+        </div>
+      </div>
+
+      <div class="student-lab-shell" id="studentLabShell" aria-live="polite">
+        <div class="student-lab-summary" id="studentLabSummary"></div>
+        <div class="student-lab-grid">
+          <div class="student-lab-catalog" id="studentLabCatalog"></div>
+          <div class="student-lab-detail" id="studentLabDetail"></div>
         </div>
       </div>
 
