@@ -786,6 +786,12 @@
       background: rgba(255,255,255,.035);
     }
 
+    .lab-guide-step.is-active {
+      border-color: rgba(34,211,238,.24);
+      background: linear-gradient(180deg, rgba(34,211,238,.12), rgba(255,255,255,.04));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    }
+
     .lab-guide-step-label {
       display: inline-flex;
       align-items: center;
@@ -797,6 +803,12 @@
       color: #8cecff;
       font: 700 8px 'JetBrains Mono', monospace;
       letter-spacing: .8px;
+    }
+
+    .lab-guide-step.is-active .lab-guide-step-label {
+      border-color: rgba(34,211,238,.38);
+      background: rgba(34,211,238,.12);
+      color: #b5f4ff;
     }
 
     .lab-guide-step strong {
@@ -874,6 +886,178 @@
       color: #f5fffb;
     }
 
+    .tour-guide-shell {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      z-index: 14;
+      width: min(360px, calc(100% - 24px));
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.08);
+      background:
+        radial-gradient(circle at top right, rgba(34,211,238,.12), transparent 32%),
+        linear-gradient(160deg, rgba(8,13,21,.94), rgba(12,18,29,.88));
+      box-shadow: 0 18px 40px rgba(0,0,0,.28);
+      backdrop-filter: blur(14px);
+    }
+
+    .tour-guide-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .tour-guide-kicker {
+      color: #96f0c2;
+      font: 700 8px 'JetBrains Mono', monospace;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .tour-guide-title {
+      display: block;
+      color: #f4f8fc;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    .tour-guide-state {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.05);
+      color: #dce8f3;
+      font: 700 8px 'JetBrains Mono', monospace;
+      letter-spacing: 1.2px;
+    }
+
+    .tour-guide-copy {
+      margin: 10px 0 0;
+      color: #b9c7d6;
+      font-size: 10px;
+      line-height: 1.75;
+    }
+
+    .tour-guide-progress {
+      margin-top: 12px;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+      overflow: hidden;
+    }
+
+    .tour-guide-progress span {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(34,211,238,.96), rgba(52,211,153,.92));
+      transition: width .25s ease;
+    }
+
+    .tour-guide-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .tour-guide-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 32px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.05);
+      color: #f1f7fd;
+      font: 700 8px 'JetBrains Mono', monospace;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all .18s;
+    }
+
+    .tour-guide-btn:hover {
+      border-color: rgba(34,211,238,.3);
+      background: rgba(34,211,238,.08);
+      color: var(--accent);
+    }
+
+    .tour-guide-btn:disabled {
+      opacity: .45;
+      cursor: default;
+    }
+
+    .tour-guide-btn--primary {
+      border-color: rgba(52,211,153,.28);
+      background: linear-gradient(135deg, rgba(34,211,238,.18), rgba(52,211,153,.16));
+      color: #f5fffb;
+    }
+
+    .tour-beacon {
+      position: absolute;
+      z-index: 13;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      transform: translate(-50%, -120%);
+      pointer-events: none;
+    }
+
+    .tour-beacon.is-visible {
+      display: inline-flex;
+    }
+
+    .tour-beacon-pulse {
+      position: relative;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 0 rgba(34,211,238,.36);
+      animation: beaconPulse 1.8s ease-out infinite;
+    }
+
+    .tour-beacon-label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(34,211,238,.22);
+      background: rgba(8,13,21,.88);
+      color: #eaf7ff;
+      font: 700 8px 'JetBrains Mono', monospace;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      box-shadow: 0 10px 24px rgba(0,0,0,.24);
+    }
+
+    @keyframes beaconPulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(34,211,238,.36);
+        transform: scale(.92);
+      }
+      70% {
+        box-shadow: 0 0 0 16px rgba(34,211,238,0);
+        transform: scale(1);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(34,211,238,0);
+        transform: scale(.92);
+      }
+    }
+
     @media (max-width: 1000px) {
       .app {
         grid-template-columns: 1fr;
@@ -916,6 +1100,12 @@
       .stgl { padding:8px 10px; font-size:12px; min-height:36px }
       .cam-bar { bottom:56px; right:6px }
       .cam-btn { padding:8px 12px; font-size:11px; min-width:38px }
+      .tour-guide-shell {
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+        width: auto;
+      }
     }
 
     @media (max-width: 600px) {
@@ -1083,6 +1273,26 @@
       <div class="compare-divider"></div>
     </div>
     <div class="tooltip" id="tooltip"><div class="tt-title"></div><div class="tt-body"></div></div>
+    <div class="tour-guide-shell" id="tourGuideShell" aria-live="polite">
+      <div class="tour-guide-head">
+        <div>
+          <div class="tour-guide-kicker" id="tourGuideKicker">GUIDED TOUR</div>
+          <strong class="tour-guide-title" id="tourGuideTitle">Начните с базового режима</strong>
+        </div>
+        <span class="tour-guide-state" id="tourGuideState">1 / 3</span>
+      </div>
+      <p class="tour-guide-copy" id="tourGuideCopy">Тур проведёт вас по ключевым точкам сценария и сам сфокусирует камеру на нужном узле.</p>
+      <div class="tour-guide-progress"><span id="tourGuideProgress"></span></div>
+      <div class="tour-guide-actions">
+        <button class="tour-guide-btn" id="tourGuidePrev" type="button">← Назад</button>
+        <button class="tour-guide-btn" id="tourGuideFocus" type="button">Фокус</button>
+        <button class="tour-guide-btn tour-guide-btn--primary" id="tourGuideNext" type="button">Дальше →</button>
+      </div>
+    </div>
+    <div class="tour-beacon" id="tourBeacon">
+      <span class="tour-beacon-pulse" aria-hidden="true"></span>
+      <span class="tour-beacon-label" id="tourBeaconLabel">Точка интереса</span>
+    </div>
   </div>
   <div class="mob-overlay" id="mobOverlay" onclick="closePanel()"></div>
   <div class="rp">
@@ -1182,6 +1392,7 @@
   let faultRevealFrom = 0, faultRevealTo = 0;
   let xrayMode = false, compareMode = false, compareGrp = null;
   let currentLabScenario = null;
+  let tourStepIndex = 0, tourTargetObj = null, tourTargetKind = 'gear', tourTargetLabel = '';
   let replayUntil = 0, replayCooldownUntil = 0;
   let gbxGrp = null, stageObjs = [], brgs = [], sparks = null, markers = [], oilM = null;
   let hoverMesh = null, hoverInfo = null, hoverIndicator = null;
@@ -1833,6 +2044,17 @@
       const actionNode = event.target.closest('[data-lab-action]');
       if (!actionNode) return;
       runLabAction(actionNode.dataset.labAction, actionNode.dataset);
+    });
+    document.getElementById('tourGuidePrev')?.addEventListener('click', () => {
+      applyTourStep(Math.max(0, tourStepIndex - 1));
+    });
+    document.getElementById('tourGuideNext')?.addEventListener('click', () => {
+      const steps = resolveTourSteps();
+      if (!steps.length) return;
+      applyTourStep(tourStepIndex >= steps.length - 1 ? 0 : tourStepIndex + 1);
+    });
+    document.getElementById('tourGuideFocus')?.addEventListener('click', () => {
+      focusTourCurrentTarget();
     });
     applyLaunchContext();
     // Load ML model
@@ -4184,6 +4406,7 @@
         if (hoverIndicator.material.opacity < 0.01) hoverIndicator.visible = false;
       }
     }
+    updateTourBeacon();
     composer.render();
     sigBuf = genSig(sT);
     if (compareMode) {
@@ -4326,6 +4549,89 @@
     }
   };
 
+  const LAB_TOUR_STEPS = {
+    intro_baseline: [
+      {
+        title: 'Исправная ступень как опорная точка',
+        copy: 'Начните с ровного базового режима. Здесь важно почувствовать, как выглядит спокойная работа без ударов и без лишнего шума.',
+        target: { stage: 0, part: 'gear', kind: 'gear', label: 'Базовая ведущая шестерня' },
+        setup: { preset: 'healthy', speed: 20, load: 18, compare: false }
+      },
+      {
+        title: 'Скорость двигает гармоники, но не ломает структуру',
+        copy: 'Теперь поднимите частоту вращения. Пики уедут выше по оси частот, но baseline останется организованным и предсказуемым.',
+        target: { stage: 0, part: 'gear', kind: 'gear', label: 'Шестерня ступени 1' },
+        setup: { preset: 'healthy', speed: 34, load: 22, compare: false }
+      },
+      {
+        title: 'Закрепите baseline перед дефектами',
+        copy: 'Эта картинка нужна как reference. После неё любые ударные или подшипниковые сценарии читаются заметно увереннее.',
+        target: { stage: 0, part: 'gear', kind: 'gear', label: 'Reference mesh' },
+        setup: { preset: 'healthy', speed: 24, load: 18, compare: true }
+      }
+    ],
+    gear_fault_path: [
+      {
+        title: 'Ранний скол зуба',
+        copy: 'Сначала смотрим мягкий gear fault. Один повреждённый зуб даёт локальный удар, но структура узла ещё не разрушена полностью.',
+        target: { stage: 0, part: 'fault', kind: 'gear', label: 'Зона скола зуба' },
+        setup: { fault: 'chip', speed: 24, load: 58, compare: false }
+      },
+      {
+        title: 'Норма против дефекта',
+        copy: 'Включён compare mode. Теперь глаз быстрее замечает, что изменилось именно из-за дефекта, а не из-за общего движения механизма.',
+        target: { stage: 0, part: 'fault', kind: 'gear', label: 'Контраст с baseline' },
+        setup: { fault: 'chip', speed: 24, load: 58, compare: true }
+      },
+      {
+        title: 'Критический missing-tooth удар',
+        copy: 'Теперь показываем тяжёлый сценарий. Удар грубее, структура зацепления ломается сильнее, а impact replay делает это очень наглядным.',
+        target: { stage: 0, part: 'fault', kind: 'gear', label: 'Критический удар зацепления' },
+        setup: { fault: 'miss', speed: 26, load: 64, compare: true, impact: true }
+      }
+    ],
+    bearing_fault_path: [
+      {
+        title: 'Внутренняя обойма под нагрузкой',
+        copy: 'Камера ведёт к подшипнику. Здесь дефект локализован не в зубчатой паре, а ближе к опоре, и характер вибрации уже другой.',
+        target: { stage: 0, part: 'bearing', kind: 'bearing', label: 'Подшипник · внутренняя обойма' },
+        setup: { fault: 'inner', speed: 22, load: 42, compare: false }
+      },
+      {
+        title: 'Почему здесь важна огибающая',
+        copy: 'Когда добавляем сравнение с нормой, становится легче увидеть не ударный зубчатый паттерн, а более цикличную bearing-модуляцию.',
+        target: { stage: 0, part: 'bearing', kind: 'bearing', label: 'Bearing modulation zone' },
+        setup: { fault: 'inner', speed: 22, load: 42, compare: true }
+      },
+      {
+        title: 'Более мягкий дефект тела качения',
+        copy: 'Теперь переключаемся на шарик. Паттерн становится деликатнее, и это хороший момент, чтобы сравнить его с обоймой и с gear fault.',
+        target: { stage: 0, part: 'bearing', kind: 'bearing', label: 'Дефект шарика' },
+        setup: { fault: 'ball', speed: 20, load: 36, compare: true, impact: true }
+      }
+    ],
+    load_sweep: [
+      {
+        title: 'Низкая нагрузка как стартовая точка',
+        copy: 'Сначала держим систему в мягком режиме. Это помогает почувствовать, как параметры выглядят до усиления нагрузки и температуры.',
+        target: { stage: 0, part: 'gear', kind: 'gear', label: 'Ступень 1 · baseline' },
+        setup: { preset: 'healthy', speed: 18, load: 10, compare: false }
+      },
+      {
+        title: 'Рост скорости и нагрузки',
+        copy: 'Теперь усиливаем режим. Даже без дефекта динамика становится жёстче, а значения вибрации и температуры поднимаются.',
+        target: { stage: 0, part: 'gear', kind: 'gear', label: 'Нагруженный режим' },
+        setup: { preset: 'healthy', speed: 38, load: 72, compare: false }
+      },
+      {
+        title: 'Деградация поверх рабочего режима',
+        copy: 'На последнем шаге запускается деградация. Смотрите, как severity растёт уже не из-за одного параметра, а из-за накопления повреждения.',
+        target: { stage: 0, part: 'fault', kind: 'gear', label: 'Рост деградации' },
+        setup: { preset: 'healthy', speed: 32, load: 68, compare: true, degradation: true }
+      }
+    ]
+  };
+
   function esc(value) {
     return String(value ?? '')
       .replace(/&/g, '&amp;')
@@ -4401,6 +4707,167 @@
       return LAB_SCENARIOS[launchContext.lab];
     }
     return LAB_SCENARIOS.intro_baseline;
+  }
+
+  function buildAnalysisTourSteps() {
+    const faultId = launchContext.fault || 'normal';
+    const isBearing = ['ball', 'inner', 'outer'].includes(faultId);
+    if (faultId === 'normal') return LAB_TOUR_STEPS.intro_baseline;
+    return [
+      {
+        title: 'Найдите физическую точку дефекта',
+        copy: isBearing
+          ? 'Камера ведёт к подшипнику. Сначала поймайте глазами сам узел, на который намекает диагноз.'
+          : 'Камера ведёт к зоне зацепления. Сначала привяжите диагноз к конкретному месту, а не только к названию класса.',
+        target: { stage: 0, part: isBearing ? 'bearing' : 'fault', kind: isBearing ? 'bearing' : 'gear', label: isBearing ? 'Подшипниковый узел' : 'Зона дефекта зуба' },
+        setup: { fault: faultId, preset: launchContext.preset || null, speed: isBearing ? 22 : 24, load: isBearing ? 44 : 56, compare: false }
+      },
+      {
+        title: 'Сравните дефект с нормой',
+        copy: 'Теперь включён compare mode. Это лучший способ отделить эффект дефекта от общего движения механизма.',
+        target: { stage: 0, part: isBearing ? 'bearing' : 'fault', kind: isBearing ? 'bearing' : 'gear', label: isBearing ? 'Сравнение bearing vs baseline' : 'Сравнение fault vs baseline' },
+        setup: { fault: faultId, preset: launchContext.preset || null, speed: isBearing ? 22 : 24, load: isBearing ? 44 : 56, compare: true }
+      },
+      {
+        title: 'Свяжите механику с объяснением модели',
+        copy: isBearing
+          ? 'Здесь особенно полезно смотреть на цикличность и огибающую. После этого диагностический вывод в dashboard читается заметно яснее.'
+          : 'Impact replay подчёркивает, как механический удар превращается в тот самый паттерн, который потом ловит модель.',
+        target: { stage: 0, part: isBearing ? 'bearing' : 'fault', kind: isBearing ? 'bearing' : 'gear', label: isBearing ? 'Bearing signature' : 'Impact signature' },
+        setup: { fault: faultId, preset: launchContext.preset || null, speed: isBearing ? 22 : 24, load: isBearing ? 44 : 56, compare: true, impact: true }
+      }
+    ];
+  }
+
+  function resolveTourSteps() {
+    if (launchContext.source === 'analysis') return buildAnalysisTourSteps();
+    return LAB_TOUR_STEPS[launchContext.lab] || LAB_TOUR_STEPS.intro_baseline;
+  }
+
+  function resolveTourTarget(target = {}) {
+    const stageIndex = Number.isFinite(target.stage) ? target.stage : 0;
+    const stageObj = stageObjs[stageIndex] || stageObjs[0];
+    const stageState = stages[stageIndex] || stages[0] || { fault: 'normal' };
+    const defaultKind = ['ball', 'inner', 'outer'].includes(stageState.fault) ? 'bearing' : 'gear';
+    const kind = target.kind || defaultKind;
+    if (!stageObj) {
+      return { obj: null, kind, label: target.label || 'Точка интереса' };
+    }
+
+    let obj = null;
+    switch (target.part) {
+      case 'bearing':
+        obj = stageObj.brg?.[0] || stageObj.faultAnchor || stageObj.g1 || stageObj.g2;
+        break;
+      case 'g2':
+        obj = stageObj.g2 || stageObj.g1 || stageObj.faultAnchor;
+        break;
+      case 'fault':
+        obj = stageObj.faultAnchor || (kind === 'bearing' ? stageObj.brg?.[0] : stageObj.g1) || stageObj.g2;
+        break;
+      case 'gear':
+      default:
+        obj = stageObj.g1 || stageObj.faultAnchor || stageObj.g2 || stageObj.brg?.[0];
+        break;
+    }
+
+    const fallbackLabel = kind === 'bearing' ? 'Подшипниковый узел' : 'Зона зацепления';
+    return {
+      obj,
+      kind,
+      label: target.label || fallbackLabel,
+    };
+  }
+
+  function focusTourCurrentTarget() {
+    const step = resolveTourSteps()[tourStepIndex];
+    const target = resolveTourTarget(step?.target || {});
+    tourTargetObj = target.obj || null;
+    tourTargetKind = target.kind || 'gear';
+    tourTargetLabel = target.label || 'Точка интереса';
+    const beaconLabel = document.getElementById('tourBeaconLabel');
+    if (beaconLabel) beaconLabel.textContent = tourTargetLabel;
+    if (!tourTargetObj) {
+      document.getElementById('tourBeacon')?.classList.remove('is-visible');
+      return;
+    }
+    setHoverMesh(tourTargetObj, { kind: tourTargetKind });
+    focusInspectableObject(tourTargetObj, tourTargetKind);
+  }
+
+  function updateTourBeacon() {
+    const beacon = document.getElementById('tourBeacon');
+    if (!beacon || !cam || !ren || !tourTargetObj) {
+      if (beacon) beacon.classList.remove('is-visible');
+      return;
+    }
+
+    const anchor = tourTargetObj.userData?.hitGroup || tourTargetObj;
+    const world = new THREE.Vector3();
+    anchor.getWorldPosition(world);
+    world.y += tourTargetKind === 'bearing' ? 0.04 : 0.12;
+    const projected = world.clone().project(cam);
+    if (projected.z < -1 || projected.z > 1) {
+      beacon.classList.remove('is-visible');
+      return;
+    }
+
+    const x = (projected.x * 0.5 + 0.5) * ren.domElement.clientWidth;
+    const y = (-projected.y * 0.5 + 0.5) * ren.domElement.clientHeight;
+    if (x < 0 || y < 0 || x > ren.domElement.clientWidth || y > ren.domElement.clientHeight) {
+      beacon.classList.remove('is-visible');
+      return;
+    }
+
+    beacon.style.left = x + 'px';
+    beacon.style.top = y + 'px';
+    beacon.classList.add('is-visible');
+  }
+
+  function renderTourGuide() {
+    const steps = resolveTourSteps();
+    const shell = document.getElementById('tourGuideShell');
+    const kickerNode = document.getElementById('tourGuideKicker');
+    const titleNode = document.getElementById('tourGuideTitle');
+    const copyNode = document.getElementById('tourGuideCopy');
+    const stateNode = document.getElementById('tourGuideState');
+    const progressNode = document.getElementById('tourGuideProgress');
+    const prevBtn = document.getElementById('tourGuidePrev');
+    const nextBtn = document.getElementById('tourGuideNext');
+    if (!shell || !titleNode || !copyNode || !stateNode || !progressNode || !prevBtn || !nextBtn) return;
+
+    if (!steps.length) {
+      shell.style.display = 'none';
+      return;
+    }
+
+    shell.style.display = '';
+    const safeIndex = Math.max(0, Math.min(tourStepIndex, steps.length - 1));
+    const step = steps[safeIndex];
+    if (kickerNode) kickerNode.textContent = `${currentLabScenario?.kicker || 'GUIDED TOUR'} · TOUR`;
+    titleNode.textContent = step.title || 'Guided tour';
+    copyNode.textContent = step.copy || '';
+    stateNode.textContent = `${safeIndex + 1} / ${steps.length}`;
+    progressNode.style.width = `${((safeIndex + 1) / steps.length) * 100}%`;
+    prevBtn.disabled = safeIndex === 0;
+    nextBtn.textContent = safeIndex === steps.length - 1 ? 'С начала ↺' : 'Дальше →';
+  }
+
+  function applyTourStep(index) {
+    const steps = resolveTourSteps();
+    if (!steps.length) return;
+    tourStepIndex = Math.max(0, Math.min(index, steps.length - 1));
+    const step = steps[tourStepIndex];
+    if (step?.setup) {
+      applyLabSetup({
+        ...(currentLabScenario?.setup || {}),
+        ...step.setup,
+        autofocus: false,
+      });
+    }
+    renderLabGuide(currentLabScenario);
+    renderTourGuide();
+    setTimeout(focusTourCurrentTarget, 520);
   }
 
   function setSpeedValue(value) {
@@ -4514,8 +4981,8 @@
     titleNode.textContent = currentLabScenario.title || 'Норма как точка отсчёта';
     leadNode.textContent = currentLabScenario.lead || '';
     tagsNode.innerHTML = (currentLabScenario.tags || []).map(tag => `<span class="lab-guide-tag">${esc(tag)}</span>`).join('');
-    stepsNode.innerHTML = (currentLabScenario.steps || []).map(step => `
-      <div class="lab-guide-step">
+    stepsNode.innerHTML = (currentLabScenario.steps || []).map((step, index) => `
+      <div class="lab-guide-step${index === tourStepIndex ? ' is-active' : ''}">
         <span class="lab-guide-step-label">${esc(step.label || '01')}</span>
         <div>
           <strong>${esc(step.title || '')}</strong>
@@ -4535,20 +5002,27 @@
       case 'lab':
         launchContext.source = 'lab';
         launchContext.lab = dataset.labValue || 'intro_baseline';
+        tourStepIndex = 0;
         renderLabGuide(resolveLaunchScenario());
         applyLabSetup(currentLabScenario?.setup || {});
+        renderTourGuide();
+        setTimeout(() => applyTourStep(0), 180);
         break;
       case 'preset':
         applyPreset(dataset.labValue || 'healthy');
+        setTimeout(focusTourCurrentTarget, 180);
         break;
       case 'fault':
         applyPrimaryFault(dataset.labValue || 'normal');
+        setTimeout(focusTourCurrentTarget, 180);
         break;
       case 'compare':
         setCompareMode(dataset.labValue !== '0');
+        setTimeout(focusTourCurrentTarget, 220);
         break;
       case 'impact':
         playImpactReplay();
+        setTimeout(focusTourCurrentTarget, 120);
         break;
       case 'diagnose':
         if (mlOk) runDiagnosis();
@@ -4556,6 +5030,7 @@
       case 'degradation':
         if (degRunning) stopDegradation();
         else startDegradation();
+        setTimeout(focusTourCurrentTarget, 180);
         break;
       default:
         break;
@@ -4578,6 +5053,8 @@
 
     applyLabSetup(setup);
     renderLabGuide(currentLabScenario);
+    renderTourGuide();
+    setTimeout(() => applyTourStep(0), 180);
 
     if (launchContext.source || launchContext.lab) {
       const badge = document.querySelector('.hdr .ver');

@@ -27,7 +27,6 @@
     <button class="nav-btn" data-page="profile">ПРОФИЛЬ</button>
     <a href="simulator.html" class="nav-btn"
        style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">3D</a>
-    <button class="nav-btn" onclick="goHomeSection('section-conclusion')">ВЫВОДЫ</button>
   </nav>
   <button class="hamburger-menu" onclick="document.getElementById('mobileNav').classList.toggle('open'); this.textContent = this.textContent === '☰' ? '✕' : '☰'" aria-label="Меню">☰</button>
   <div class="status">
@@ -44,7 +43,6 @@
   <button class="nav-btn" data-page="diag" onclick="goPage('diag');document.getElementById('mobileNav').classList.remove('open');document.querySelector('.hamburger-menu').textContent='☰'">АНАЛИЗ</button>
   <button class="nav-btn" data-page="profile" onclick="goPage('profile');document.getElementById('mobileNav').classList.remove('open');document.querySelector('.hamburger-menu').textContent='☰'">ПРОФИЛЬ</button>
   <a href="simulator.html" class="nav-btn" style="text-decoration:none;display:flex;align-items:center;gap:8px">3D СИМУЛЯТОР</a>
-  <button class="nav-btn" onclick="goHomeSection('section-conclusion');document.getElementById('mobileNav').classList.remove('open');document.querySelector('.hamburger-menu').textContent='☰'">ВЫВОДЫ</button>
 </div>
 
 <section class="action-dock-shell" aria-label="Быстрые сценарии работы">
@@ -54,7 +52,7 @@
       <p class="action-dock-text">Если вы впервые здесь, начните с виртуальной лаборатории: сначала поймите механику дефекта, потом проверьте себя на анализе и только затем сохраняйте кейс в журнал.</p>
     </div>
     <div class="action-dock-actions">
-      <button class="action-dock-btn" type="button" onclick="goHomeSection('section-quickstart')">КАК НАЧАТЬ</button>
+      <button class="action-dock-btn" type="button" onclick="goHomeSection('section-quickstart')">ВЫБРАТЬ СЦЕНАРИЙ</button>
       <button class="action-dock-btn" type="button" onclick="goHomeSection('section-lab')">ВИРТУАЛЬНАЯ ЛАБА</button>
       <button class="action-dock-btn action-dock-btn--primary" type="button" onclick="goPage('diag')">ПОПРОБОВАТЬ АНАЛИЗ</button>
       <button class="action-dock-btn" type="button" onclick="goPage('profile')">СОХРАНИТЬ В ПРОФИЛЬ</button>
@@ -93,7 +91,7 @@
           <a href="simulator.html?source=lab&amp;lab=intro_baseline" class="btn btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px">
             <span aria-hidden="true">🎮</span> ВИРТУАЛЬНАЯ ЛАБА
           </a>
-          <button class="btn btn-ghost" onclick="goHomeSection('section-lab')">МАРШРУТ ИЗУЧЕНИЕ → ДИАГНОСТИКА</button>
+          <button class="btn btn-ghost" onclick="goHomeSection('section-quickstart')">ВЫБРАТЬ СЦЕНАРИЙ СТАРТА</button>
         </div>
         <div class="hero-proof">
           <div class="hero-proof-card">
@@ -211,41 +209,117 @@
 
   <section class="section section--quickstart" id="section-quickstart">
     <div class="container">
-      <div class="quickstart-header">
-        <div class="label">КАК НАЧАТЬ</div>
-        <h2 class="quickstart-title">Первый раз здесь? Разберётесь за пару минут</h2>
-        <p class="quickstart-lead">
-          VibroLab устроен как учебный стенд: попробуйте готовый кейс, потом загрузите свой сигнал и сохраните результат в кабинете.
-        </p>
-      </div>
-      <div class="quickstart-grid">
-        <button class="quickstart-card" type="button" onclick="goPage('diag')">
-          <span class="quickstart-num">01</span>
-          <strong class="quickstart-card-title">Запустите готовый кейс</strong>
-          <p class="quickstart-card-desc">Откроется страница анализа и сразу проиграется сигнал «отсутствие зуба» — увидите, как модель ставит диагноз.</p>
-          <span class="quickstart-cta">ПОПРОБОВАТЬ КЕЙС →</span>
-        </button>
-        <button class="quickstart-card" type="button" onclick="goPage('diag')">
-          <span class="quickstart-num">02</span>
-          <strong class="quickstart-card-title">Загрузите свой файл</strong>
-          <p class="quickstart-card-desc">Поддерживаются SEU TXT, WAV, CSV, MAT, NPY, UFF. После загрузки появятся временной сигнал, FFT, признаки и диагноз.</p>
-          <span class="quickstart-cta">К ЗАГРУЗКЕ →</span>
-        </button>
-        <button class="quickstart-card" type="button" onclick="goPage('profile')">
-          <span class="quickstart-num">03</span>
-          <strong class="quickstart-card-title">Сохраните результат</strong>
-          <p class="quickstart-card-desc">В профиле появится история сеансов, сравнение с эталоном и alerts — удобно вести лабораторный журнал.</p>
-          <span class="quickstart-cta">ОТКРЫТЬ ПРОФИЛЬ →</span>
-        </button>
-      </div>
-      <div class="quickstart-tips">
-        <div class="quickstart-tip">
-          <span class="quickstart-tip-icon" aria-hidden="true">💡</span>
-          <span>Данные не уходят на сервер — модель считает прямо в вашем браузере.</span>
+      <div class="start-hub-shell">
+        <div class="start-hub-header">
+          <div class="label">СТАРТОВЫЕ СЦЕНАРИИ</div>
+          <h2 class="start-hub-title">Выберите маршрут, который подходит именно вам</h2>
+          <p class="start-hub-lead">
+            VibroLab можно проходить как учебную лабораторию, как интерактивную 3D-экскурсию по дефектам или как
+            быстрый диагностический инструмент для собственного файла. Сначала выберите удобный вход, а дальше интерфейс
+            уже поведёт вас по шагам.
+          </p>
         </div>
-        <div class="quickstart-tip">
-          <span class="quickstart-tip-icon" aria-hidden="true">🎮</span>
-          <span>В <a href="simulator.html?source=lab&amp;lab=intro_baseline">виртуальной лаборатории</a> можно покрутить редуктор и увидеть, как дефект влияет на сигнал и FFT.</span>
+
+        <div class="start-hub-grid">
+          <button
+            class="start-journey-card start-journey-card--recommended"
+            type="button"
+            data-ux-action="guided-route"
+            data-ux-page="diag"
+            data-ux-guide="guided_labs"
+            data-ux-lab="intro_baseline"
+            data-ux-target="analysisWizard"
+          >
+            <div class="start-journey-top">
+              <span class="start-journey-badge">РЕКОМЕНДОВАНО</span>
+              <span class="start-journey-time">8–12 МИН</span>
+            </div>
+            <h3 class="start-journey-title">Пройти guided lab</h3>
+            <p class="start-journey-copy">
+              Лучший вход для студентов: норма, затем дефект, потом скрытый кейс и самопроверка. Подходит, если хочется
+              не просто получить ответ, а реально понять механику и паттерны сигнала.
+            </p>
+            <div class="start-journey-points">
+              <span>CHECKPOINTS</span>
+              <span>СКРЫТЫЕ КЕЙСЫ</span>
+              <span>ПОШАГОВЫЙ РАЗБОР</span>
+            </div>
+            <div class="start-journey-footer">
+              <span>Если не уверены, с чего начать, выбирайте этот маршрут.</span>
+              <strong>ОТКРЫТЬ ЛАБОРАТОРИЮ →</strong>
+            </div>
+          </button>
+
+          <button
+            class="start-journey-card start-journey-card--tour"
+            type="button"
+            data-ux-action="lab"
+            data-ux-value="intro_baseline"
+          >
+            <div class="start-journey-top">
+              <span class="start-journey-badge">3D TOUR</span>
+              <span class="start-journey-time">5–7 МИН</span>
+            </div>
+            <h3 class="start-journey-title">Открыть 3D экскурсию</h3>
+            <p class="start-journey-copy">
+              Если хочется сначала увидеть физику, начните с симулятора. Guided tour сам проведёт по узлам, сфокусирует
+              камеру на дефекте и покажет, как механика отражается в сигнале и FFT.
+            </p>
+            <div class="start-journey-points">
+              <span>АВТОФОКУС</span>
+              <span>HOTSPOTS</span>
+              <span>COMPARE MODE</span>
+            </div>
+            <div class="start-journey-footer">
+              <span>Хороший вариант для пары, демонстрации или первого знакомства.</span>
+              <strong>ЗАПУСТИТЬ 3D TOUR →</strong>
+            </div>
+          </button>
+
+          <button
+            class="start-journey-card start-journey-card--file"
+            type="button"
+            data-ux-action="guided-route"
+            data-ux-page="diag"
+            data-ux-guide="own_file"
+            data-ux-target="uploadZone"
+          >
+            <div class="start-journey-top">
+              <span class="start-journey-badge">СВОЙ ФАЙЛ</span>
+              <span class="start-journey-time">2–3 МИН</span>
+            </div>
+            <h3 class="start-journey-title">Проверить свой сигнал</h3>
+            <p class="start-journey-copy">
+              Подходит, если у вас уже есть запись вибрации. Интерфейс сразу переведёт в upload-зону, а wizard подскажет,
+              что делать дальше: дождаться диагноза, открыть разбор в 3D и сохранить результат в журнал.
+            </p>
+            <div class="start-journey-points">
+              <span>UPLOAD</span>
+              <span>ПОНЯТНЫЙ ДИАГНОЗ</span>
+              <span>СОХРАНЕНИЕ В ПРОФИЛЬ</span>
+            </div>
+            <div class="start-journey-footer">
+              <span>Поддерживаются TXT, WAV, CSV, MAT, NPY, UFF и другие форматы.</span>
+              <strong>ПЕРЕЙТИ К ЗАГРУЗКЕ →</strong>
+            </div>
+          </button>
+        </div>
+
+        <div class="start-hub-flow">
+          <div class="start-hub-flow-step"><span>01</span>Выберите маршрут входа</div>
+          <div class="start-hub-flow-step"><span>02</span>Интерфейс подстроит следующий шаг</div>
+          <div class="start-hub-flow-step"><span>03</span>Сохраните разбор или откройте 3D</div>
+        </div>
+
+        <div class="start-hub-tips">
+          <div class="start-hub-tip">
+            <span class="start-hub-tip-icon" aria-hidden="true">💡</span>
+            <span>Если вы преподаватель или студент, чаще всего лучший порядок такой: guided lab → 3D tour → свой файл.</span>
+          </div>
+          <div class="start-hub-tip">
+            <span class="start-hub-tip-icon" aria-hidden="true">🔒</span>
+            <span>Данные не уходят на сервер автоматически: анализ и модель работают прямо в браузере.</span>
+          </div>
         </div>
       </div>
     </div>
@@ -753,33 +827,6 @@
     </div>
   </section>
 
-  <section class="section" id="section-conclusion">
-    <div class="container">
-      <div class="label" style="margin-bottom:24px">Практическая ценность и развитие</div>
-      <div class="two-col" style="gap:24px;align-items:start">
-        <div class="card thesis-card">
-          <div class="card-title">ЧТО УЖЕ РАБОТАЕТ</div>
-          <ul class="thesis-list">
-            <li>Обучена модель с accuracy 98.4% и cross-validation 98.47 ± 0.21% на реальных лабораторных данных.</li>
-            <li>Реализованы 53 физически обоснованных признака одновременно на Python и JavaScript с проверенной идентичностью.</li>
-            <li>Собран браузерный inference без серверного ML: модель загружается один раз и работает локально у пользователя.</li>
-            <li>Создан 3D-симулятор редукторов с визуализацией дефектов, сигналов, FFT и real-time диагностикой.</li>
-            <li>Сервис развёрнут как production-контур с Docker, FastAPI, CI/CD и браузерным доступом.</li>
-          </ul>
-        </div>
-        <div class="card thesis-card">
-          <div class="card-title">ПРАКТИЧЕСКАЯ ЦЕННОСТЬ И РАЗВИТИЕ</div>
-          <ul class="thesis-list">
-            <li>Система уже показывает, как можно сократить время диагностики и снизить зависимость от ручного экспертного анализа.</li>
-            <li>Порог входа минимален: для демонстрации и анализа пользователю достаточно браузера и измеренного файла.</li>
-            <li>Следующий шаг — подключение онлайн-мониторинга через MQTT и работа с потоковыми измерениями.</li>
-            <li>В репозитории уже есть задел под прогнозирование остаточного ресурса, отчёты и накопление истории состояния.</li>
-            <li>Для промышленного внедрения следующим этапом станет валидация на эксплуатационных данных конкретного предприятия.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </section>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════
@@ -821,6 +868,19 @@
           <div class="analysis-coach-tip" id="analysisCoachTip"></div>
           <div class="analysis-coach-actions" id="analysisCoachActions"></div>
         </div>
+      </div>
+
+      <div class="analysis-wizard" id="analysisWizard" aria-live="polite">
+        <div class="analysis-wizard-copy">
+          <div class="analysis-wizard-kicker" id="analysisWizardKicker">WIZARD · STEP 1/4</div>
+          <h3 class="analysis-wizard-title" id="analysisWizardTitle">Сначала выберите, как хотите начать анализ</h3>
+          <p class="analysis-wizard-lead" id="analysisWizardLead">
+            Можно открыть готовый кейс, пройти guided lab или сразу перейти к своему файлу. После первого шага интерфейс
+            сам подскажет, что делать дальше.
+          </p>
+          <div class="analysis-wizard-actions" id="analysisWizardActions"></div>
+        </div>
+        <div class="analysis-wizard-steps" id="analysisWizardSteps"></div>
       </div>
 
       <div class="student-lab-shell" id="studentLabShell" aria-live="polite">

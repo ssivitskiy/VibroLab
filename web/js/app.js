@@ -1755,6 +1755,9 @@ const App = (() => {
     if (action.value != null) attrs.push(`data-ux-value="${escapeHtml(action.value)}"`);
     if (action.page != null) attrs.push(`data-ux-page="${escapeHtml(action.page)}"`);
     if (action.section != null) attrs.push(`data-ux-section="${escapeHtml(action.section)}"`);
+    if (action.guide != null) attrs.push(`data-ux-guide="${escapeHtml(action.guide)}"`);
+    if (action.lab != null) attrs.push(`data-ux-lab="${escapeHtml(action.lab)}"`);
+    if (action.target != null) attrs.push(`data-ux-target="${escapeHtml(action.target)}"`);
     return `<button ${attrs.join(' ')}>${escapeHtml(action.label)}</button>`;
   }
 
@@ -1771,6 +1774,19 @@ const App = (() => {
         break;
       case 'page':
         goPage(dataset.uxValue || 'home');
+        break;
+      case 'guided-route':
+        if (dataset.uxGuide) analysisGuideMode = dataset.uxGuide;
+        if (dataset.uxLab && STUDY_LABS[dataset.uxLab]) {
+          setActiveStudyLab(dataset.uxLab, { keepGuideMode: true, scroll: false });
+        } else {
+          renderStudyLabShell();
+          renderAnalysisCoach();
+        }
+        goPage(dataset.uxPage || dataset.uxValue || 'diag');
+        if (dataset.uxTarget) {
+          window.setTimeout(() => el(dataset.uxTarget)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 90);
+        }
         break;
       case 'section':
         goHomeSection(dataset.uxValue || 'section-quickstart');
@@ -2012,6 +2028,194 @@ const App = (() => {
       button.disabled = disabled;
       button.classList.toggle('is-active', !disabled && button.dataset.guideMode === analysisGuideMode);
     });
+    renderAnalysisWizard();
+  }
+
+  function hasAnalysisSignalData() {
+    const data = currentSignalData?.data;
+    return !!(data && typeof data.length === 'number' && data.length > 0);
+  }
+
+  function buildAnalysisWizardConfig() {
+    const activeLab = getStudyLab(activeStudyLabId);
+    const sourceLabel = trimText(currentDiagnosis?.input?.label || currentInputContext?.label);
+    const diagnosisName = currentDiagnosis ? (VM.RU[currentDiagnosis.cls] || currentDiagnosis.cls) : null;
+    const hiddenPending = isHiddenCasePending();
+    const hasSource = diagLocked || hasAnalysisSignalData() || !!currentDiagnosis;
+
+    const steps = [
+      {
+        num: '01',
+        title: 'Выберите источник',
+        note: hasSource
+          ? (sourceLabel ? `Источник выбран: ${sourceLabel}.` : 'Источник для анализа уже выбран.')
+          : 'Запустите демо-кейс, guided lab или загрузите свой файл.',
+        status: hasSource ? 'done' : 'current',
+      },
+      {
+        num: '02',
+        title: 'Посмотрите сигнал и FFT',
+        note: hasSource
+          ? (diagLocked ? 'Строим временной сигнал и спектр. Это занимает всего несколько секунд.' : 'Временная область и FFT уже готовы для интерпретации.')
+          : 'После запуска здесь появятся временная область, FFT и диагностические подсказки.',
+        status: diagLocked ? 'current' : hasSource ? 'done' : 'upcoming',
+      },
+      {
+        num: '03',
+        title: hiddenPending ? 'Сформулируйте гипотезу' : 'Прочитайте диагноз',
+        note: hiddenPending
+          ? 'Скрытый кейс активен: сначала выберите свой вариант, а уже потом открывайте ответ модели.'
+          : currentDiagnosis
+            ? `Диагноз готов: ${diagnosisName}. Сопоставьте результат с объяснением и вероятностями классов.`
+            : 'После расчёта здесь появится итоговый класс, объяснение и рекомендуемое действие.',
+        status: hiddenPending ? 'current' : currentDiagnosis ? 'done' : 'upcoming',
+      },
+      {
+        num: '04',
+        title: 'Закрепите результат',
+        note: currentDiagnosis
+          ? 'Откройте физический разбор в 3D, сохраните кейс в профиль или переходите к следующему маршруту.'
+          : 'Финальный шаг откроется после появления результата анализа.',
+        status: currentDiagnosis && !hiddenPending ? 'current' : 'upcoming',
+      },
+    ];
+
+    if (diagLocked) {
+      return {
+        kicker: 'WIZARD · STEP 2/4',
+        title: sourceLabel ? `Готовим разбор по источнику «${sourceLabel}»` : 'Строим сигнал и подготавливаем диагноз',
+        lead: 'Сейчас VibroLab считает временную область, FFT и признаки. Ничего дополнительно нажимать не нужно: дождитесь результата ниже.',
+        actions: [
+          { kind: 'scroll', value: 'sigCanvas', label: 'СМОТРЕТЬ СИГНАЛ', tone: 'primary' },
+          { kind: 'scroll', value: 'specCanvas', label: 'СМОТРЕТЬ FFT' },
+        ],
+        steps,
+      };
+    }
+
+    if (hiddenPending) {
+      return {
+        kicker: 'WIZARD · STEP 3/4',
+        title: 'Сначала ваша гипотеза, потом ответ модели',
+        lead: 'Это учебный режим самопроверки. Смотрите на сигнал и FFT как инженер, не опираясь на готовую подсказку модели.',
+        actions: [
+          { kind: 'scroll', value: 'diagResult', label: 'ПЕРЕЙТИ К ГИПОТЕЗЕ', tone: 'primary' },
+          { kind: 'lab', value: activeLab.id, label: 'ОТКРЫТЬ 3D ЛАБУ' },
+        ],
+        steps,
+      };
+    }
+
+    if (currentDiagnosis) {
+      const primaryActions = apiReady
+        ? [
+            { kind: 'save', label: getSaveActionLabel(), tone: 'primary' },
+            { kind: '3d', label: 'ПОКАЗАТЬ В 3D' },
+            { kind: 'page', value: 'profile', label: 'ОТКРЫТЬ ПРОФИЛЬ' },
+          ]
+        : [
+            { kind: '3d', label: 'ПОКАЗАТЬ В 3D', tone: 'primary' },
+            { kind: 'page', value: 'profile', label: 'ОТКРЫТЬ ПРОФИЛЬ' },
+          ];
+      return {
+        kicker: 'WIZARD · STEP 4/4',
+        title: `${diagnosisName} · результат готов`,
+        lead: 'Теперь главное не потерять контекст: откройте физическую интерпретацию в 3D, сохраните кейс в профиль или переходите к следующему сценарию.',
+        actions: primaryActions,
+        steps,
+      };
+    }
+
+    const presetsByMode = {
+      guided_labs: {
+        kicker: 'WIZARD · LAB ENTRY',
+        title: `Стартуйте с лаборатории «${activeLab.title}»`,
+        lead: 'Guided labs лучше всего подходят для обучения: система проведёт вас по шагам и не даст потерять контекст между сигналом, 3D и самопроверкой.',
+        actions: [
+          { kind: 'guided-route', page: 'diag', guide: 'guided_labs', lab: activeLab.id, target: 'studentLabShell', label: 'ОТКРЫТЬ GUIDED LAB', tone: 'primary' },
+          { kind: 'demo', value: activeLab.actions.find((action) => action.kind === 'run-demo')?.value || 'normal', label: 'ЗАПУСТИТЬ ДЕМО-КЕЙС' },
+        ],
+      },
+      hidden_cases: {
+        kicker: 'WIZARD · SELF-CHECK',
+        title: 'Скрытый кейс как режим самопроверки',
+        lead: 'Если уже знакомы с паттернами дефектов, можно сразу проверить себя: VibroLab скроет ответ модели до вашей гипотезы.',
+        actions: [
+          { kind: 'hidden-case', value: activeLab.hiddenCase.id, label: 'СТАРТОВАТЬ СКРЫТЫЙ КЕЙС', tone: 'primary' },
+          { kind: 'guided-route', page: 'diag', guide: 'guided_labs', lab: activeLab.id, target: 'studentLabShell', label: 'СНАЧАЛА ОТКРЫТЬ ЛАБУ' },
+        ],
+      },
+      own_file: {
+        kicker: 'WIZARD · FILE ROUTE',
+        title: 'Сразу переходите к своему сигналу',
+        lead: 'Upload-зона уже готова. После выбора файла VibroLab сам построит сигнал, FFT, признаки и понятное объяснение результата.',
+        actions: [
+          { kind: 'guided-route', page: 'diag', guide: 'own_file', target: 'uploadZone', label: 'ПЕРЕЙТИ К ЗАГРУЗКЕ', tone: 'primary' },
+          { kind: 'demo', value: 'normal', label: 'СНАЧАЛА ПОСМОТРЕТЬ ЭТАЛОН' },
+        ],
+      },
+      compare_faults: {
+        kicker: 'WIZARD · COMPARE',
+        title: 'Сравните контрастные дефекты',
+        lead: 'Хороший учебный маршрут для объяснения разницы между gear fault и bearing fault: два контрастных кейса дают больше понимания, чем десяток слайдов.',
+        actions: [
+          { kind: 'demo', value: 'tooth_miss', label: 'ОТКРЫТЬ GEAR FAULT', tone: 'primary' },
+          { kind: 'demo', value: 'inner_race', label: 'ОТКРЫТЬ BEARING FAULT' },
+        ],
+      },
+      virtual_lab: {
+        kicker: 'WIZARD · 3D FIRST',
+        title: 'Сначала откройте экскурсию по физике дефекта',
+        lead: 'Если хочется сначала понять механику, откройте 3D lab. Guided tour проведёт вас по узлам, а затем можно вернуться сюда уже с более уверенной оптикой.',
+        actions: [
+          { kind: 'lab', value: 'intro_baseline', label: 'ЗАПУСТИТЬ 3D TOUR', tone: 'primary' },
+          { kind: 'guided-route', page: 'diag', guide: 'guided_labs', lab: 'intro_baseline', target: 'studentLabShell', label: 'ПОСЛЕ ЭТОГО К LABS' },
+        ],
+      },
+      first_time: {
+        kicker: 'WIZARD · FIRST RUN',
+        title: 'Лучший первый запуск — готовый кейс без риска ошибиться',
+        lead: 'Начните с эталонного сигнала, посмотрите, как читается диагноз, а потом переходите к своему файлу или лабораторному маршруту.',
+        actions: [
+          { kind: 'demo', value: 'normal', label: 'ЗАПУСТИТЬ КЕЙС «НОРМА»', tone: 'primary' },
+          { kind: 'guided-route', page: 'diag', guide: 'own_file', target: 'uploadZone', label: 'ПОТОМ ЗАГРУЗИТЬ СВОЙ ФАЙЛ' },
+        ],
+      },
+    };
+
+    return {
+      ...(presetsByMode[analysisGuideMode] || presetsByMode.first_time),
+      steps,
+    };
+  }
+
+  function renderAnalysisWizard() {
+    const shellNode = el('analysisWizard');
+    const kickerNode = el('analysisWizardKicker');
+    const titleNode = el('analysisWizardTitle');
+    const leadNode = el('analysisWizardLead');
+    const stepsNode = el('analysisWizardSteps');
+    const actionsNode = el('analysisWizardActions');
+    if (!shellNode || !kickerNode || !titleNode || !leadNode || !stepsNode || !actionsNode) return;
+
+    const config = buildAnalysisWizardConfig();
+    kickerNode.textContent = config.kicker;
+    titleNode.textContent = config.title;
+    leadNode.textContent = config.lead;
+    stepsNode.innerHTML = (config.steps || []).map((step) => {
+      const stateLabel = step.status === 'done' ? 'DONE' : step.status === 'current' ? 'NOW' : 'NEXT';
+      return `
+        <article class="analysis-wizard-step is-${escapeHtml(step.status || 'upcoming')}">
+          <div class="analysis-wizard-step-top">
+            <span class="analysis-wizard-step-num">${escapeHtml(step.num || '01')}</span>
+            <span class="analysis-wizard-step-state">${escapeHtml(stateLabel)}</span>
+          </div>
+          <strong>${escapeHtml(step.title || '')}</strong>
+          <p>${escapeHtml(step.note || '')}</p>
+        </article>
+      `;
+    }).join('');
+    actionsNode.innerHTML = (config.actions || []).map((action) => buildUxActionMarkup(action, 'analysis-coach-action')).join('');
   }
 
   function buildProfileOnboardConfig() {
@@ -4257,6 +4461,7 @@ const App = (() => {
     renderCaptureSummary();
     renderAnalysisComparePanel();
     renderStudyLabShell();
+    renderAnalysisWizard();
   }
 
   function clearCurrentDiagnosis() {
@@ -4264,6 +4469,7 @@ const App = (() => {
     renderCaptureSummary();
     renderAnalysisComparePanel();
     renderStudyLabShell();
+    renderAnalysisWizard();
   }
 
   function buildSessionRecord() {
@@ -4932,6 +5138,7 @@ const App = (() => {
     window.setTimeout(updateViewportChrome, 80);
     renderStudyLabShell();
     renderAnalysisCoach();
+    renderAnalysisWizard();
     renderProfileOnboard();
   }
 
@@ -5042,6 +5249,7 @@ const App = (() => {
     if (!hiddenMeta) {
       markStudyLabCheckpointsByTrigger('demo', cls);
     }
+    renderAnalysisCoach();
     activateScenarioCards(cls);
     document.querySelectorAll('.fault-btn').forEach(b=>b.classList.toggle('active',b.dataset.cls===cls));
     litPipeline(0);
@@ -5247,6 +5455,7 @@ const App = (() => {
         titleHint,
         measurementId: null,
       };
+      renderAnalysisCoach();
       currentSignalData={data:signal,sampleRate:parsed.sampleRate};
 
       let chInfo = parsed.channels ? ` | Каналы: ${parsed.channels.length} | Выбран: ${parsed.selectedChannel}` : '';
@@ -6011,6 +6220,7 @@ const App = (() => {
 
     buildFaultBtns();
     renderStudyLabShell();
+    renderAnalysisWizard();
     buildModel();
     setupScenarioLinks();
     initRevealSystem();
