@@ -22,6 +22,11 @@ const App = (() => {
   let analysisGuideMode = 'first_time';
   let activeStudyLabId = 'intro_baseline';
   let studyLabState = null;
+  let journeyOnboardingState = null;
+  let journeyDraftState = null;
+  let autosaveTimer = 0;
+  let autosavePaused = false;
+  let autosaveMeta = { savedAt: null, restoredAt: null };
   let apiReady = false;
   let dashboardSummary = null;
   let selectedAssetId = null;
@@ -53,6 +58,8 @@ const App = (() => {
     legacySessions: 'vm_local_sessions_v1',
     legacyImportDone: 'vm_server_import_done_v1',
     studyLabs: 'vm_guided_labs_v1',
+    journeyOnboarding: 'vm_journey_onboarding_v1',
+    journeyDraft: 'vm_journey_draft_v1',
   };
   const API_BASE = '/api';
   const STORAGE_LIMITS = {
@@ -380,6 +387,378 @@ const App = (() => {
     }
   }
 
+  function removeStorage(key) {
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch (e) {
+      console.warn('[APP] Storage remove failed:', key, e);
+      return false;
+    }
+  }
+
+  function formatClock(value) {
+    if (!value) return 'только что';
+    try {
+      return new Intl.DateTimeFormat('ru-RU', { hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+    } catch (e) {
+      return 'только что';
+    }
+  }
+
+  function getAnalysisGuideLabel(mode = analysisGuideMode) {
+    const labels = {
+      first_time: 'FIRST RUN',
+      guided_labs: 'GUIDED LAB',
+      hidden_cases: 'SELF-CHECK',
+      own_file: 'OWN FILE',
+      compare_faults: 'COMPARE',
+      virtual_lab: '3D FIRST',
+    };
+    return labels[mode] || 'GUIDED';
+  }
+
+  function createDefaultJourneyOnboardingState() {
+    return {
+      seen: false,
+      dismissedAt: null,
+      lastOpenedAt: null,
+      lastCompletedRoute: null,
+    };
+  }
+
+  function normalizeJourneyOnboardingState(raw) {
+    const next = createDefaultJourneyOnboardingState();
+    const payload = raw && typeof raw === 'object' ? raw : {};
+    next.seen = payload.seen === true;
+    next.dismissedAt = payload.dismissedAt || null;
+    next.lastOpenedAt = payload.lastOpenedAt || null;
+    next.lastCompletedRoute = trimText(payload.lastCompletedRoute) || null;
+    return next;
+  }
+
+  function loadJourneyOnboardingState() {
+    journeyOnboardingState = normalizeJourneyOnboardingState(
+      readStorage(STORAGE_KEYS.journeyOnboarding, createDefaultJourneyOnboardingState())
+    );
+    return journeyOnboardingState;
+  }
+
+  function saveJourneyOnboardingState() {
+    if (!journeyOnboardingState) journeyOnboardingState = createDefaultJourneyOnboardingState();
+    writeStorage(STORAGE_KEYS.journeyOnboarding, journeyOnboardingState);
+  }
+
+  function markJourneyOnboardingSeen(meta = {}) {
+    if (!journeyOnboardingState) loadJourneyOnboardingState();
+    journeyOnboardingState = {
+      ...journeyOnboardingState,
+      seen: true,
+      dismissedAt: meta.dismissedAt || journeyOnboardingState.dismissedAt || null,
+      lastOpenedAt: meta.lastOpenedAt || journeyOnboardingState.lastOpenedAt || null,
+      lastCompletedRoute: meta.lastCompletedRoute || journeyOnboardingState.lastCompletedRoute || null,
+    };
+    saveJourneyOnboardingState();
+  }
+
+  function sanitizeInputContext(input) {
+    const payload = input && typeof input === 'object' ? input : {};
+    return {
+      type: trimText(payload.type),
+      label: trimText(payload.label),
+      scenario: trimText(payload.scenario),
+      sourceFile: trimText(payload.sourceFile),
+      name: trimText(payload.name),
+      format: trimText(payload.format),
+      channel: trimText(payload.channel),
+      sourceTitle: trimText(payload.sourceTitle),
+      titleHint: trimText(payload.titleHint),
+      measurementId: trimText(payload.measurementId),
+      hiddenCaseId: trimText(payload.hiddenCaseId),
+      hiddenLabId: trimText(payload.hiddenLabId),
+      sessionId: trimText(payload.sessionId),
+      segmentSummary: payload.segmentSummary && typeof payload.segmentSummary === 'object'
+        ? {
+            analyzedWindows: Number(payload.segmentSummary.analyzedWindows) || 0,
+            totalWindows: Number(payload.segmentSummary.totalWindows) || 0,
+            representativeWindow: Number(payload.segmentSummary.representativeWindow) || 0,
+            representativeStart: Number(payload.segmentSummary.representativeStart) || 0,
+            representativeClass: trimText(payload.segmentSummary.representativeClass),
+            representativeMean: Number(payload.segmentSummary.representativeMean) || 0,
+            representativePeak: Number(payload.segmentSummary.representativePeak) || 0,
+            selectedClassHint: trimText(payload.segmentSummary.selectedClassHint),
+          }
+        : null,
+    };
+  }
+
+  function compactFeaturePayload(features) {
+    if (!Array.isArray(features)) return null;
+    return features.slice(0, 128).map((value) => Number(Number(value).toFixed(6)));
+  }
+
+  function normalizeFeaturePayload(features) {
+    if (!Array.isArray(features)) return null;
+    return features
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value));
+  }
+
+  function normalizeSignalPayload(raw) {
+    const payload = raw && typeof raw === 'object' ? raw : {};
+    const source = Array.isArray(payload.data)
+      ? payload.data
+      : Array.isArray(payload.signalData)
+        ? payload.signalData
+        : [];
+    const data = source
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value));
+    if (!data.length) return null;
+    return {
+      data,
+      sampleRate: Number(payload.sampleRate) || VM.FS,
+    };
+  }
+
+  function getActivePipelineStep() {
+    for (let index = 5; index >= 1; index -= 1) {
+      if (el(`ps${index}`)?.classList.contains('lit')) return index;
+    }
+    return 0;
+  }
+
+  function buildJourneyDraftSnapshot() {
+    const hasSignal = currentSignalData?.data?.length;
+    const hasDiagnosis = !!currentDiagnosis;
+    const page = document.body.dataset.page || 'home';
+    if (!hasSignal && !hasDiagnosis && page === 'home' && analysisGuideMode === 'first_time') {
+      return {
+        savedAt: new Date().toISOString(),
+        page,
+        analysisGuideMode,
+        activeStudyLabId,
+        currentInputContext: sanitizeInputContext(currentInputContext),
+        currentDiagnosis: null,
+        currentSignalData: null,
+        journalDraft: {
+          assetName: trimText(el('assetNameInput')?.value),
+          sessionState: trimText(el('sessionStateInput')?.value),
+          workStatus: trimText(el('workStatusInput')?.value),
+          note: trimText(el('sessionNoteInput')?.value),
+          engineerReason: trimText(el('engineerReasonInput')?.value),
+          actionTaken: trimText(el('actionTakenInput')?.value),
+        },
+        ui: {
+          sigStatus: trimText(el('sigStatus')?.textContent),
+          sigStatusColor: trimText(el('sigStatus')?.style.color),
+          specStatus: trimText(el('specStatus')?.textContent),
+          specStatusColor: trimText(el('specStatus')?.style.color),
+          sigBaseText: trimText(el('sigDesc')?.dataset.baseText || el('sigDesc')?.textContent),
+          specBaseText: trimText(el('specDesc')?.dataset.baseText || el('specDesc')?.textContent),
+          pipelineStep: getActivePipelineStep(),
+        },
+      };
+    }
+
+    return {
+      savedAt: new Date().toISOString(),
+      page,
+      analysisGuideMode,
+      activeStudyLabId,
+      currentInputContext: sanitizeInputContext(currentDiagnosis?.input || currentInputContext),
+      currentDiagnosis: currentDiagnosis
+        ? {
+            cls: currentDiagnosis.cls,
+            confidence: Number(currentDiagnosis.confidence || 0),
+            probabilities: { ...(currentDiagnosis.probabilities || {}) },
+            sourceLabel: trimText(currentDiagnosis.sourceLabel),
+            input: sanitizeInputContext(currentDiagnosis.input),
+            playbook: currentDiagnosis.playbook || {},
+            signalData: compactSignal(currentDiagnosis.signalData || currentSignalData?.data || []),
+            sampleRate: Number(currentDiagnosis.sampleRate || currentSignalData?.sampleRate || VM.FS),
+            features: compactFeaturePayload(currentDiagnosis.features),
+          }
+        : null,
+      currentSignalData: hasSignal
+        ? {
+            data: compactSignal(currentSignalData.data),
+            sampleRate: Number(currentSignalData.sampleRate || VM.FS),
+          }
+        : null,
+      journalDraft: {
+        assetName: trimText(el('assetNameInput')?.value),
+        sessionState: trimText(el('sessionStateInput')?.value),
+        workStatus: trimText(el('workStatusInput')?.value),
+        note: trimText(el('sessionNoteInput')?.value),
+        engineerReason: trimText(el('engineerReasonInput')?.value),
+        actionTaken: trimText(el('actionTakenInput')?.value),
+      },
+      ui: {
+        sigStatus: trimText(el('sigStatus')?.textContent),
+        sigStatusColor: trimText(el('sigStatus')?.style.color),
+        specStatus: trimText(el('specStatus')?.textContent),
+        specStatusColor: trimText(el('specStatus')?.style.color),
+        sigBaseText: trimText(el('sigDesc')?.dataset.baseText || el('sigDesc')?.textContent),
+        specBaseText: trimText(el('specDesc')?.dataset.baseText || el('specDesc')?.textContent),
+        pipelineStep: getActivePipelineStep(),
+      },
+    };
+  }
+
+  function loadJourneyDraftState() {
+    journeyDraftState = readStorage(STORAGE_KEYS.journeyDraft, null);
+    autosaveMeta.savedAt = journeyDraftState?.savedAt || null;
+    return journeyDraftState;
+  }
+
+  function saveJourneyDraftSnapshot(reason = 'auto') {
+    if (autosavePaused) return false;
+    const snapshot = buildJourneyDraftSnapshot();
+    if (!snapshot) return false;
+    snapshot.reason = reason;
+    journeyDraftState = snapshot;
+    autosaveMeta.savedAt = snapshot.savedAt;
+    writeStorage(STORAGE_KEYS.journeyDraft, snapshot);
+    renderJourneyOnboarding();
+    renderAnalysisStickyProgress();
+    return true;
+  }
+
+  function scheduleJourneyDraftSave(reason = 'auto') {
+    if (autosavePaused) return;
+    window.clearTimeout(autosaveTimer);
+    autosaveTimer = window.setTimeout(() => {
+      saveJourneyDraftSnapshot(reason);
+    }, 180);
+  }
+
+  function clearJourneyDraft(options = {}) {
+    removeStorage(STORAGE_KEYS.journeyDraft);
+    journeyDraftState = null;
+    autosaveMeta.savedAt = null;
+    autosaveMeta.restoredAt = null;
+    if (options.announce) {
+      toast('Черновик очищен', 'Автосохранённый прогресс удалён. Можно начинать с чистого сценария.', 'info');
+    }
+    renderJourneyOnboarding();
+    renderAnalysisStickyProgress();
+  }
+
+  function shouldAutoRestoreJourneyDraft(snapshot) {
+    if (!snapshot) return false;
+    if (initialRoute.page || initialRoute.section || initialRoute.demo || initialRoute.guide || initialRoute.lab) return false;
+    return snapshot.page === 'diag' && !!snapshot.currentDiagnosis;
+  }
+
+  function applyJourneyDraftFields(draft) {
+    const payload = draft && typeof draft === 'object' ? draft : {};
+    if (el('assetNameInput')) el('assetNameInput').value = payload.assetName || el('assetNameInput').value || '';
+    if (el('sessionStateInput')) el('sessionStateInput').value = payload.sessionState || el('sessionStateInput').value || 'warning';
+    if (el('workStatusInput')) el('workStatusInput').value = payload.workStatus || el('workStatusInput').value || 'observe';
+    if (el('sessionNoteInput')) el('sessionNoteInput').value = payload.note || '';
+    if (el('engineerReasonInput')) el('engineerReasonInput').value = payload.engineerReason || '';
+    if (el('actionTakenInput')) el('actionTakenInput').value = payload.actionTaken || '';
+    syncWorkStatusFromState();
+    renderCaptureSummary();
+  }
+
+  function restoreSignalVisualsFromDraft(snapshot) {
+    const signalPayload = normalizeSignalPayload(snapshot.currentSignalData || snapshot.currentDiagnosis);
+    if (!signalPayload) return [];
+    const restoredColor = snapshot.currentDiagnosis?.cls ? (VM.COLORS[snapshot.currentDiagnosis.cls] || '#00e5ff') : '#00e5ff';
+    currentSignalData = signalPayload;
+    if (currentStop) currentStop();
+    currentStop = Viz.drawSignal('sigCanvas', signalPayload.data, restoredColor, true);
+    Viz.addCrosshair(el('sigCanvas'), {
+      type: 'signal',
+      data: signalPayload.data,
+      sampleRate: signalPayload.sampleRate || VM.FS,
+      color: restoredColor,
+    });
+    const { freqs, spectrum } = FFT.computeSpectrum(signalPayload.data, signalPayload.sampleRate || VM.FS);
+    Viz.drawSpectrum('specCanvas', freqs, spectrum, restoredColor);
+    Viz.addCrosshair(el('specCanvas'), { type: 'spectrum', data: spectrum, freqs, color: restoredColor });
+    litPipeline(snapshot.ui?.pipelineStep || 5);
+    if (el('sigStatus')) {
+      el('sigStatus').textContent = snapshot.ui?.sigStatus || '● RESUMED';
+      el('sigStatus').style.color = snapshot.ui?.sigStatusColor || restoredColor;
+    }
+    if (el('specStatus')) {
+      el('specStatus').textContent = snapshot.ui?.specStatus || 'READY';
+      el('specStatus').style.color = snapshot.ui?.specStatusColor || restoredColor;
+    }
+    if (el('sigDesc')) {
+      const text = snapshot.ui?.sigBaseText || currentInputContext?.label || 'Восстановленный сигнал';
+      el('sigDesc').textContent = text;
+      el('sigDesc').dataset.baseText = text;
+    }
+    if (el('specDesc')) {
+      const text = snapshot.ui?.specBaseText || `Спектр: макс ${Math.round((signalPayload.sampleRate || VM.FS) / 2)} Гц`;
+      el('specDesc').textContent = text;
+      el('specDesc').dataset.baseText = text;
+    }
+    return signalPayload.data;
+  }
+
+  async function restoreJourneyDraft(options = {}) {
+    const snapshot = options.snapshot || journeyDraftState || loadJourneyDraftState();
+    if (!snapshot) return false;
+
+    autosavePaused = true;
+    currentSourceFile = null;
+    closeJourneyOnboarding({ persist: false });
+
+    if (snapshot.analysisGuideMode) analysisGuideMode = snapshot.analysisGuideMode;
+    if (snapshot.activeStudyLabId && STUDY_LABS[snapshot.activeStudyLabId]) {
+      activeStudyLabId = snapshot.activeStudyLabId;
+      if (studyLabState) saveStudyLabState();
+    }
+
+    currentInputContext = sanitizeInputContext(snapshot.currentInputContext || snapshot.currentDiagnosis?.input || currentInputContext);
+    applyJourneyDraftFields(snapshot.journalDraft);
+
+    if (snapshot.currentDiagnosis) {
+      goPage('diag');
+    } else if (snapshot.page) {
+      goPage(snapshot.page);
+    }
+
+    renderStudyLabShell();
+    renderAnalysisCoach();
+    renderAnalysisWizard();
+
+    const restoredSignal = restoreSignalVisualsFromDraft(snapshot);
+    const restoredDiagnosis = snapshot.currentDiagnosis;
+    if (restoredDiagnosis) {
+      activateScenarioCards(restoredDiagnosis.input?.scenario || currentInputContext?.scenario || null);
+      showDiagnosis(
+        restoredDiagnosis.cls,
+        restoredDiagnosis.probabilities || { [restoredDiagnosis.cls]: restoredDiagnosis.confidence || 1 },
+        VM.COLORS[restoredDiagnosis.cls],
+        restoredSignal,
+        normalizeFeaturePayload(restoredDiagnosis.features)
+      );
+      if (!isHiddenCasePending()) {
+        await showAdvancedDiagnosis(restoredSignal, normalizeFeaturePayload(restoredDiagnosis.features), {
+          ...restoredDiagnosis,
+          cls: restoredDiagnosis.cls,
+          confidence: restoredDiagnosis.confidence || restoredDiagnosis.probabilities?.[restoredDiagnosis.cls] || 0,
+          features: normalizeFeaturePayload(restoredDiagnosis.features),
+        });
+      }
+    }
+
+    autosaveMeta.restoredAt = new Date().toISOString();
+    autosavePaused = false;
+    renderJourneyOnboarding();
+    renderAnalysisStickyProgress();
+    if (options.announce !== false) {
+      toast('Черновик восстановлен', 'VibroLab вернул вас к последнему шагу анализа и сохранил маршрут обучения.', 'success');
+    }
+    return true;
+  }
+
   function buildStudyActionMarkup(action, className = 'student-lab-action') {
     const toneClass = action.tone === 'primary' ? ` ${className}--primary` : '';
     const attrs = [
@@ -449,6 +828,7 @@ const App = (() => {
     if (!studyLabState) studyLabState = createDefaultStudyLabState();
     studyLabState.activeLabId = activeStudyLabId;
     writeStorage(STORAGE_KEYS.studyLabs, studyLabState);
+    scheduleJourneyDraftSave('study-lab');
   }
 
   function getStudyLab(labId = activeStudyLabId) {
@@ -1761,12 +2141,137 @@ const App = (() => {
     return `<button ${attrs.join(' ')}>${escapeHtml(action.label)}</button>`;
   }
 
+  function shouldShowJourneyOnboarding() {
+    if (!journeyOnboardingState) loadJourneyOnboardingState();
+    if (!journeyDraftState) loadJourneyDraftState();
+    if (initialRoute.page || initialRoute.section || initialRoute.demo || initialRoute.guide || initialRoute.lab) return false;
+    if (shouldAutoRestoreJourneyDraft(journeyDraftState)) return false;
+    return journeyOnboardingState?.seen !== true;
+  }
+
+  function openJourneyOnboarding(options = {}) {
+    const shellNode = el('journeyOnboard');
+    if (!shellNode) return;
+    if (!journeyOnboardingState) loadJourneyOnboardingState();
+    journeyOnboardingState = {
+      ...journeyOnboardingState,
+      lastOpenedAt: new Date().toISOString(),
+    };
+    saveJourneyOnboardingState();
+    renderJourneyOnboarding();
+    shellNode.hidden = false;
+    document.body.classList.add('onboarding-open');
+    if (options.focus !== false) {
+      window.setTimeout(() => el('journeyOnboardTitle')?.focus?.(), 30);
+    }
+  }
+
+  function closeJourneyOnboarding(options = {}) {
+    const shellNode = el('journeyOnboard');
+    if (!shellNode) return;
+    shellNode.hidden = true;
+    document.body.classList.remove('onboarding-open');
+    if (options.persist !== false) {
+      markJourneyOnboardingSeen({ dismissedAt: new Date().toISOString() });
+    }
+  }
+
+  function completeJourneyOnboarding(routeKey) {
+    markJourneyOnboardingSeen({
+      dismissedAt: new Date().toISOString(),
+      lastCompletedRoute: routeKey || analysisGuideMode,
+    });
+    closeJourneyOnboarding({ persist: false });
+  }
+
+  function renderJourneyOnboarding() {
+    const shellNode = el('journeyOnboard');
+    const resumeNode = el('journeyOnboardResume');
+    const clearButton = el('journeyOnboardClear');
+    if (!shellNode || !resumeNode || !clearButton) return;
+
+    if (!journeyDraftState) loadJourneyDraftState();
+    const snapshot = journeyDraftState;
+    const diagnosisLabel = snapshot?.currentDiagnosis?.cls ? (VM.RU[snapshot.currentDiagnosis.cls] || snapshot.currentDiagnosis.cls) : null;
+    const restoreLabel = snapshot?.currentInputContext?.label || diagnosisLabel || 'последний шаг анализа';
+    const canResume = !!(snapshot && (snapshot.currentDiagnosis || snapshot.page === 'diag'));
+
+    resumeNode.hidden = !canResume;
+    clearButton.hidden = !canResume;
+    if (canResume) {
+      resumeNode.innerHTML = `
+        <div class="journey-onboard-resume-head">
+          <div class="journey-onboard-resume-copy">
+            <strong>Есть автосохранённый прогресс</strong>
+            <p>Последний сохранённый шаг: ${escapeHtml(restoreLabel)}. Сохранено в ${escapeHtml(formatClock(snapshot.savedAt))}. Можно продолжить с этого места или начать заново.</p>
+          </div>
+          <div class="journey-onboard-resume-actions">
+            ${buildUxActionMarkup({ kind: 'resume-draft', label: 'ПРОДОЛЖИТЬ', tone: 'primary' }, 'analysis-sticky-action')}
+            ${buildUxActionMarkup({ kind: 'clear-draft', label: 'НАЧАТЬ С ЧИСТОГО ЛИСТА' }, 'analysis-sticky-action')}
+          </div>
+        </div>
+      `;
+    } else {
+      resumeNode.innerHTML = '';
+    }
+  }
+
+  function renderAnalysisStickyProgress(config = buildAnalysisWizardConfig()) {
+    const shellNode = el('analysisStickyProgress');
+    const kickerNode = el('analysisStickyKicker');
+    const titleNode = el('analysisStickyTitle');
+    const autosaveNode = el('analysisStickyAutosave');
+    const stepsNode = el('analysisStickySteps');
+    const actionsNode = el('analysisStickyActions');
+    if (!shellNode || !kickerNode || !titleNode || !autosaveNode || !stepsNode || !actionsNode) return;
+
+    const lab = getStudyLab(activeStudyLabId);
+    const labProgress = getStudyLabProgress(lab.id);
+    const routeLabel = (analysisGuideMode === 'guided_labs' || analysisGuideMode === 'hidden_cases')
+      ? `${lab.badge} · ${labProgress.completed}/${labProgress.total}`
+      : getAnalysisGuideLabel();
+    const wizardLabel = trimText((config.kicker || '').replace(/^WIZARD\s*·\s*/i, '')) || 'FLOW';
+
+    kickerNode.textContent = `${routeLabel} · ${wizardLabel}`;
+    titleNode.textContent = config.title || 'Пошаговый маршрут анализа';
+    autosaveNode.textContent = autosaveMeta.restoredAt
+      ? `Черновик восстановлен · ${formatClock(autosaveMeta.restoredAt)}`
+      : autosaveMeta.savedAt
+        ? `Автосохранено · ${formatClock(autosaveMeta.savedAt)}`
+        : 'Автосохранение включено';
+
+    const stickyActions = [
+      { kind: 'scroll', value: 'analysisWizard', label: 'РАЗВЕРНУТЬ WIZARD', tone: 'primary' },
+      { kind: 'open-onboarding', label: 'ONBOARDING' },
+    ];
+    if (journeyDraftState?.currentDiagnosis || journeyDraftState?.page === 'diag') {
+      stickyActions.push({ kind: 'clear-draft', label: 'СБРОСИТЬ ЧЕРНОВИК' });
+    }
+    actionsNode.innerHTML = stickyActions.map((action) => buildUxActionMarkup(action, 'analysis-sticky-action')).join('');
+
+    stepsNode.innerHTML = (config.steps || []).map((step) => {
+      const stateLabel = step.status === 'done' ? 'DONE' : step.status === 'current' ? 'NOW' : 'NEXT';
+      return `
+        <article class="analysis-sticky-step is-${escapeHtml(step.status || 'upcoming')}">
+          <div class="analysis-sticky-step-top">
+            <span class="analysis-sticky-step-num">${escapeHtml(step.num || '01')}</span>
+            <span class="analysis-sticky-step-state">${escapeHtml(stateLabel)}</span>
+          </div>
+          <strong>${escapeHtml(step.title || '')}</strong>
+          <p>${escapeHtml(step.note || '')}</p>
+        </article>
+      `;
+    }).join('');
+  }
+
   function runUxAction(kind, dataset = {}) {
     switch (kind) {
       case 'demo':
+        completeJourneyOnboarding('demo');
         runScenario(dataset.uxValue || 'normal');
         break;
       case 'lab':
+        completeJourneyOnboarding(dataset.uxValue || 'virtual_lab');
         openLabScenario(dataset.uxValue || 'intro_baseline');
         break;
       case 'hidden-case':
@@ -1776,6 +2281,7 @@ const App = (() => {
         goPage(dataset.uxValue || 'home');
         break;
       case 'guided-route':
+        completeJourneyOnboarding(dataset.uxGuide || dataset.uxLab || 'guided-route');
         if (dataset.uxGuide) analysisGuideMode = dataset.uxGuide;
         if (dataset.uxLab && STUDY_LABS[dataset.uxLab]) {
           setActiveStudyLab(dataset.uxLab, { keepGuideMode: true, scroll: false });
@@ -1790,6 +2296,17 @@ const App = (() => {
         break;
       case 'section':
         goHomeSection(dataset.uxValue || 'section-quickstart');
+        break;
+      case 'open-onboarding':
+        openJourneyOnboarding();
+        break;
+      case 'resume-draft':
+        restoreJourneyDraft().catch((e) => {
+          toast('Не удалось восстановить черновик', e.message || 'Ошибка восстановления локального автосохранения.', 'warning');
+        });
+        break;
+      case 'clear-draft':
+        clearJourneyDraft({ announce: true });
         break;
       case 'page-section':
         goPageSection(dataset.uxPage || 'profile', dataset.uxSection || dataset.uxValue || 'authPanel');
@@ -2216,6 +2733,7 @@ const App = (() => {
       `;
     }).join('');
     actionsNode.innerHTML = (config.actions || []).map((action) => buildUxActionMarkup(action, 'analysis-coach-action')).join('');
+    renderAnalysisStickyProgress(config);
   }
 
   function buildProfileOnboardConfig() {
@@ -4462,6 +4980,7 @@ const App = (() => {
     renderAnalysisComparePanel();
     renderStudyLabShell();
     renderAnalysisWizard();
+    scheduleJourneyDraftSave('diagnosis');
   }
 
   function clearCurrentDiagnosis() {
@@ -4470,6 +4989,7 @@ const App = (() => {
     renderAnalysisComparePanel();
     renderStudyLabShell();
     renderAnalysisWizard();
+    scheduleJourneyDraftSave('clear-diagnosis');
   }
 
   function buildSessionRecord() {
@@ -4910,12 +5430,19 @@ const App = (() => {
       focusProfileAsset(alert.assetId, 'journalPanel');
     });
     ['assetNameInput', 'sessionNoteInput', 'engineerReasonInput', 'actionTakenInput'].forEach((id) => {
-      el(id)?.addEventListener('input', renderCaptureSummary);
-      el(id)?.addEventListener('change', renderCaptureSummary);
+      el(id)?.addEventListener('input', () => {
+        renderCaptureSummary();
+        scheduleJourneyDraftSave('journal-input');
+      });
+      el(id)?.addEventListener('change', () => {
+        renderCaptureSummary();
+        scheduleJourneyDraftSave('journal-change');
+      });
     });
     el('sessionStateInput')?.addEventListener('change', () => {
       syncWorkStatusFromState(true);
       renderCaptureSummary();
+      scheduleJourneyDraftSave('session-state');
     });
     el('workStatusInput')?.addEventListener('change', () => {
       const work = trimText(el('workStatusInput')?.value);
@@ -4924,6 +5451,7 @@ const App = (() => {
       if (stateNode && work === 'replaced') stateNode.value = 'after_maintenance';
       if (stateNode && work === 'observe' && stateNode.value === 'service') stateNode.value = 'healthy';
       renderCaptureSummary();
+      scheduleJourneyDraftSave('work-status');
     });
     el('assetFocusSelect')?.addEventListener('change', (event) => {
       selectedAssetId = event.target.value || null;
@@ -5140,6 +5668,7 @@ const App = (() => {
     renderAnalysisCoach();
     renderAnalysisWizard();
     renderProfileOnboard();
+    scheduleJourneyDraftSave('page');
   }
 
   function goHomeSection(sectionId) {
@@ -5250,6 +5779,7 @@ const App = (() => {
       markStudyLabCheckpointsByTrigger('demo', cls);
     }
     renderAnalysisCoach();
+    scheduleJourneyDraftSave('demo-start');
     activateScenarioCards(cls);
     document.querySelectorAll('.fault-btn').forEach(b=>b.classList.toggle('active',b.dataset.cls===cls));
     litPipeline(0);
@@ -5456,6 +5986,7 @@ const App = (() => {
         measurementId: null,
       };
       renderAnalysisCoach();
+      scheduleJourneyDraftSave('file-start');
       currentSignalData={data:signal,sampleRate:parsed.sampleRate};
 
       let chInfo = parsed.channels ? ` | Каналы: ${parsed.channels.length} | Выбран: ${parsed.selectedChannel}` : '';
@@ -6175,6 +6706,8 @@ const App = (() => {
   async function init() {
     document.body.dataset.page = document.body.dataset.page || 'home';
     loadStudyLabState();
+    loadJourneyOnboardingState();
+    loadJourneyDraftState();
     document.querySelectorAll('.nav-btn').forEach(b => {
       if (b.dataset.page) b.addEventListener('click', () => goPage(b.dataset.page));
     });
@@ -6182,7 +6715,19 @@ const App = (() => {
       button.addEventListener('click', () => {
         analysisGuideMode = button.dataset.guideMode || 'first_time';
         renderAnalysisCoach();
+        scheduleJourneyDraftSave('guide-mode');
       });
+    });
+    el('journeyOnboardClose')?.addEventListener('click', () => closeJourneyOnboarding());
+    el('journeyOnboardSkip')?.addEventListener('click', () => closeJourneyOnboarding());
+    el('journeyOnboardClear')?.addEventListener('click', () => clearJourneyDraft({ announce: true }));
+    el('journeyOnboard')?.addEventListener('click', (event) => {
+      if (event.target === el('journeyOnboard')) closeJourneyOnboarding();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && el('journeyOnboard') && !el('journeyOnboard').hidden) {
+        closeJourneyOnboarding();
+      }
     });
     document.addEventListener('click', (event) => {
       const labSelectNode = event.target.closest('[data-study-lab-select]');
@@ -6221,12 +6766,19 @@ const App = (() => {
     buildFaultBtns();
     renderStudyLabShell();
     renderAnalysisWizard();
+    renderJourneyOnboarding();
     buildModel();
     setupScenarioLinks();
     initRevealSystem();
     updateViewportChrome();
     window.addEventListener('scroll', updateViewportChrome, { passive: true });
     window.addEventListener('resize', updateViewportChrome);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') saveJourneyDraftSnapshot('visibility');
+    });
+    window.addEventListener('beforeunload', () => {
+      saveJourneyDraftSnapshot('beforeunload');
+    });
     if (typeof DemoCases !== 'undefined') {
       await DemoCases.load(`model/demo_cases.json?v=${ASSET_VERSION}`);
     }
@@ -6262,6 +6814,11 @@ const App = (() => {
     updateHeaderProfile();
     renderCaptureSummary();
     applyInitialRoute();
+    if (shouldAutoRestoreJourneyDraft(journeyDraftState)) {
+      await restoreJourneyDraft({ announce: false });
+    } else if (shouldShowJourneyOnboarding()) {
+      window.setTimeout(() => openJourneyOnboarding({ focus: false }), 180);
+    }
 
     // Load ONNX models if available
     if (typeof ModelONNX !== 'undefined' && ModelONNX.loadAll) {
@@ -6298,6 +6855,9 @@ const App = (() => {
     openAssetPage,
     openSimulatorFromAnalysis,
     openLabScenario,
+    openJourneyOnboarding,
+    restoreJourneyDraft,
+    clearJourneyDraft,
     uploadCurrentMeasurement,
     saveCurrentSession,
     fileDiag: runFileDiag,

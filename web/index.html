@@ -45,6 +45,74 @@
   <a href="simulator.html" class="nav-btn" style="text-decoration:none;display:flex;align-items:center;gap:8px">3D СИМУЛЯТОР</a>
 </div>
 
+<div class="journey-onboard-backdrop" id="journeyOnboard" hidden>
+  <div class="journey-onboard" role="dialog" aria-modal="true" aria-labelledby="journeyOnboardTitle">
+    <button class="journey-onboard-close" id="journeyOnboardClose" type="button" aria-label="Закрыть onboarding">×</button>
+    <div class="journey-onboard-kicker" id="journeyOnboardKicker">FIRST RUN · 30 СЕКУНД</div>
+    <h2 class="journey-onboard-title" id="journeyOnboardTitle" tabindex="-1">Сначала выберите удобный маршрут, а дальше VibroLab поведёт вас по шагам</h2>
+    <p class="journey-onboard-lead" id="journeyOnboardLead">
+      Этот экран нужен только для мягкого старта. Он помогает быстро понять, идти ли вам в guided lab, в 3D-экскурсию
+      или сразу к своему файлу. Ниже можно выбрать маршрут или продолжить с последнего автосохранённого шага.
+    </p>
+    <div class="journey-onboard-resume" id="journeyOnboardResume" hidden></div>
+    <div class="journey-onboard-grid">
+      <button
+        class="journey-onboard-card journey-onboard-card--recommended"
+        type="button"
+        data-ux-action="guided-route"
+        data-ux-page="diag"
+        data-ux-guide="guided_labs"
+        data-ux-lab="intro_baseline"
+        data-ux-target="analysisStickyProgress"
+      >
+        <div class="journey-onboard-card-top">
+          <span class="journey-onboard-badge">РЕКОМЕНДОВАНО</span>
+          <span class="journey-onboard-time">8–12 МИН</span>
+        </div>
+        <strong>Пройти guided lab</strong>
+        <p>Лучший маршрут для первого знакомства: норма, дефект, скрытый кейс и понятный финальный разбор.</p>
+      </button>
+      <button
+        class="journey-onboard-card journey-onboard-card--tour"
+        type="button"
+        data-ux-action="lab"
+        data-ux-value="intro_baseline"
+      >
+        <div class="journey-onboard-card-top">
+          <span class="journey-onboard-badge">3D TOUR</span>
+          <span class="journey-onboard-time">5–7 МИН</span>
+        </div>
+        <strong>Открыть 3D экскурсию</strong>
+        <p>Подходит, если хочется сначала увидеть механику дефекта, а уже потом переходить к сигналу и FFT.</p>
+      </button>
+      <button
+        class="journey-onboard-card journey-onboard-card--file"
+        type="button"
+        data-ux-action="guided-route"
+        data-ux-page="diag"
+        data-ux-guide="own_file"
+        data-ux-target="uploadZone"
+      >
+        <div class="journey-onboard-card-top">
+          <span class="journey-onboard-badge">СВОЙ ФАЙЛ</span>
+          <span class="journey-onboard-time">2–3 МИН</span>
+        </div>
+        <strong>Перейти к своему сигналу</strong>
+        <p>Если запись уже готова, интерфейс сразу откроет upload-зону и подскажет следующие шаги после анализа.</p>
+      </button>
+    </div>
+    <div class="journey-onboard-flow">
+      <div class="journey-onboard-flow-step"><span>01</span>Выберите маршрут старта</div>
+      <div class="journey-onboard-flow-step"><span>02</span>Пройдите анализ шаг за шагом</div>
+      <div class="journey-onboard-flow-step"><span>03</span>Сайт сам сохранит ваш прогресс локально</div>
+    </div>
+    <div class="journey-onboard-actions">
+      <button class="student-lab-action" id="journeyOnboardSkip" type="button">ПОКА БЕЗ ONBOARDING</button>
+      <button class="student-lab-action" id="journeyOnboardClear" type="button" hidden>СБРОСИТЬ ЧЕРНОВИК</button>
+    </div>
+  </div>
+</div>
+
 <section class="action-dock-shell" aria-label="Быстрые сценарии работы">
   <div class="container action-dock">
     <div class="action-dock-copy">
@@ -211,7 +279,10 @@
     <div class="container">
       <div class="start-hub-shell">
         <div class="start-hub-header">
-          <div class="label">СТАРТОВЫЕ СЦЕНАРИИ</div>
+          <div class="start-hub-header-top">
+            <div class="label">СТАРТОВЫЕ СЦЕНАРИИ</div>
+            <button class="start-hub-helper" type="button" data-ux-action="open-onboarding">ПОКАЗАТЬ ONBOARDING</button>
+          </div>
           <h2 class="start-hub-title">Выберите маршрут, который подходит именно вам</h2>
           <p class="start-hub-lead">
             VibroLab можно проходить как учебную лабораторию, как интерактивную 3D-экскурсию по дефектам или как
@@ -842,6 +913,20 @@
           Ниже два способа стартануть: слева — ваш файл, справа — три эталонных сигнала из SEU Dataset.
           Результат появится сразу после выбора.
         </p>
+      </div>
+
+      <div class="analysis-sticky-progress" id="analysisStickyProgress" aria-live="polite">
+        <div class="analysis-sticky-progress-top">
+          <div class="analysis-sticky-copy">
+            <div class="analysis-sticky-kicker" id="analysisStickyKicker">JOURNEY · STEP 1/4</div>
+            <h3 class="analysis-sticky-title" id="analysisStickyTitle">Сначала выберите маршрут входа, а дальше интерфейс сам удержит контекст</h3>
+          </div>
+          <div class="analysis-sticky-side">
+            <span class="analysis-sticky-autosave" id="analysisStickyAutosave">Автосохранение включено</span>
+            <div class="analysis-sticky-actions" id="analysisStickyActions"></div>
+          </div>
+        </div>
+        <div class="analysis-sticky-steps" id="analysisStickySteps"></div>
       </div>
 
       <div class="analysis-coach" id="analysisCoach" aria-live="polite">
