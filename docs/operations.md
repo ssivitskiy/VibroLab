@@ -7,7 +7,11 @@
 - приложение работает из каталога `~/vibrolab`
 - основной контейнер: `web`
 - публичный endpoint: `http://<host>/`
-- health endpoint: `http://<host>/api/health`
+- health endpoint в root-развёртывании: `http://<host>/api/health`
+- если приложение опубликовано под подкаталогом, задайте `VIBROLAB_PUBLIC_BASE_PATH`
+  например `/demonstrations/vibrolab/app`
+- после этого backend начнёт обслуживать и root-маршруты, и prefixed-маршруты
+  например `http://<host>/demonstrations/vibrolab/app/api/health`
 - текущий live-сервер `185.239.50.243` принимает deploy SSH на порту `2222`
 
 ## Backup policy

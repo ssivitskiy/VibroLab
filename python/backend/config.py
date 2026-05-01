@@ -11,6 +11,13 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 RUNTIME_DIR = BASE_DIR / "runtime"
 
 
+def normalize_public_path(value: str | None) -> str:
+    raw = (value or "").strip()
+    if not raw or raw == "/":
+        return ""
+    return "/" + raw.strip("/")
+
+
 @dataclass(slots=True)
 class Settings:
     app_name: str = "VibroLab API"
@@ -23,10 +30,10 @@ class Settings:
         for origin in os.getenv("VIBROLAB_ALLOW_ORIGINS", "http://localhost:8000,http://localhost:8080").split(",")
         if origin.strip()
     )
+    public_base_path: str = normalize_public_path(os.getenv("VIBROLAB_PUBLIC_BASE_PATH", ""))
 
 
 def get_settings() -> Settings:
     """Build a fresh settings object from the environment."""
 
     return Settings()
-

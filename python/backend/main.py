@@ -87,15 +87,45 @@ def resolve_work_status_label(key: str, fallback: str | None = None) -> str:
 
 
 def build_share_url(share_token: str | None) -> str | None:
-    return f"/shared/reports/{share_token}" if share_token else None
+    return build_public_path(f"/shared/reports/{share_token}") if share_token else None
 
 
 def build_measurement_download_url(measurement_id: str) -> str:
-    return f"/api/measurements/{measurement_id}/download"
+    return build_public_path(f"/api/measurements/{measurement_id}/download")
+
+
+def build_public_path(path: str) -> str:
+    normalized = path if path.startswith("/") else f"/{path}"
+    base_path = settings.public_base_path
+    if normalized == "/" and base_path:
+        return f"{base_path}/"
+    if base_path and not normalized.startswith(f"{base_path}/") and normalized != base_path:
+        return f"{base_path}{normalized}"
+    return normalized
+
+
+def build_route_variants(path: str) -> list[str]:
+    normalized = path if path.startswith("/") else f"/{path}"
+    variants = [normalized]
+    base_path = settings.public_base_path
+    if base_path:
+        if normalized == "/":
+            variants.extend([base_path, f"{base_path}/"])
+        else:
+            variants.append(f"{base_path}{normalized}")
+    deduped: list[str] = []
+    for variant in variants:
+        if variant not in deduped:
+            deduped.append(variant)
+    return deduped
 
 
 def resolve_web_target(web_dir: Path, file_path: str) -> Path | None:
-    candidate = (web_dir / file_path).resolve()
+    normalized = file_path.lstrip("/")
+    base_prefix = settings.public_base_path.strip("/")
+    if base_prefix and (normalized == base_prefix or normalized.startswith(f"{base_prefix}/")):
+        normalized = normalized[len(base_prefix):].lstrip("/")
+    candidate = (web_dir / normalized).resolve()
     try:
         candidate.relative_to(web_dir.resolve())
     except ValueError:
@@ -1597,19 +1627,17 @@ def create_app(database_url: str | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    app.include_router(api, prefix="/api")
+    for api_prefix in build_route_variants("/api"):
+        app.include_router(api, prefix=api_prefix)
 
     web_dir = Path(BASE_DIR) / "web"
     if web_dir.exists():
-        @app.get("/", include_in_schema=False)
         def index():
             return FileResponse(web_dir / "index.html")
 
-        @app.get("/simulator.html", include_in_schema=False)
         def simulator():
             return FileResponse(web_dir / "simulator.html")
 
-        @app.get("/shared/reports/{share_token}", include_in_schema=False)
         def shared_report(share_token: str):
             with Session(app.state.engine) as session:
                 report = session.exec(select(Report).where(Report.share_token == share_token)).first()
@@ -1621,7 +1649,6 @@ def create_app(database_url: str | None = None) -> FastAPI:
                     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report data is incomplete")
                 return HTMLResponse(render_public_report(report, inspection, asset))
 
-        @app.get("/{file_path:path}", include_in_schema=False)
         def static_proxy(file_path: str):
             target = resolve_web_target(web_dir, file_path)
             if target is None:
@@ -1629,6 +1656,18 @@ def create_app(database_url: str | None = None) -> FastAPI:
             if target.is_file():
                 return FileResponse(target)
             return FileResponse(web_dir / "index.html")
+
+        for route in build_route_variants("/"):
+            app.add_api_route(route, index, methods=["GET"], include_in_schema=False)
+
+        for route in build_route_variants("/simulator.html"):
+            app.add_api_route(route, simulator, methods=["GET"], include_in_schema=False)
+
+        for route in build_route_variants("/shared/reports/{share_token}"):
+            app.add_api_route(route, shared_report, methods=["GET"], include_in_schema=False)
+
+        for route in build_route_variants("/{file_path:path}"):
+            app.add_api_route(route, static_proxy, methods=["GET"], include_in_schema=False)
 
     return app
 

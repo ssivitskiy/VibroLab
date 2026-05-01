@@ -10,6 +10,7 @@ services:
     environment:
       VIBROLAB_ALLOW_ORIGINS: "${VIBROLAB_ALLOW_ORIGINS:-http://185.239.50.243,http://localhost:8000,http://localhost:8080}"
       VIBROLAB_SECURE_COOKIES: "${VIBROLAB_SECURE_COOKIES:-0}"
+      VIBROLAB_PUBLIC_BASE_PATH: "${VIBROLAB_PUBLIC_BASE_PATH:-}"
     volumes:
       - ./web:/app/web:ro
       - ./runtime:/app/runtime

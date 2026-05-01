@@ -2,6 +2,84 @@
  * VibroLab — Config (SEU full dataset aware)
  */
 
+function normalizeAppBasePath(value) {
+  const raw = String(value || '').trim();
+  if (!raw || raw === '/') return '';
+  return `/${raw.replace(/^\/+|\/+$/g, '')}`;
+}
+
+function detectAppBasePath() {
+  if (typeof window === 'undefined' || window.location?.protocol === 'file:') return '';
+
+  const explicitBase = normalizeAppBasePath(
+    window.__VIBROLAB_CONFIG__?.appBasePath
+    || document.documentElement?.dataset?.appBasePath
+    || document.body?.dataset?.appBasePath
+    || ''
+  );
+  if (explicitBase) return explicitBase;
+
+  const pathname = window.location.pathname || '/';
+  for (const suffix of ['/index.html', '/simulator.html']) {
+    if (pathname.endsWith(suffix)) {
+      return normalizeAppBasePath(pathname.slice(0, -suffix.length));
+    }
+  }
+
+  if (pathname.endsWith('/')) return normalizeAppBasePath(pathname.slice(0, -1));
+
+  const lastSegment = pathname.split('/').filter(Boolean).pop() || '';
+  if (pathname !== '/' && lastSegment && !lastSegment.includes('.')) {
+    return normalizeAppBasePath(pathname);
+  }
+
+  return '';
+}
+
+function isAbsoluteUrl(value) {
+  return /^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith('//');
+}
+
+function buildRuntimeConfig() {
+  const appBasePath = detectAppBasePath();
+
+  function resolveAppPath(path) {
+    const raw = String(path || '').trim();
+    if (!raw) return appBasePath || '/';
+    if (isAbsoluteUrl(raw) || raw.startsWith('#') || raw.startsWith('?')) return raw;
+
+    const normalized = raw.startsWith('/') ? raw : `/${raw}`;
+    if (!appBasePath) return normalized;
+    if (normalized === appBasePath || normalized.startsWith(`${appBasePath}/`)) return normalized;
+    return `${appBasePath}${normalized}`;
+  }
+
+  const configuredApiBase = window.__VIBROLAB_CONFIG__?.apiBase || '/api';
+  const apiBase = resolveAppPath(configuredApiBase);
+
+  return {
+    appBasePath,
+    apiBase,
+    isLocalFile: window.location?.protocol === 'file:',
+    resolveAppPath,
+    resolveApiPath(path = '') {
+      const raw = String(path || '').trim();
+      if (!raw) return apiBase;
+      if (isAbsoluteUrl(raw)) return raw;
+      if (raw === apiBase || raw.startsWith(`${apiBase}/`)) return raw;
+      const normalized = raw.startsWith('/') ? raw : `/${raw}`;
+      return `${apiBase}${normalized}`;
+    },
+    absoluteUrl(path) {
+      const resolved = resolveAppPath(path);
+      if (isAbsoluteUrl(resolved) || window.location?.protocol === 'file:') return resolved;
+      return new URL(resolved, window.location.origin).href;
+    },
+  };
+}
+
+window.VIBROLAB_RUNTIME = buildRuntimeConfig();
+
 const CLASS_LIBRARY = {
   normal: {
     label: 'Норма',
@@ -164,3 +242,4 @@ VM.sourceLabel = function sourceLabel(meta) {
 };
 
 VM.syncMeta();
+VM.RUNTIME = window.VIBROLAB_RUNTIME;

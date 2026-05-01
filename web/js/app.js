@@ -61,7 +61,8 @@ const App = (() => {
     journeyOnboarding: 'vm_journey_onboarding_v1',
     journeyDraft: 'vm_journey_draft_v1',
   };
-  const API_BASE = '/api';
+  const runtime = window.VIBROLAB_RUNTIME || {};
+  const API_BASE = runtime.apiBase || '/api';
   const STORAGE_LIMITS = {
     sessions: 24,
     signalSamples: 4096,
@@ -1452,7 +1453,10 @@ const App = (() => {
   async function apiRequest(path, options = {}) {
     const headers = new Headers(options.headers || {});
     if (!headers.has('Content-Type') && options.body) headers.set('Content-Type', 'application/json');
-    const response = await fetch(`${API_BASE}${path}`, {
+    const requestUrl = typeof runtime.resolveApiPath === 'function'
+      ? runtime.resolveApiPath(path)
+      : `${API_BASE}${path}`;
+    const response = await fetch(requestUrl, {
       credentials: 'include',
       ...options,
       headers,
@@ -2922,8 +2926,8 @@ const App = (() => {
       node.innerHTML = `<div class="workspace-state workspace-state--offline">
           <div class="workspace-state-icon" aria-hidden="true">📡</div>
           <div class="workspace-state-text">
-            <strong>Серверная часть не запущена</strong>
-            <p>Аккаунт и история работают на стороне FastAPI. Поднимите backend командой <code>make serve</code>, чтобы войти и сохранять сеансы.</p>
+            <strong>Серверные функции временно недоступны</strong>
+            <p>Аккаунт, история и сохранение сеансов работают через backend API. Когда серверный контур восстановится, сюда снова вернутся вход, журнал и monitoring.</p>
             <p class="workspace-state-hint">Анализ сигналов и 3D-симулятор работают и без сервера.</p>
           </div>
         </div>`;
@@ -2984,7 +2988,7 @@ const App = (() => {
     if (!summaryNode || !alertListNode || !alertEmptyNode || !alertStatusNode || !alertFilterNode || !alertSortFieldNode || !alertSortInput) return;
 
     if (!apiReady) {
-      summaryNode.innerHTML = `<div class="workspace-empty-block"><strong>Серверная часть не запущена.</strong> Сводка по узлам и health score собираются на стороне FastAPI backend — поднимите его командой <code>make serve</code>, чтобы увидеть эти панели. Анализ сигналов работает и без сервера.</div>`;
+      summaryNode.innerHTML = `<div class="workspace-empty-block"><strong>Серверные панели временно недоступны.</strong> Сводка по узлам, health score и alert-лента появятся сразу после восстановления backend API. Анализ сигналов и 3D-симулятор продолжают работать локально.</div>`;
       alertStatusNode.innerHTML = '';
       alertFilterNode.style.display = 'none';
       alertSortFieldNode.style.display = 'none';
@@ -4608,7 +4612,9 @@ const App = (() => {
       toast('Нет ссылки', 'Сначала сформируйте отчёт для выбранного сеанса.', 'warning');
       return;
     }
-    const absolute = new URL(report.shareUrl, window.location.origin).href;
+    const absolute = typeof runtime.absoluteUrl === 'function'
+      ? runtime.absoluteUrl(report.shareUrl)
+      : new URL(report.shareUrl, window.location.origin).href;
     try {
       await navigator.clipboard.writeText(absolute);
       toast('Ссылка скопирована', absolute, 'success');
@@ -4623,7 +4629,10 @@ const App = (() => {
       toast('Нет ссылки', 'Сначала сформируйте отчёт для выбранного сеанса.', 'warning');
       return;
     }
-    window.open(new URL(report.shareUrl, window.location.origin).href, '_blank', 'noopener,noreferrer');
+    const absolute = typeof runtime.absoluteUrl === 'function'
+      ? runtime.absoluteUrl(report.shareUrl)
+      : new URL(report.shareUrl, window.location.origin).href;
+    window.open(absolute, '_blank', 'noopener,noreferrer');
   }
 
   function focusProfileAsset(assetId, sectionId = 'journalPanel') {
@@ -4807,7 +4816,10 @@ const App = (() => {
       toast('Нет файла', 'Для выбранного измерения недоступна ссылка на скачивание.', 'warning');
       return;
     }
-    window.open(new URL(measurement.downloadUrl, window.location.origin).href, '_blank', 'noopener,noreferrer');
+    const absolute = typeof runtime.absoluteUrl === 'function'
+      ? runtime.absoluteUrl(measurement.downloadUrl)
+      : new URL(measurement.downloadUrl, window.location.origin).href;
+    window.open(absolute, '_blank', 'noopener,noreferrer');
   }
 
   function openMeasurementInAnalysis(measurementId) {

@@ -20,6 +20,9 @@
 - установлен `docker compose`
 - на сервере есть каталог приложения, например `~/vibrolab`
 - для пользователя деплоя есть доступ к Docker
+- если приложение публикуется не в корне домена, а под путём вроде
+  `/demonstrations/vibrolab/app`, в server `.env` нужно задать
+  `VIBROLAB_PUBLIC_BASE_PATH=/demonstrations/vibrolab/app`
 
 ## GitHub Secrets
 
@@ -41,6 +44,13 @@
 ```bash
 git clone <your-repo-url> ~/vibrolab
 cd ~/vibrolab
+docker compose up -d --build web
+```
+
+Для subpath-развёртывания:
+
+```bash
+echo "VIBROLAB_PUBLIC_BASE_PATH=/demonstrations/vibrolab/app" >> .env
 docker compose up -d --build web
 ```
 
