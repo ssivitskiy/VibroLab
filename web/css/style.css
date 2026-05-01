@@ -451,6 +451,10 @@ textarea:focus-visible {
   backdrop-filter:blur(16px);
 }
 
+.journey-onboard-backdrop[hidden] {
+  display:none !important;
+}
+
 .journey-onboard {
   position:relative;
   width:min(1120px, 100%);
