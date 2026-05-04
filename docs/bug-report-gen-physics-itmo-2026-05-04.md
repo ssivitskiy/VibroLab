@@ -1,170 +1,170 @@
-# Bug Report — `gen.physics.itmo.ru` VibroLab Deployment
+# Баг-репорт — развёртывание VibroLab на `gen.physics.itmo.ru`
 
-**Audit date:** 2026-05-04  
-**Audited target:** `https://gen.physics.itmo.ru/demonstrations/vibrolab/app/`  
-**Repository state at audit time:** `main @ 5cd42d6`
+**Дата проверки:** 2026-05-04  
+**Проверяемый адрес:** `https://gen.physics.itmo.ru/demonstrations/vibrolab/app/`  
+**Состояние репозитория на момент проверки:** `main @ 5cd42d6`
 
-## Summary
+## Краткий вывод
 
-The public deployment on `gen.physics.itmo.ru` is not aligned with the current repository state. As of 2026-05-04, the live instance still exhibits issues that are already fixed in `main`, including broken subpath API routing, a non-dismissible onboarding overlay, and stale frontend asset versions.
+Публичное развёртывание на `gen.physics.itmo.ru` не соответствует текущему состоянию репозитория. На 2026-05-04 live-инстанс всё ещё показывает проблемы, которые уже исправлены в `main`: неработающий API под subpath, незакрывающийся onboarding overlay и устаревшие версии frontend-ассетов.
 
-The deployment should be treated as a separate environment that has not yet been updated to the current application version.
+Этот deployment нужно рассматривать как отдельную среду, которая ещё не обновлена до актуальной версии приложения.
 
-## Repository Baseline
+## Актуальная база в репозитории
 
-Current `main` already contains the relevant fixes:
+В текущем `main` уже есть нужные исправления:
 
 - `b1ca9c9` — `fix: support subpath api and static routing`
 - `9938964` — `fix: restore onboarding close behavior`
 - `5cd42d6` — `chore: bust frontend cache for subpath fix`
 
-These commits together cover:
+Эти коммиты закрывают следующие проблемы:
 
-- subpath-aware frontend API base resolution
-- backend support for `/demonstrations/vibrolab/app/*`
-- fixed onboarding close behavior
-- asset version bumps for `style.css`, `config.js`, and `app.js`
+- frontend теперь корректно определяет API base path при запуске из подкаталога
+- backend поддерживает маршруты вида `/demonstrations/vibrolab/app/*`
+- onboarding overlay снова можно закрыть
+- обновлены версии ассетов для `style.css`, `config.js` и `app.js`, чтобы браузер не держал старый кэш
 
-## Current Public State
+## Текущее состояние публичного сайта
 
-Observed on the live site on 2026-05-04:
+Наблюдения на live-сайте 2026-05-04:
 
-- `https://gen.physics.itmo.ru/demonstrations/vibrolab/app/api/health` returns `404 Not Found`
-- the public site still loads old frontend assets such as `js/app.js?v=20260419-ux-pass-2`
-- the onboarding dialog remains visible after clicking the `×` close button
-- the legacy offline/server-unavailable state is still present in the deployed UI
-- query-driven routes such as `?page=profile` and `?page=diag&demo=normal` did not resolve to the expected application states during the audit session
+- `https://gen.physics.itmo.ru/demonstrations/vibrolab/app/api/health` возвращает `404 Not Found`
+- сайт всё ещё загружает старые frontend-ассеты, например `js/app.js?v=20260419-ux-pass-2`
+- onboarding dialog остаётся видимым после клика по кнопке закрытия `×`
+- в интерфейсе всё ещё виден старый server-unavailable/offline fallback
+- query routes вроде `?page=profile` и `?page=diag&demo=normal` во время проверки не открыли ожидаемые состояния приложения
 
-## Findings
+## Найденные проблемы
 
-### 1. Critical — Prefixed API endpoint is not deployed
+### 1. Critical — prefixed API endpoint не развёрнут
 
 **URL**
 
 - `https://gen.physics.itmo.ru/demonstrations/vibrolab/app/api/health`
 
-**Expected**
+**Ожидаемое поведение**
 
 - `200 OK`
-- health JSON payload from the VibroLab backend
+- JSON с health-статусом backend-сервиса VibroLab
 
-**Actual**
+**Фактическое поведение**
 
 - `404 Not Found`
-- response body identifies `nginx/1.24.0 (Ubuntu)`
+- ответ отдаётся nginx `1.24.0 (Ubuntu)`
 
-**Impact**
+**Влияние**
 
-- all server-backed features are effectively unavailable
-- profile, save/history, monitoring, and report-related flows cannot work correctly
+- все server-backed функции фактически недоступны
+- профиль, сохранение истории, monitoring и отчёты не могут работать корректно
 
-### 2. High — Public deployment is stale relative to `main`
+### 2. High — публичный deployment устарел относительно `main`
 
-**Evidence**
+**Доказательства**
 
-- the live page still loads `js/app.js?v=20260419-ux-pass-2`
-- current repository `main` already contains newer fixes and cache-busted asset references
-- bugs fixed in `9938964` and `5cd42d6` are still visible on the public deployment
+- live-страница всё ещё загружает `js/app.js?v=20260419-ux-pass-2`
+- текущий `main` уже содержит более новые исправления и cache-busted ссылки на ассеты
+- баги, исправленные в `9938964` и `5cd42d6`, всё ещё воспроизводятся на публичном сайте
 
-**Impact**
+**Влияние**
 
-- the public instance does not reflect the current application state
-- debugging by repository content alone is misleading until this deployment is updated
+- публичный сайт не отражает актуальное состояние приложения
+- отладка по текущему коду репозитория будет вводить в заблуждение, пока deployment не обновлён
 
-### 3. High — Onboarding overlay cannot be dismissed
+### 3. High — onboarding overlay нельзя закрыть
 
-**Reproduction**
+**Шаги воспроизведения**
 
-1. Open `https://gen.physics.itmo.ru/demonstrations/vibrolab/app/`
-2. Wait for the first-run onboarding overlay
-3. Click the `×` close button
+1. Открыть `https://gen.physics.itmo.ru/demonstrations/vibrolab/app/`
+2. Дождаться появления first-run onboarding overlay
+3. Нажать кнопку закрытия `×`
 
-**Expected**
+**Ожидаемое поведение**
 
-- the onboarding dialog closes
-- the user can access the underlying page
+- onboarding dialog закрывается
+- пользователь получает доступ к основной странице
 
-**Actual**
+**Фактическое поведение**
 
-- the dialog remains visible
-- the close button receives focus, but the overlay is not hidden
+- dialog остаётся на экране
+- кнопка получает фокус, но overlay не скрывается
 
-**Known root cause**
+**Известная причина**
 
-This matches the CSS bug fixed in commit `9938964`, where the overlay backdrop had a hard `display:flex` rule that overrode the `hidden` attribute.
+Это совпадает с CSS-багом, исправленным в коммите `9938964`: у overlay backdrop было жёсткое правило `display:flex`, которое переопределяло HTML-атрибут `hidden`.
 
-### 4. High — Query-based routes are not honored reliably on the public deployment
+### 4. High — query-based routes работают ненадёжно на публичном deployment
 
-**Observed routes**
+**Проверенные маршруты**
 
 - `https://gen.physics.itmo.ru/demonstrations/vibrolab/app/?page=profile`
 - `https://gen.physics.itmo.ru/demonstrations/vibrolab/app/?page=diag&demo=normal`
 
-**Expected**
+**Ожидаемое поведение**
 
-- `?page=profile` should open the profile view
-- `?page=diag&demo=normal` should open the analysis page with the demo case applied
+- `?page=profile` открывает страницу профиля
+- `?page=diag&demo=normal` открывает страницу анализа и применяет demo-кейс
 
-**Actual during audit**
+**Фактическое поведение во время проверки**
 
-- the home/landing view remained visible
-- onboarding still appeared on top
-- expected target states were not surfaced reliably
+- оставалась видимой home/landing view
+- поверх страницы продолжал отображаться onboarding
+- ожидаемые целевые состояния не открывались стабильно
 
-**Impact**
+**Влияние**
 
-- deep links and shared entry points are unreliable
-- guided flows and support/debug links are harder to trust
+- deep links и входные точки для поддержки/демонстрации ненадёжны
+- guided flows сложнее проверять и показывать пользователям
 
-### 5. High — Legacy backend-offline state is still visible in production
+### 5. High — старое backend-offline состояние всё ещё видно в production
 
-**Observed**
+**Наблюдение**
 
-- the deployed UI still contains the legacy offline/server-unavailable messaging
+- deployed UI всё ещё содержит старое сообщение о недоступности серверной части
 
-**Impact**
+**Влияние**
 
-- production users still see a degraded state that should already be resolved by the current repository version
-- this reinforces that the environment is not running the current build
+- production-пользователь видит деградированное состояние, которое уже должно быть закрыто текущей версией репозитория
+- это дополнительно подтверждает, что окружение работает не на актуальной сборке
 
-## Likely Cause
+## Вероятная причина
 
-The `gen.physics.itmo.ru` deployment appears to be a separate environment that has not been updated to the current repository `main`.
+Deployment на `gen.physics.itmo.ru`, судя по поведению, является отдельной средой и ещё не обновлён до текущего `main`.
 
-Possible contributing causes:
+Возможные факторы:
 
-- the environment still serves older frontend static assets
-- backend code has not been updated to the subpath-aware version
-- reverse proxy does not route `/demonstrations/vibrolab/app/api/*` to the VibroLab backend
-- browser/proxy/CDN cache may still be holding older asset versions
+- окружение всё ещё отдаёт старые frontend static assets
+- backend-код не обновлён до версии с поддержкой subpath
+- reverse proxy не проксирует `/demonstrations/vibrolab/app/api/*` в VibroLab backend
+- браузерный, proxy или CDN-кэш может удерживать старые версии ассетов
 
-## Required Update
+## Что нужно обновить
 
-The target environment should be updated to `main @ 5cd42d6` or newer.
+Целевое окружение нужно обновить до `main @ 5cd42d6` или более новой версии.
 
-Minimum required changes:
+Минимальный список действий:
 
-- deploy updated backend from `python/backend/`
-- deploy updated frontend static files from `web/`
-- set `VIBROLAB_PUBLIC_BASE_PATH=/demonstrations/vibrolab/app`
-- rebuild/restart the VibroLab app service
-- ensure reverse proxy forwards the application subpath correctly
-- purge or bypass stale cache for updated frontend assets
+- развернуть актуальный backend из `python/backend/`
+- развернуть актуальные static files из `web/`
+- выставить `VIBROLAB_PUBLIC_BASE_PATH=/demonstrations/vibrolab/app`
+- пересобрать и перезапустить сервис VibroLab
+- убедиться, что reverse proxy корректно проксирует subpath приложения
+- очистить или обойти stale cache для обновлённых frontend-ассетов
 
-## Acceptance Criteria
+## Критерии готовности
 
-The bug is resolved only when all of the following are true:
+Проблема считается исправленной только если выполняются все условия:
 
-- `GET /demonstrations/vibrolab/app/api/health` returns `200`
-- the onboarding dialog closes via `×`, `Escape`, and backdrop click
-- `?page=profile` opens the profile page reliably
-- `?page=diag&demo=normal` opens the analysis flow reliably
-- the public deployment no longer serves stale `20260419-*` frontend asset versions
-- profile/save/history/monitoring features no longer fail due to missing backend routing
+- `GET /demonstrations/vibrolab/app/api/health` возвращает `200`
+- onboarding dialog закрывается через `×`, `Escape` и клик по backdrop
+- `?page=profile` стабильно открывает профиль
+- `?page=diag&demo=normal` стабильно открывает analysis flow
+- публичный deployment больше не отдаёт устаревшие frontend asset versions вида `20260419-*`
+- profile/save/history/monitoring больше не ломаются из-за отсутствующего backend routing
 
-## Suggested Follow-up
+## Рекомендуемые следующие шаги
 
-- update the separate `gen.physics.itmo.ru` deployment from current `main`
-- verify reverse proxy configuration for the application subpath
-- perform a cache purge after deployment
-- re-run browser smoke tests on the production URL after rollout
+- обновить отдельный deployment `gen.physics.itmo.ru` из текущего `main`
+- проверить reverse proxy config для application subpath
+- выполнить cache purge после deployment
+- повторить browser smoke test на production URL после выкладки
