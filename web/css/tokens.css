@@ -121,6 +121,72 @@
   --glow-cyan:   0 0 20px rgba(0,229,255,0.3);
   --glow-green:  0 0 8px var(--green);
   --glow-red:    0 0 8px var(--red);
+
+  /* On-canvas helpers (sliders, ticks, grid lines on charts) */
+  --canvas-bg:   #06090f;
+  --canvas-grid: rgba(255,255,255,0.06);
+  --canvas-axis: rgba(255,255,255,0.18);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT THEME — opt-in via <html data-theme="light">
+   Keeps neon accents (slightly darkened for AA contrast on light bg)
+   ═══════════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"] {
+  /* Surfaces flip — paper-like, layered */
+  --bg:        #f6f7fa;
+  --surface:   #ffffff;
+  --surface2:  #eef1f6;
+  --surface3:  #e3e8f0;
+
+  /* Borders — soft, but visible */
+  --border:    #d8deea;
+  --border-hi: #c4cdd9;
+
+  /* Neon accents — darkened for contrast on light surfaces */
+  --cyan:   #0891b2;
+  --green:  #059669;
+  --orange: #ea580c;
+  --red:    #dc2626;
+  --yellow: #b45309;
+  --purple: #7c3aed;
+  --pink:   #db2777;
+  --blue:   #2563eb;
+
+  /* Text — dark on light */
+  --text:        #2d3748;
+  --text-strong: #0f172a;
+  --muted:       #94a3b8;
+  --muted-hi:    #475569;
+
+  /* Tints lighter for light bg */
+  --tint-cyan-weak:    rgba(8,145,178,0.06);
+  --tint-cyan:         rgba(8,145,178,0.10);
+  --tint-cyan-strong:  rgba(8,145,178,0.18);
+  --tint-green-weak:   rgba(5,150,105,0.08);
+  --tint-green:        rgba(5,150,105,0.12);
+  --tint-orange:       rgba(234,88,12,0.10);
+  --tint-red:          rgba(220,38,38,0.10);
+  --tint-yellow:       rgba(180,83,9,0.10);
+
+  /* Shadows — softer on light theme */
+  --shadow-card:  0 4px 14px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04);
+  --shadow-lift:  0 10px 28px rgba(15,23,42,0.10);
+  --shadow-stage: 0 16px 40px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
+  --shadow-hero:  0 20px 60px rgba(15,23,42,0.10), 0 0 36px rgba(8,145,178,0.10);
+
+  --glow-cyan:   0 0 18px rgba(8,145,178,0.25);
+
+  /* Canvas helpers — keep oscilloscope feel dark even in light mode */
+  --canvas-bg:   #0f172a;
+  --canvas-grid: rgba(255,255,255,0.06);
+  --canvas-axis: rgba(255,255,255,0.18);
+}
+
+:root[data-theme="light"] body {
+  background: var(--bg);
+  color: var(--text);
 }
 
 /* ═══════════════════════════════════════════════════════════════

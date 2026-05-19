@@ -6,7 +6,7 @@
   <meta name="description" content="VibroLab 3D — Интерактивный симулятор редукторов с диагностикой дефектов">
   <meta name="theme-color" content="#060a12">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
-  <title>VibroLab — 3D Gearbox Simulator</title>
+  <title>VibroLab — 3D-симулятор редуктора</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="js/three/postprocessing.bundle.js"></script>
   <script src="js/config.js?v=20260501-subpath-fix-1"></script>
@@ -36,6 +36,22 @@
       --yellow: #facc15;
       --purple: #a78bfa;
       --blue: #60a5fa
+    }
+
+    :root[data-theme="light"] {
+      --bg: #f6f7fa;
+      --panel: #ffffff;
+      --panel2: #eef1f6;
+      --border: #d8deea;
+      --text: #1e293b;
+      --dim: #64748b;
+      --accent: #0891b2;
+      --green: #059669;
+      --red: #dc2626;
+      --orange: #ea580c;
+      --yellow: #b45309;
+      --purple: #7c3aed;
+      --blue: #2563eb
     }
 
     body {
@@ -527,6 +543,47 @@
     .hamburger:hover { border-color: var(--accent); color: var(--accent) }
     .mob-overlay { display: none; position: fixed; inset: 0; z-index: 49; background: rgba(0,0,0,.5) }
     .mob-overlay.show { display: block }
+
+    /* SVG icons (Lucide-style) */
+    .icon {
+      width: 1em;
+      height: 1em;
+      display: inline-block;
+      vertical-align: -0.15em;
+      flex-shrink: 0;
+      color: currentColor;
+    }
+    .icon-lg { width: 1.4em; height: 1.4em; }
+    .icon-xl { width: 2em; height: 2em; }
+
+    /* Theme toggle button */
+    .theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 28px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--dim);
+      cursor: pointer;
+      padding: 0;
+      transition: color .15s, border-color .15s, background .15s;
+    }
+    .theme-toggle:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    .theme-toggle .icon { width: 14px; height: 14px; }
+    .theme-toggle .theme-toggle-moon { display: none; }
+    :root[data-theme="light"] .theme-toggle .theme-toggle-sun { display: none; }
+    :root[data-theme="light"] .theme-toggle .theme-toggle-moon { display: inline-block; }
+
+    /* Light theme overrides for hardcoded dark colors */
+    :root[data-theme="light"] .tooltip { background: rgba(255,255,255,.95); box-shadow: 0 6px 20px rgba(15,23,42,.12); }
+    :root[data-theme="light"] .mob-overlay { background: rgba(15,23,42,.4); }
+    :root[data-theme="light"] body { background: var(--bg); }
 
     .vp canvas { cursor: grab }
     .vp canvas:active { cursor: grabbing }
@@ -1113,15 +1170,50 @@
       .lp.open { width: 100% }
     }
   </style>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('vibrolab-theme');
+        if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute;pointer-events:none" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="ic-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 11-13h-7l1-7Z"/></symbol>
+    <symbol id="ic-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18M7 14v4M12 9v9M17 5v13"/></symbol>
+    <symbol id="ic-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4.6 4.6 0 0 1 5.8 5.8L19 13.5l-1.5-1.5-1.5 1.5-3-3 1.5-1.5L13 7.5l1.7-1.2zM7.5 13.5l-4.8 4.8a2.1 2.1 0 1 0 3 3l4.8-4.8"/></symbol>
+    <symbol id="ic-volume" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5ZM15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/></symbol>
+    <symbol id="ic-volume-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5ZM22 9l-6 6M16 9l6 6"/></symbol>
+    <symbol id="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-11"/></symbol>
+    <symbol id="ic-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></symbol>
+    <symbol id="ic-dot" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="12" cy="12" r="6"/></symbol>
+    <symbol id="ic-play" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6 4l14 8-14 8z"/></symbol>
+    <symbol id="ic-stop" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="5" y="5" width="14" height="14" rx="1"/></symbol>
+    <symbol id="ic-film" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></symbol>
+    <symbol id="ic-xray" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></symbol>
+    <symbol id="ic-compare" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/></symbol>
+    <symbol id="ic-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+    <symbol id="ic-save" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></symbol>
+    <symbol id="ic-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></symbol>
+    <symbol id="ic-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></symbol>
+    <symbol id="ic-maximize" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+    <symbol id="ic-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+    <symbol id="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></symbol>
+    <symbol id="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/></symbol>
+    <symbol id="ic-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+  </defs>
+</svg>
 <div id="loadScreen"
-     style="position:fixed;inset:0;z-index:999;background:#060a12;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s">
+     style="position:fixed;inset:0;z-index:999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .6s">
   <div
-    style="font:800 28px 'Outfit',sans-serif;background:linear-gradient(135deg,#22d3ee,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent">
-    ⚡ VibroLab
+    style="font:800 28px 'Outfit',sans-serif;background:linear-gradient(135deg,var(--accent),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:inline-flex;align-items:center;gap:10px">
+    <svg class="icon icon-lg" aria-hidden="true" style="color:var(--accent)"><use href="#ic-bolt"/></svg>
+    VibroLab
   </div>
-  <div style="font:400 11px 'JetBrains Mono',monospace;color:#5a6a80;margin-top:8px">Loading 3D engine...</div>
+  <div style="font:400 11px 'JetBrains Mono',monospace;color:var(--dim);margin-top:8px">Загружаем 3D-движок…</div>
   <div style="width:120px;height:2px;background:#1a2438;border-radius:1px;margin-top:16px;overflow:hidden">
     <div
       style="width:60%;height:100%;background:linear-gradient(90deg,#22d3ee,#34d399);border-radius:1px;animation:ldbar 1.2s ease-in-out infinite"></div>
@@ -1137,11 +1229,15 @@
        }</style>
 <div class="app">
   <div class="hdr">
-    <h1>⚡ VibroLab</h1><span class="ver">Simulator</span>
-    <button class="hamburger" id="menuBtn" onclick="togPanel('lp')">☰</button>
-    <button class="hamburger" id="chartBtn" onclick="togPanel('rp')" style="font-size:13px">📊</button>
+    <h1><svg class="icon" aria-hidden="true" style="vertical-align:-0.18em"><use href="#ic-bolt"/></svg> VibroLab</h1><span class="ver">Симулятор</span>
+    <button class="hamburger" id="menuBtn" onclick="togPanel('lp')" aria-label="Меню параметров"><svg class="icon" aria-hidden="true"><use href="#ic-gear"/></svg></button>
+    <button class="hamburger" id="chartBtn" onclick="togPanel('rp')" aria-label="Графики"><svg class="icon" aria-hidden="true"><use href="#ic-chart"/></svg></button>
     <button class="sim-help-btn" id="simHelpBtn" onclick="showOnboard()" aria-label="Показать мини-гид по симулятору" title="Мини-гид">?</button>
-    <a href="index.html" class="lnk">← Dashboard</a>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="Переключить тему" onclick="(function(b){var d=document.documentElement;var cur=d.getAttribute('data-theme')==='light'?'light':'dark';var next=cur==='light'?'dark':'light';d.setAttribute('data-theme',next);try{localStorage.setItem('vibrolab-theme',next);}catch(e){}b.setAttribute('aria-pressed',next==='light');})(this)">
+      <svg class="icon theme-toggle-sun" aria-hidden="true"><use href="#ic-sun"/></svg>
+      <svg class="icon theme-toggle-moon" aria-hidden="true"><use href="#ic-moon"/></svg>
+    </button>
+    <a href="index.html" class="lnk">← Главная</a>
   </div>
   <div class="lp">
     <div class="sec" id="secType">
@@ -1149,7 +1245,7 @@
       <div class="sec-body">
         <div id="typeBtns"></div>
         <div style="margin-top:4px">
-          <button class="xbtn" id="xBtn" onclick="togExplode()">🔧 Разборка</button>
+          <button class="xbtn" id="xBtn" onclick="togExplode()"><svg class="icon" aria-hidden="true"><use href="#ic-wrench"/></svg> Разборка</button>
         </div>
       </div>
     </div>
@@ -1172,23 +1268,23 @@
     <div class="sec" id="secSound">
       <div class="st" onclick="togSec(this)">Звук</div>
       <div class="sec-body">
-        <div class="stgl" id="sndT" onclick="togSnd()"><span id="sndI">🔇</span> Выкл</div>
+        <div class="stgl" id="sndT" onclick="togSnd()"><span id="sndI"><svg class="icon" aria-hidden="true"><use href="#ic-volume-off"/></svg></span> Выкл</div>
         <div class="sg" id="volBox" style="margin-top:4px;display:none"><label>Громкость <span id="volV">50%</span></label><input type="range" id="volS" min="0" max="100" value="50" oninput="setVol(this.value)"></div>
       </div>
     </div>
     <div class="sec" id="secPresets">
       <div class="st" onclick="togSec(this)">Пресеты</div>
       <div class="sec-body">
-        <button class="xbtn" onclick="applyPreset('healthy')" style="width:100%;margin-bottom:3px">✓ Всё исправно</button>
-        <button class="xbtn" onclick="applyPreset('chip_s1')" style="width:100%;margin-bottom:3px">⚠ Скол на S1</button>
-        <button class="xbtn" onclick="applyPreset('multi')" style="width:100%;margin-bottom:3px">🔴 Множ. дефекты</button>
-        <button class="xbtn" onclick="applyPreset('bearing')" style="width:100%;margin-bottom:3px">◉ Дефект подшипника</button>
+        <button class="xbtn" onclick="applyPreset('healthy')" style="width:100%;margin-bottom:3px"><svg class="icon" aria-hidden="true" style="color:var(--green)"><use href="#ic-check"/></svg> Всё исправно</button>
+        <button class="xbtn" onclick="applyPreset('chip_s1')" style="width:100%;margin-bottom:3px"><svg class="icon" aria-hidden="true" style="color:var(--orange)"><use href="#ic-warning"/></svg> Скол на S1</button>
+        <button class="xbtn" onclick="applyPreset('multi')" style="width:100%;margin-bottom:3px"><svg class="icon" aria-hidden="true" style="color:var(--red)"><use href="#ic-dot"/></svg> Множественные дефекты</button>
+        <button class="xbtn" onclick="applyPreset('bearing')" style="width:100%;margin-bottom:3px"><svg class="icon" aria-hidden="true" style="color:var(--purple)"><use href="#ic-dot"/></svg> Дефект подшипника</button>
       </div>
     </div>
     <div class="sec" id="secScenario">
       <div class="st" onclick="togSec(this)">Сценарий</div>
       <div class="sec-body">
-        <button class="xbtn" id="degBtn" onclick="togDegradation()" style="width:100%">▶ Деградация</button>
+        <button class="xbtn" id="degBtn" onclick="togDegradation()" style="width:100%"><svg class="icon" aria-hidden="true"><use href="#ic-play"/></svg> Деградация</button>
         <div id="degBar" style="display:none;margin-top:4px">
           <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--dim);margin-bottom:2px">
             <span id="degLabel">Норма</span>
@@ -1202,31 +1298,31 @@
       <div class="st" onclick="togSec(this)">Эффекты</div>
       <div class="sec-body">
         <div class="mode-grid">
-          <button class="xbtn wide" id="replayBtn" onclick="playImpactReplay()">🎬 Impact Replay</button>
-          <button class="xbtn" id="xrayBtn" onclick="togXray()">🩻 X-Ray</button>
-          <button class="xbtn" id="cmpBtn" onclick="togCompare()">◫ Compare</button>
+          <button class="xbtn wide" id="replayBtn" onclick="playImpactReplay()"><svg class="icon" aria-hidden="true"><use href="#ic-film"/></svg> Повтор удара</button>
+          <button class="xbtn" id="xrayBtn" onclick="togXray()"><svg class="icon" aria-hidden="true"><use href="#ic-xray"/></svg> Рентген</button>
+          <button class="xbtn" id="cmpBtn" onclick="togCompare()"><svg class="icon" aria-hidden="true"><use href="#ic-compare"/></svg> Сравнение</button>
         </div>
-        <div class="mode-note">Impact Replay замедляет ударный момент, X-Ray раскрывает корпус, Compare показывает норму и текущий режим одновременно.</div>
+        <div class="mode-note">Повтор удара замедляет ударный момент, Рентген раскрывает корпус, Сравнение показывает норму и текущий режим одновременно.</div>
       </div>
     </div>
     <div class="sec" id="secData">
       <div class="st" onclick="togSec(this)">Данные</div>
       <div class="sec-body">
-        <div class="upz" onclick="document.getElementById('fIn').click()">📁 CSV / WAV / TXT / MAT / NPY<input type="file" id="fIn"
+        <div class="upz" onclick="document.getElementById('fIn').click()"><svg class="icon" aria-hidden="true"><use href="#ic-folder"/></svg> CSV / WAV / TXT / MAT / NPY<input type="file" id="fIn"
                                                                                                   accept=".csv,.wav,.txt,.mat,.npy,.npz,.dat,.uff"
                                                                                                   onchange="onFile(event)">
         </div>
         <div id="upR" style="margin-top:4px;font-size:9px;color:var(--dim)"></div>
         <div style="margin-top:4px;display:flex;gap:4px">
-          <button class="xbtn" onclick="exportSignal('wav')" style="flex:1">💾 WAV</button>
-          <button class="xbtn" onclick="exportSignal('csv')" style="flex:1">💾 CSV</button>
+          <button class="xbtn" onclick="exportSignal('wav')" style="flex:1"><svg class="icon" aria-hidden="true"><use href="#ic-save"/></svg> WAV</button>
+          <button class="xbtn" onclick="exportSignal('csv')" style="flex:1"><svg class="icon" aria-hidden="true"><use href="#ic-save"/></svg> CSV</button>
         </div>
       </div>
     </div>
     <div class="sec" id="secReport">
       <div class="st" onclick="togSec(this)">Отчёт</div>
       <div class="sec-body">
-        <button class="xbtn" onclick="exportPDF()" style="width:100%">📄 Скачать PDF-отчёт</button>
+        <button class="xbtn" onclick="exportPDF()" style="width:100%"><svg class="icon" aria-hidden="true"><use href="#ic-file-text"/></svg> Скачать PDF-отчёт</button>
       </div>
     </div>
   </div>
@@ -1240,7 +1336,7 @@
       </div>
       <div class="bdg" id="dTp" style="color:var(--dim)">Параллельный • 2 ступени</div>
     </div>
-    <div class="dbg" id="dBdg" style="transition:all .3s"><span id="dI">✓</span> <span id="dT">Все ступени исправны</span></div>
+    <div class="dbg" id="dBdg" style="transition:all .3s"><span id="dI"><svg class="icon" aria-hidden="true" style="color:var(--green)"><use href="#ic-check"/></svg></span> <span id="dT">Все ступени исправны</span></div>
     <!-- Vibration severity monitor -->
     <div id="vibMonitor" style="position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;z-index:10">
       <div class="bdg" style="min-width:80px">
@@ -1263,10 +1359,10 @@
       <button class="cam-btn" onclick="camPreset('top')" title="Вид сверху">T</button>
       <button class="cam-btn" onclick="camPreset('side')" title="Вид сбоку">S</button>
       <button class="cam-btn" onclick="camPreset('iso')" title="Изометрия">3D</button>
-      <button class="cam-btn" onclick="camPreset('reset')" title="Сброс камеры" style="border-color:var(--accent);color:var(--accent)">⟲</button>
+      <button class="cam-btn" onclick="camPreset('reset')" title="Сброс камеры" aria-label="Сброс камеры" style="border-color:var(--accent);color:var(--accent)"><svg class="icon" aria-hidden="true"><use href="#ic-refresh"/></svg></button>
     </div>
-    <div class="replay-badge" id="replayBadge">Impact Replay · 0.25×</div>
-    <div class="xray-badge" id="xrayBadge">X-Ray Cutaway</div>
+    <div class="replay-badge" id="replayBadge">Повтор удара · 0.25×</div>
+    <div class="xray-badge" id="xrayBadge">Рентген-разрез</div>
     <div class="compare-hud" id="compareHud">
       <div class="compare-label left">Норма</div>
       <div class="compare-label right">Текущий режим</div>
@@ -1276,7 +1372,7 @@
     <div class="tour-guide-shell" id="tourGuideShell" aria-live="polite">
       <div class="tour-guide-head">
         <div>
-          <div class="tour-guide-kicker" id="tourGuideKicker">GUIDED TOUR</div>
+          <div class="tour-guide-kicker" id="tourGuideKicker">УЧЕБНАЯ ЭКСКУРСИЯ</div>
           <strong class="tour-guide-title" id="tourGuideTitle">Начните с базового режима</strong>
         </div>
         <span class="tour-guide-state" id="tourGuideState">1 / 3</span>
@@ -1298,17 +1394,17 @@
   <div class="rp">
     <div class="cb">
       <div class="ct">Осциллограмма</div>
-      <button class="fs-btn" onclick="togFullscreen(this)">⛶</button>
+      <button class="fs-btn" onclick="togFullscreen(this)" aria-label="Полноэкранный режим" title="Полноэкранный режим"><svg class="icon" aria-hidden="true"><use href="#ic-maximize"/></svg></button>
       <canvas class="ch" id="wC"></canvas>
     </div>
     <div class="cb">
       <div class="ct">Спектр FFT</div>
-      <button class="fs-btn" onclick="togFullscreen(this)">⛶</button>
+      <button class="fs-btn" onclick="togFullscreen(this)" aria-label="Полноэкранный режим" title="Полноэкранный режим"><svg class="icon" aria-hidden="true"><use href="#ic-maximize"/></svg></button>
       <canvas class="ch" id="fC"></canvas>
     </div>
     <div class="cb">
       <div class="ct">Огибающая (Envelope)</div>
-      <button class="fs-btn" onclick="togFullscreen(this)">⛶</button>
+      <button class="fs-btn" onclick="togFullscreen(this)" aria-label="Полноэкранный режим" title="Полноэкранный режим"><svg class="icon" aria-hidden="true"><use href="#ic-maximize"/></svg></button>
       <canvas class="ch" id="eC"></canvas>
     </div>
     <div class="fi" id="infoBox"><h3 id="fiT">Исправен</h3>
@@ -1327,7 +1423,7 @@
   </div>
   <div id="onboardHint" class="sim-onboard" style="display:none">
     <div class="sim-onboard-box" role="dialog" aria-labelledby="simOnboardTitle" aria-modal="true">
-      <div id="simOnboardTitle" class="sim-onboard-title">⚡ VibroLab 3D · мини-гид</div>
+      <div id="simOnboardTitle" class="sim-onboard-title"><svg class="icon" aria-hidden="true" style="color:var(--accent);vertical-align:-0.2em"><use href="#ic-bolt"/></svg> VibroLab 3D · мини-гид</div>
       <p class="sim-onboard-lead">Симулятор — это учебный стенд. Покрутите ручки и смотрите, как меняются графики.</p>
       <div class="sim-onboard-step">
         <span class="sim-onboard-step-num">1</span>
@@ -1347,7 +1443,7 @@
         <span class="sim-onboard-step-num">3</span>
         <div>
           <strong>Покрутите модель</strong>
-          <p>Левая кнопка мыши — вращение, колесо — zoom. Кнопка «🔧 Разборка» покажет взрыв-схему.</p>
+          <p>Левая кнопка мыши — вращение, колесо — масштаб. Кнопка «Разборка» покажет взрыв-схему.</p>
         </div>
       </div>
       <div class="sim-onboard-actions">
@@ -1373,11 +1469,11 @@
       s: 'In'
     }, {id: 'outer', label: 'Нар.об▪', c: '#fb7185', s: 'Ou'},
   ];
-  const TYPES = [{id: 'parallel', label: '⚙ Параллельный', ru: 'Параллельный'}, {
+  const TYPES = [{id: 'parallel', label: 'Параллельный', ru: 'Параллельный'}, {
     id: 'planetary',
-    label: '☀ Планетарный',
+    label: 'Планетарный',
     ru: 'Планетарный'
-  }, {id: 'worm', label: '🔩 Червячный', ru: 'Червячный'}];
+  }, {id: 'worm', label: 'Червячный', ru: 'Червячный'}];
 
   let curType = 'parallel', spd = 20, ld = 0, sndOn = false, actx = null, sndVol = 50;
   let stages = [{z1: 20, z2: 40, fault: 'normal'}, {z1: 18, z2: 36, fault: 'normal'}];
@@ -2096,7 +2192,7 @@
       <div class="sz">Z₁<input value="${s.z1}" onchange="setZ(${i},1,this.value)" type="number" min="8" max="80">
       : Z₂<input value="${s.z2}" onchange="setZ(${i},2,this.value)" type="number" min="8" max="120"></div>
       <span style="margin-left:auto;font:600 9px 'JetBrains Mono',monospace;color:${f.c}">${f.label}</span>
-      ${stages.length > 1 ? `<button class="srm" onclick="rmStage(${i})">✕</button>` : ''}
+      ${stages.length > 1 ? `<button class="srm" onclick="rmStage(${i})" aria-label="Убрать ступень"><svg class="icon" aria-hidden="true"><use href="#ic-close"/></svg></button>` : ''}
     </div><div class="sfl">${FAULTS.map(ft => `<button class="sf${ft.id === s.fault ? ' on' : ''}" data-tip="${ft.label}" style="${ft.id === s.fault ? 'background:' + ft.c + '22;border-color:' + ft.c + ';color:' + ft.c : ''}" onclick="setFault(${i},'${ft.id}')">${ft.s}</button>`).join('')}</div></div>`
     }).join('');
   }
@@ -2147,14 +2243,14 @@
     const faulted = stages.filter(s => s.fault !== 'normal');
     const bdg = document.getElementById('dBdg');
     if (!faulted.length) {
-      document.getElementById('dI').textContent = '✓';
+      document.getElementById('dI').innerHTML = '<svg class="icon" aria-hidden="true" style="color:var(--green)"><use href="#ic-check"/></svg>';
       document.getElementById('dT').textContent = 'Все ступени исправны';
       bdg.style.borderColor = bdg.style.color = 'var(--green)';
       document.getElementById('fiT').textContent = 'Исправен';
       document.getElementById('fiD').textContent = 'Все ступени в норме.'
     } else {
       const f0 = FAULTS.find(x => x.id === faulted[0].fault);
-      document.getElementById('dI').textContent = '⚠';
+      document.getElementById('dI').innerHTML = '<svg class="icon" aria-hidden="true" style="color:var(--orange)"><use href="#ic-warning"/></svg>';
       document.getElementById('dT').textContent = faulted.length + ' деф.: ' + faulted.map(s => {
         const fi = stages.indexOf(s);
         return 'S' + (fi + 1) + '=' + FAULTS.find(x => x.id === s.fault).s
@@ -3261,7 +3357,9 @@
     sndOn = !sndOn;
     const b = document.getElementById('sndT');
     b.classList.toggle('on', sndOn);
-    document.getElementById('sndI').textContent = sndOn ? '🔊' : '🔇';
+    document.getElementById('sndI').innerHTML = sndOn
+      ? '<svg class="icon" aria-hidden="true"><use href="#ic-volume"/></svg>'
+      : '<svg class="icon" aria-hidden="true"><use href="#ic-volume-off"/></svg>';
     b.lastChild.textContent = sndOn ? ' Вкл' : ' Выкл';
     document.getElementById('volBox').style.display = sndOn ? '' : 'none';
     if (sndOn) {
@@ -4191,7 +4289,7 @@
       const active = replayScale < 0.999;
       replayBtn?.classList.toggle('on', active);
       replayBadge.classList.toggle('show', active);
-      if (active) replayBadge.textContent = 'Impact Replay · ' + replayScale.toFixed(2) + '×';
+      if (active) replayBadge.textContent = 'Повтор удара · ' + replayScale.toFixed(2) + '×';
     }
 
     // ─── Camera inertia ───
@@ -4470,73 +4568,73 @@
 
   const LAB_SCENARIOS = {
     intro_baseline: {
-      kicker: 'ЛАБА 01 · BASELINE',
+      kicker: 'ЛАБА 01 · НОРМА',
       title: 'Норма как точка отсчёта',
-      lead: 'Начните со спокойного режима: так легче заметить, где в FFT находится GMF и что именно ломается после появления дефекта.',
-      tags: ['baseline', 'GMF', 'FFT', 'speed sweep'],
+      lead: 'Начните со спокойного режима: так легче заметить, где в спектре находится зубчатая гармоника и что именно ломается после появления дефекта.',
+      tags: ['эталон', 'зубчатая частота', 'спектр', 'разгон по скорости'],
       theoryTitle: 'Что наблюдать',
-      theory: 'В исправном режиме энергия собрана вокруг базовых гармоник, без выраженных ударов и резкой модуляции. Это лучший reference для всех дальнейших сравнений.',
+      theory: 'В исправном режиме энергия собрана вокруг базовых гармоник, без выраженных ударов и резкой модуляции. Это лучший эталон для всех дальнейших сравнений.',
       steps: [
         { label: '01', title: 'Оставьте редуктор исправным', note: 'Посмотрите на временной сигнал и убедитесь, что форма остаётся ровной и предсказуемой.' },
         { label: '02', title: 'Поднимите скорость', note: 'С ростом частоты вращения гармоники смещаются вверх по оси частот, но структура спектра остаётся аккуратной.' },
-        { label: '03', title: 'Переходите к дефектам', note: 'После спокойного baseline отличие fault case читается намного увереннее.' },
+        { label: '03', title: 'Переходите к дефектам', note: 'После спокойного эталона отличие дефектного режима читается намного увереннее.' },
       ],
       actions: [
         { kind: 'preset', value: 'healthy', label: 'ПОКАЗАТЬ НОРМУ', tone: 'primary' },
-        { kind: 'lab', value: 'gear_fault_path', label: 'К GEAR LAB' },
+        { kind: 'lab', value: 'gear_fault_path', label: 'К ЛАБОРАТОРИИ ШЕСТЕРНИ' },
         { kind: 'route', page: 'diag', demo: 'normal', guide: 'virtual_lab', label: 'ПРОВЕРИТЬ В АНАЛИЗЕ' },
       ],
       setup: { preset: 'healthy', speed: 20, load: 18, compare: false }
     },
     gear_fault_path: {
-      kicker: 'ЛАБА 02 · GEAR FAULT',
+      kicker: 'ЛАБА 02 · ШЕСТЕРНЯ',
       title: 'Скол и отсутствие зуба',
-      lead: 'Здесь важен ударный характер дефекта: механика становится менее регулярной, а FFT быстро перестаёт быть похожим на baseline.',
-      tags: ['gear fault', 'impact', 'compare', 'GMF'],
+      lead: 'Здесь важен ударный характер дефекта: механика становится менее регулярной, а спектр быстро перестаёт быть похожим на эталон.',
+      tags: ['дефект шестерни', 'удар', 'сравнение', 'зубчатая частота'],
       theoryTitle: 'Что наблюдать',
-      theory: 'Для зубчатого дефекта характерны ударные события, рост широкополосной энергии и разрушение привычной структуры вокруг GMF. Compare помогает увидеть это почти мгновенно.',
+      theory: 'Для зубчатого дефекта характерны ударные события, рост широкополосной энергии и разрушение привычной структуры вокруг зубчатой частоты. Режим сравнения помогает увидеть это почти мгновенно.',
       steps: [
         { label: '01', title: 'Запустите дефект зуба', note: 'Скол показывает ранний ударный режим, а отсутствие зуба даёт уже очень жёсткий аварийный паттерн.' },
-        { label: '02', title: 'Включите Compare', note: 'Когда норма и дефект стоят рядом, изменения в сигнале и спектре читаются без дополнительных объяснений.' },
-        { label: '03', title: 'Используйте Impact Replay', note: 'Замедленный повтор помогает связать физический удар с тем, что вы видите в графиках.' },
+        { label: '02', title: 'Включите сравнение', note: 'Когда норма и дефект стоят рядом, изменения в сигнале и спектре читаются без дополнительных объяснений.' },
+        { label: '03', title: 'Используйте повтор удара', note: 'Замедленный повтор помогает связать физический удар с тем, что вы видите в графиках.' },
       ],
       actions: [
         { kind: 'fault', value: 'chip', label: 'ПОКАЗАТЬ СКОЛ', tone: 'primary' },
         { kind: 'compare', value: '1', label: 'СРАВНИТЬ С НОРМОЙ' },
-        { kind: 'impact', label: 'IMPACT REPLAY' },
+        { kind: 'impact', label: 'ПОВТОР УДАРА' },
         { kind: 'route', page: 'diag', demo: 'tooth_miss', guide: 'compare_faults', label: 'ПРОГНАТЬ ДИАГНОСТИКУ' },
       ],
       setup: { fault: 'chip', speed: 24, load: 58, compare: true, autofocus: true, impact: true }
     },
     bearing_fault_path: {
-      kicker: 'ЛАБА 03 · BEARING',
+      kicker: 'ЛАБА 03 · ПОДШИПНИК',
       title: 'Внутренняя обойма и модуляция',
-      lead: 'Подшипниковый дефект читается иначе, чем зубчатый. Этот сценарий помогает почувствовать разницу между ударной зубчатой парой и bearing modulation.',
-      tags: ['bearing', 'envelope', 'BPFI', 'compare'],
+      lead: 'Подшипниковый дефект читается иначе, чем зубчатый. Этот сценарий помогает почувствовать разницу между ударной зубчатой парой и модуляцией подшипника.',
+      tags: ['подшипник', 'огибающая', 'BPFI', 'сравнение'],
       theoryTitle: 'Что наблюдать',
-      theory: 'Для дефекта внутренней обоймы важна модуляция при прохождении зоны нагрузки. Огибающая и sideband-структуры становятся особенно полезными.',
+      theory: 'Для дефекта внутренней обоймы важна модуляция при прохождении зоны нагрузки. Огибающая и боковые полосы становятся особенно полезными.',
       steps: [
-        { label: '01', title: 'Откройте bearing fault', note: 'Посмотрите, как повреждение локализуется ближе к подшипнику и меняет характер вибрации.' },
-        { label: '02', title: 'Следите за envelope', note: 'В отличие от зубчатого удара, здесь полезно смотреть не только FFT, но и огибающую.' },
-        { label: '03', title: 'Сравните с gear fault', note: 'Переключение между двумя лабораториями быстро закрепляет разницу между классами.' },
+        { label: '01', title: 'Откройте дефект подшипника', note: 'Посмотрите, как повреждение локализуется ближе к подшипнику и меняет характер вибрации.' },
+        { label: '02', title: 'Следите за огибающей', note: 'В отличие от зубчатого удара, здесь полезно смотреть не только спектр, но и огибающую.' },
+        { label: '03', title: 'Сравните с дефектом шестерни', note: 'Переключение между двумя лабораториями быстро закрепляет разницу между классами.' },
       ],
       actions: [
         { kind: 'fault', value: 'inner', label: 'ПОКАЗАТЬ BPFI', tone: 'primary' },
-        { kind: 'compare', value: '1', label: 'COMPARE MODE' },
-        { kind: 'lab', value: 'gear_fault_path', label: 'К GEAR LAB' },
+        { kind: 'compare', value: '1', label: 'РЕЖИМ СРАВНЕНИЯ' },
+        { kind: 'lab', value: 'gear_fault_path', label: 'К ЛАБОРАТОРИИ ШЕСТЕРНИ' },
         { kind: 'route', page: 'diag', demo: 'inner_race', guide: 'compare_faults', label: 'СРАВНИТЬ НА АНАЛИЗЕ' },
       ],
       setup: { fault: 'inner', speed: 22, load: 42, compare: true, autofocus: true, impact: true }
     },
     load_sweep: {
-      kicker: 'ЛАБА 04 · LOAD + SPEED',
+      kicker: 'ЛАБА 04 · НАГРУЗКА + СКОРОСТЬ',
       title: 'Скорость, нагрузка и деградация',
       lead: 'Этот режим нужен, чтобы увидеть динамику: один и тот же узел может проявлять себя по-разному в зависимости от режима работы и стадии износа.',
-      tags: ['load', 'speed', 'degradation', 'severity'],
+      tags: ['нагрузка', 'скорость', 'деградация', 'тяжесть'],
       theoryTitle: 'Что наблюдать',
       theory: 'Рост нагрузки и скорости усиливает проявление дефекта и влияет на уровень вибрации. Таймлайн деградации помогает понять, как один и тот же механизм движется от нормы к отказу.',
       steps: [
-        { label: '01', title: 'Покрутите скорость и нагрузку', note: 'Меняйте оба ползунка и следите, как отвечают температура, severity и графики.' },
+        { label: '01', title: 'Покрутите скорость и нагрузку', note: 'Меняйте оба ползунка и следите, как отвечают температура, тяжесть и графики.' },
         { label: '02', title: 'Запустите деградацию', note: 'Сценарий проведёт узел через несколько стадий износа и покажет, как меняется интерпретация.' },
         { label: '03', title: 'Потом переходите к своему файлу', note: 'После этого проще понять, какие режимы могли усилить наблюдаемый у вас паттерн.' },
       ],
@@ -4559,33 +4657,33 @@
       },
       {
         title: 'Скорость двигает гармоники, но не ломает структуру',
-        copy: 'Теперь поднимите частоту вращения. Пики уедут выше по оси частот, но baseline останется организованным и предсказуемым.',
+        copy: 'Теперь поднимите частоту вращения. Пики уедут выше по оси частот, но эталон останется организованным и предсказуемым.',
         target: { stage: 0, part: 'gear', kind: 'gear', label: 'Шестерня ступени 1' },
         setup: { preset: 'healthy', speed: 34, load: 22, compare: false }
       },
       {
-        title: 'Закрепите baseline перед дефектами',
-        copy: 'Эта картинка нужна как reference. После неё любые ударные или подшипниковые сценарии читаются заметно увереннее.',
-        target: { stage: 0, part: 'gear', kind: 'gear', label: 'Reference mesh' },
+        title: 'Закрепите эталон перед дефектами',
+        copy: 'Эта картинка нужна как опорная. После неё любые ударные или подшипниковые сценарии читаются заметно увереннее.',
+        target: { stage: 0, part: 'gear', kind: 'gear', label: 'Эталонное зацепление' },
         setup: { preset: 'healthy', speed: 24, load: 18, compare: true }
       }
     ],
     gear_fault_path: [
       {
         title: 'Ранний скол зуба',
-        copy: 'Сначала смотрим мягкий gear fault. Один повреждённый зуб даёт локальный удар, но структура узла ещё не разрушена полностью.',
+        copy: 'Сначала смотрим мягкий дефект шестерни. Один повреждённый зуб даёт локальный удар, но структура узла ещё не разрушена полностью.',
         target: { stage: 0, part: 'fault', kind: 'gear', label: 'Зона скола зуба' },
         setup: { fault: 'chip', speed: 24, load: 58, compare: false }
       },
       {
         title: 'Норма против дефекта',
-        copy: 'Включён compare mode. Теперь глаз быстрее замечает, что изменилось именно из-за дефекта, а не из-за общего движения механизма.',
-        target: { stage: 0, part: 'fault', kind: 'gear', label: 'Контраст с baseline' },
+        copy: 'Включён режим сравнения. Теперь глаз быстрее замечает, что изменилось именно из-за дефекта, а не из-за общего движения механизма.',
+        target: { stage: 0, part: 'fault', kind: 'gear', label: 'Контраст с эталоном' },
         setup: { fault: 'chip', speed: 24, load: 58, compare: true }
       },
       {
-        title: 'Критический missing-tooth удар',
-        copy: 'Теперь показываем тяжёлый сценарий. Удар грубее, структура зацепления ломается сильнее, а impact replay делает это очень наглядным.',
+        title: 'Критический удар при отсутствии зуба',
+        copy: 'Теперь показываем тяжёлый сценарий. Удар грубее, структура зацепления ломается сильнее, а повтор удара делает это очень наглядным.',
         target: { stage: 0, part: 'fault', kind: 'gear', label: 'Критический удар зацепления' },
         setup: { fault: 'miss', speed: 26, load: 64, compare: true, impact: true }
       }
@@ -4599,13 +4697,13 @@
       },
       {
         title: 'Почему здесь важна огибающая',
-        copy: 'Когда добавляем сравнение с нормой, становится легче увидеть не ударный зубчатый паттерн, а более цикличную bearing-модуляцию.',
-        target: { stage: 0, part: 'bearing', kind: 'bearing', label: 'Bearing modulation zone' },
+        copy: 'Когда добавляем сравнение с нормой, становится легче увидеть не ударный зубчатый паттерн, а более цикличную модуляцию подшипника.',
+        target: { stage: 0, part: 'bearing', kind: 'bearing', label: 'Зона модуляции подшипника' },
         setup: { fault: 'inner', speed: 22, load: 42, compare: true }
       },
       {
         title: 'Более мягкий дефект тела качения',
-        copy: 'Теперь переключаемся на шарик. Паттерн становится деликатнее, и это хороший момент, чтобы сравнить его с обоймой и с gear fault.',
+        copy: 'Теперь переключаемся на шарик. Паттерн становится деликатнее, и это хороший момент, чтобы сравнить его с обоймой и с дефектом шестерни.',
         target: { stage: 0, part: 'bearing', kind: 'bearing', label: 'Дефект шарика' },
         setup: { fault: 'ball', speed: 20, load: 36, compare: true, impact: true }
       }
@@ -4614,7 +4712,7 @@
       {
         title: 'Низкая нагрузка как стартовая точка',
         copy: 'Сначала держим систему в мягком режиме. Это помогает почувствовать, как параметры выглядят до усиления нагрузки и температуры.',
-        target: { stage: 0, part: 'gear', kind: 'gear', label: 'Ступень 1 · baseline' },
+        target: { stage: 0, part: 'gear', kind: 'gear', label: 'Ступень 1 · эталон' },
         setup: { preset: 'healthy', speed: 18, load: 10, compare: false }
       },
       {
@@ -4659,11 +4757,11 @@
       return {
         ...LAB_SCENARIOS.intro_baseline,
         kicker: 'СЦЕНАРИЙ ИЗ ДИАГНОСТИКИ',
-        title: 'Диагноз без дефекта: закрепите baseline',
-        lead: 'Этот запуск пришёл из анализа с нормальным или восстановленным состоянием. Используйте его как опорную точку, а потом переходите к fault cases для контраста.',
+        title: 'Диагноз без дефекта: закрепите эталон',
+        lead: 'Этот запуск пришёл из анализа с нормальным или восстановленным состоянием. Используйте его как опорную точку, а потом переходите к дефектным сценариям для контраста.',
         actions: [
           { kind: 'preset', value: 'healthy', label: 'ПОКАЗАТЬ НОРМУ', tone: 'primary' },
-          { kind: 'lab', value: 'gear_fault_path', label: 'СЛЕДОМ GEAR LAB' },
+          { kind: 'lab', value: 'gear_fault_path', label: 'ДАЛЕЕ — ЛАБОРАТОРИЯ ШЕСТЕРНИ' },
           { kind: 'route', page: 'diag', guide: 'virtual_lab', label: 'ВЕРНУТЬСЯ К ДИАГНОСТИКЕ' },
         ]
       };
@@ -4676,7 +4774,7 @@
       theoryTitle: 'Что наблюдать',
       theory: isBearing
         ? 'Смотрите на зону подшипника, envelope и характер модуляции. Здесь важнее цикличность прохождения дефекта через зону нагрузки.'
-        : 'Смотрите на ударный момент, разрушение регулярности вращения и то, как это меняет FFT относительно baseline.',
+        : 'Смотрите на ударный момент, разрушение регулярности вращения и то, как это меняет спектр относительно эталона.',
       steps: [
         { label: '01', title: 'Найдите физическую точку дефекта', note: 'Камера уже сфокусирована на узле, который связан с диагностическим выводом.' },
         { label: '02', title: 'Сравните с нормой', note: 'Включите Compare, чтобы увидеть, что меняется именно из-за дефекта, а не из-за общих параметров модели.' },
@@ -4724,8 +4822,8 @@
       },
       {
         title: 'Сравните дефект с нормой',
-        copy: 'Теперь включён compare mode. Это лучший способ отделить эффект дефекта от общего движения механизма.',
-        target: { stage: 0, part: isBearing ? 'bearing' : 'fault', kind: isBearing ? 'bearing' : 'gear', label: isBearing ? 'Сравнение bearing vs baseline' : 'Сравнение fault vs baseline' },
+        copy: 'Теперь включён режим сравнения. Это лучший способ отделить эффект дефекта от общего движения механизма.',
+        target: { stage: 0, part: isBearing ? 'bearing' : 'fault', kind: isBearing ? 'bearing' : 'gear', label: isBearing ? 'Сравнение подшипника с эталоном' : 'Сравнение дефекта с эталоном' },
         setup: { fault: faultId, preset: launchContext.preset || null, speed: isBearing ? 22 : 24, load: isBearing ? 44 : 56, compare: true }
       },
       {
@@ -5059,7 +5157,7 @@
     if (launchContext.source || launchContext.lab) {
       const badge = document.querySelector('.hdr .ver');
       if (badge) {
-        badge.textContent = [currentLabScenario?.kicker, launchContext.asset || launchContext.label].filter(Boolean).join(' · ') || 'Simulator';
+        badge.textContent = [currentLabScenario?.kicker, launchContext.asset || launchContext.label].filter(Boolean).join(' · ') || 'Симулятор';
       }
     }
 
@@ -5375,7 +5473,7 @@
     degRunning = true;
     degIdx = 0;
     degProgress = 0;
-    document.getElementById('degBtn').textContent = '⏹ Остановить';
+    document.getElementById('degBtn').innerHTML = '<svg class="icon" aria-hidden="true"><use href="#ic-stop"/></svg> Остановить';
     document.getElementById('degBtn').classList.add('on');
     document.getElementById('degBar').style.display = '';
     applyDegStep();
@@ -5420,7 +5518,7 @@
   function stopDegradation() {
     degRunning = false;
     if (degTimer) { clearInterval(degTimer); degTimer = null; }
-    document.getElementById('degBtn').textContent = '▶ Деградация';
+    document.getElementById('degBtn').innerHTML = '<svg class="icon" aria-hidden="true"><use href="#ic-play"/></svg> Деградация';
     document.getElementById('degBtn').classList.remove('on');
     document.getElementById('degBar').style.display = 'none';
     // Reset glow
@@ -5481,7 +5579,7 @@ pre{background:#f5f5f5;padding:10px;border-radius:4px;font-size:10px;line-height
 <div class="hd"><h1>⚡ VibroLab — Отчёт диагностики</h1><div class="dt">${now}</div></div>
 <h2>Параметры редуктора</h2>
 <table><tr><th>Тип</th><th>Ступеней</th><th>Общее i</th><th>Вх. скорость</th><th>Нагрузка</th></tr>
-<tr><td>${typeName}</td><td>${stages.length}</td><td>${ratio.toFixed(2)}</td><td>${spd} Hz (${spd * 60} RPM)</td><td>${ld}%</td></tr></table>
+<tr><td>${typeName}</td><td>${stages.length}</td><td>${ratio.toFixed(2)}</td><td>${spd} Гц (${spd * 60} об/мин)</td><td>${ld}%</td></tr></table>
 <h2>Ступени</h2><pre>${stagesInfo}</pre>
 <h2>3D Модель</h2>
 <div class="row"><img src="${vpImg}" width="100%" style="max-width:600px"></div>
@@ -5491,7 +5589,7 @@ pre{background:#f5f5f5;padding:10px;border-radius:4px;font-size:10px;line-height
 <h2>Осциллограмма</h2><img src="${wImg}" width="100%" style="max-width:500px;border:1px solid #ddd;border-radius:4px">
 <h2>Спектр FFT</h2><img src="${fImg}" width="100%" style="max-width:500px;border:1px solid #ddd;border-radius:4px">
 <h2>Огибающая (Envelope)</h2><img src="${eImg}" width="100%" style="max-width:500px;border:1px solid #ddd;border-radius:4px">
-<div class="foot">VibroLab · AI Gearbox Diagnostics · SEU Gearbox Dataset · ${now}</div>
+<div class="foot">VibroLab · Учебная вибродиагностика редукторов · Набор SEU Gearbox · ${now}</div>
 <script>setTimeout(()=>window.print(),500)<\/script></body></html>`);
     w.document.close();
   }
@@ -5652,7 +5750,9 @@ pre{background:#f5f5f5;padding:10px;border-radius:4px;font-size:10px;line-height
   function togFullscreen(btn) {
     const cb = btn.closest('.cb');
     cb.classList.toggle('fullscreen');
-    btn.textContent = cb.classList.contains('fullscreen') ? '✕' : '⛶';
+    btn.innerHTML = cb.classList.contains('fullscreen')
+      ? '<svg class="icon" aria-hidden="true"><use href="#ic-close"/></svg>'
+      : '<svg class="icon" aria-hidden="true"><use href="#ic-maximize"/></svg>';
     // Resize canvas for fullscreen
     const canvas = cb.querySelector('canvas');
     if (canvas) {

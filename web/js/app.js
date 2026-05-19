@@ -5693,6 +5693,9 @@ const App = (() => {
   }
 
   function goPageSection(pageId, sectionId) {
+    if (pageId === 'profile' && typeof UIStates !== 'undefined' && UIStates.showProfileTabForSection) {
+      UIStates.showProfileTabForSection(sectionId);
+    }
     const scrollToSection = () => {
       const target = el(sectionId);
       if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -5979,6 +5982,7 @@ const App = (() => {
     litPipeline(0); el('diagResult').classList.remove('show');
     if (el('sigDesc')) el('sigDesc').dataset.baseText = '';
     if (el('specDesc')) el('specDesc').dataset.baseText = '';
+    if (typeof UIStates !== 'undefined') UIStates.showAnalysisLoading();
 
     try {
       el('sigStatus').textContent='ЗАГРУЗКА...'; el('sigStatus').style.color='#fbbf24';
@@ -6058,6 +6062,9 @@ const App = (() => {
                 showDiagnosis(r.cls,r.probabilities,VM.COLORS[r.cls],signal,r.features);
                 // Advanced diagnosis with ONNX models if available
                 showAdvancedDiagnosis(signal, r.features, r);
+                if (typeof UIStates !== 'undefined') { UIStates.hideAnalysisLoading(); UIStates.hideAnalysisError(); }
+              } else if (typeof UIStates !== 'undefined') {
+                UIStates.showAnalysisError('Модель не загружена', 'Файл разобрали, но запустить классификацию не получилось — модель ещё не доступна в браузере. Перезагрузите страницу, чтобы попробовать снова.');
               } else {
                 el('diagResult').innerHTML='<div style="color:var(--orange);font-family:var(--mono)">\u26a0 Модель не загружена. Запустите python train.py && python export_model.py</div>';
                 el('diagResult').style.border='2px solid var(--orange)';
@@ -6074,6 +6081,12 @@ const App = (() => {
       el('sigStatus').textContent='ОШИБКА'; el('sigStatus').style.color='#f87171';
       el('sigDesc').textContent=err.message;
       if (el('sigDesc')) el('sigDesc').dataset.baseText = err.message;
+      if (typeof UIStates !== 'undefined') {
+        UIStates.showAnalysisError(
+          'Не удалось разобрать файл',
+          (err && err.message) ? err.message : 'Формат не распознан или файл повреждён. Попробуйте другой файл или один из готовых сигналов.'
+        );
+      }
       diagLocked=false;
       renderAnalysisCoach();
     }
@@ -6796,12 +6809,18 @@ const App = (() => {
     }
 
     // Load RF model
+    if (typeof UIStates !== 'undefined') UIStates.setModelLoading(true);
     const ok=await Model.load(`model/rf_model.json?v=${ASSET_VERSION}`);
+    if (typeof UIStates !== 'undefined') {
+      UIStates.setModelLoading(false);
+      if (ok) UIStates.hideModelError(); else UIStates.showModelError();
+    }
     console.log(ok?'[APP] RF Model ready':'[APP] RF Model not found \u2014 demo mode');
 
     try {
       await apiRequest('/health');
       apiReady = true;
+      if (typeof UIStates !== 'undefined') UIStates.hideBackendOffline();
       await loadAuthState();
       if (authState?.id) {
         await loadHistory();
@@ -6821,6 +6840,7 @@ const App = (() => {
       renderAuthSummary();
       syncWorkspaceSelection();
       renderWorkspace();
+      if (typeof UIStates !== 'undefined') UIStates.showBackendOffline();
       console.warn('[APP] Backend API not available:', e.message || e);
     }
     updateHeaderProfile();
