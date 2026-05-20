@@ -7407,6 +7407,139 @@ textarea:focus-visible {
 :root[data-theme="light"] .hero-rec-dot { box-shadow: 0 0 6px rgba(220,38,38,0.5); }
 
 /* ═══════════════════════════════════════════════════════════════
+   PRESENTATION MODE (C)
+   ═══════════════════════════════════════════════════════════════ */
+
+.presentation-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, var(--cyan), var(--green));
+  color: var(--bg);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform .2s, box-shadow .2s;
+}
+.presentation-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 229, 255, .35);
+}
+.presentation-toggle .icon { width: 12px; height: 12px; }
+:root[data-theme="light"] .presentation-toggle { color: #fff; }
+
+.presentation-overlay {
+  position: fixed;
+  inset: auto 0 0 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 24px 28px 24px;
+  background: transparent;
+  transition: none;
+}
+.presentation-overlay.show {
+  pointer-events: auto;
+  height: auto;
+}
+.presentation-overlay::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(6, 9, 15, 0) 30%, rgba(6, 9, 15, .55) 85%, rgba(6, 9, 15, .85) 100%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .35s ease;
+  z-index: -1;
+}
+:root[data-theme="light"] .presentation-overlay::before {
+  background: linear-gradient(180deg, rgba(15,23,42,0) 30%, rgba(15,23,42,.18) 85%, rgba(15,23,42,.38) 100%);
+}
+.presentation-overlay.show::before { opacity: 1; }
+
+.presentation-progress {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.presentation-dot {
+  width: 32px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, .15);
+  transition: background .3s, transform .3s;
+}
+.presentation-dot.is-done { background: var(--cyan); }
+.presentation-dot.is-current {
+  background: var(--green);
+  transform: scaleY(1.6);
+}
+:root[data-theme="light"] .presentation-dot { background: rgba(15,23,42,.18); }
+
+.presentation-cardstack {
+  max-width: 920px;
+  width: 100%;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity .45s ease, transform .45s ease;
+}
+.presentation-cardstack.is-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+.presentation-title {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4.4vw, 54px);
+  line-height: 1.05;
+  letter-spacing: 1.5px;
+  color: var(--text-strong);
+  margin-bottom: 10px;
+  text-shadow: 0 2px 14px rgba(0,0,0,.6);
+}
+:root[data-theme="light"] .presentation-title { text-shadow: 0 2px 12px rgba(255,255,255,.6); }
+.presentation-subtitle {
+  font-size: clamp(14px, 1.6vw, 18px);
+  color: var(--text);
+  line-height: 1.5;
+  max-width: 780px;
+  margin: 0 auto;
+  opacity: 0.88;
+}
+.presentation-exit {
+  margin-top: 18px;
+  padding: 8px 18px;
+  background: rgba(0, 0, 0, .55);
+  border: 1px solid var(--border-hi);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s, background .2s;
+}
+.presentation-exit:hover {
+  color: var(--cyan);
+  border-color: var(--cyan);
+}
+
+@media (max-width: 600px) {
+  .presentation-dot { width: 22px; }
+  .presentation-cardstack { padding: 0 8px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
    LOADING SKELETONS & STATES
    ═══════════════════════════════════════════════════════════════ */
 

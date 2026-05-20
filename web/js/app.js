@@ -5573,7 +5573,13 @@ const App = (() => {
     if (!metaObj) return;
     const sampleCount = (metaObj.train_size || 0) + (metaObj.test_size || 0);
     const featureCount = metaObj.n_features || metaObj.n_features_selected || metaObj.feature_names?.length || 0;
-    const setText = (id, value) => { const node = el(id); if (node) node.textContent = value; };
+    const setText = (id, value) => {
+      const node = el(id);
+      if (!node) return;
+      // If a counter animation is in progress, only update the final target so it ends on correct value.
+      if (node.hasAttribute('data-counter') && node.dataset.counterAnimated === '1') return;
+      node.textContent = value;
+    };
 
     setText('heroAccValue', `${(metaObj.accuracy * 100).toFixed(1)}%`);
     setText('heroClassValue', String(metaObj.classes?.length || 0));
@@ -6096,6 +6102,15 @@ const App = (() => {
   function showDiagnosis(cls, probs, color, signal, features) {
     const d = el('diagResult');
     d.style.border = `2px solid ${color}`; d.style.background = color + '0a';
+    // First-success confetti (once per session)
+    if (typeof UIStates !== 'undefined' && UIStates.confettiBurst && !window._vibrolabFirstDiagShown) {
+      window._vibrolabFirstDiagShown = true;
+      const rect = d.getBoundingClientRect();
+      UIStates.confettiBurst({
+        x: rect.left + rect.width / 2,
+        y: Math.max(80, rect.top + 40),
+      });
+    }
     const confidence = probs[cls] || 0;
     const playbook = getPlaybook(cls);
     const hiddenContext = getCurrentHiddenCaseContext();

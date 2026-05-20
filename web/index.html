@@ -64,6 +64,10 @@
   </nav>
   <button class="hamburger-menu" onclick="document.getElementById('mobileNav').classList.toggle('open'); var open = document.getElementById('mobileNav').classList.contains('open'); this.innerHTML = open ? '<svg class="icon" aria-hidden="true"><use href="#ic-close"/></svg>' : '<svg class="icon" aria-hidden="true"><use href="#ic-menu"/></svg>'" aria-label="Меню"><svg class="icon" aria-hidden="true"><use href="#ic-menu"/></svg></button>
   <div class="status">
+    <button class="presentation-toggle" id="presentationToggle" type="button" title="Запустить презентацию (Esc — выход)">
+      <svg class="icon" aria-hidden="true"><use href="#ic-bolt"/></svg>
+      ПРЕЗЕНТАЦИЯ
+    </button>
     <button class="theme-toggle" id="themeToggle" type="button" aria-label="Переключить тему" onclick="(function(b){var d=document.documentElement;var cur=d.getAttribute('data-theme')==='light'?'light':'dark';var next=cur==='light'?'dark':'light';d.setAttribute('data-theme',next);try{localStorage.setItem('vibrolab-theme',next);}catch(e){}b.setAttribute('aria-pressed',next==='light');})(this)">
       <svg class="icon theme-toggle-sun" aria-hidden="true"><use href="#ic-sun"/></svg>
       <svg class="icon theme-toggle-moon" aria-hidden="true"><use href="#ic-moon"/></svg>
@@ -202,17 +206,17 @@
         <div class="hero-proof">
           <div class="hero-proof-card">
             <div class="hero-proof-label">ТОЧНОСТЬ</div>
-            <div class="hero-proof-value" id="heroAccValue">98.4%</div>
+            <div class="hero-proof-value" id="heroAccValue" data-counter>98.4%</div>
             <div class="hero-proof-sub" id="heroSourceLine">Полный набор SEU</div>
           </div>
           <div class="hero-proof-card">
             <div class="hero-proof-label">КЛАССОВ</div>
-            <div class="hero-proof-value" id="heroClassValue">9</div>
+            <div class="hero-proof-value" id="heroClassValue" data-counter>9</div>
             <div class="hero-proof-sub">1 норма + 8 дефектов</div>
           </div>
           <div class="hero-proof-card">
             <div class="hero-proof-label">СЭМПЛОВ</div>
-            <div class="hero-proof-value" id="heroSampleValue">7200</div>
+            <div class="hero-proof-value" id="heroSampleValue" data-counter>7200</div>
             <div class="hero-proof-sub">Сбалансированная выборка</div>
           </div>
         </div>
@@ -261,11 +265,11 @@
               </div>
               <div class="hero-stage-kpi">
                 <span>ПРИЗНАКИ</span>
-                <strong id="heroFeatureValue">53</strong>
+                <strong id="heroFeatureValue" data-counter>53</strong>
               </div>
               <div class="hero-stage-kpi">
                 <span>КЛАССЫ</span>
-                <strong id="heroClassValueStage">9</strong>
+                <strong id="heroClassValueStage" data-counter>9</strong>
               </div>
               <div class="hero-stage-kpi">
                 <span>ИНФЕРЕНС</span>
@@ -1544,7 +1548,8 @@
 <script src="js/converter.js?v=20260411-upload-window-fix-9"></script>
 <script src="js/sensor.js?v=20260410-fft-fix"></script>
 <script src="js/viz.js?v=20260410-fft-fix"></script>
-<script src="js/uiStates.js?v=20260519-ui-states-2"></script>
+<script src="js/uiStates.js?v=20260520-ui-states-3"></script>
+<script src="js/presentation.js?v=20260520-presentation-1"></script>
 <script src="js/app.js?v=20260501-subpath-fix-1"></script>
 <!-- Notification toast container -->
 <div id="toastContainer" class="toast-container"></div>

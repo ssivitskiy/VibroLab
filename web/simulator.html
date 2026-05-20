@@ -200,6 +200,120 @@
       box-shadow: 0 0 12px rgba(167, 139, 250, .12)
     }
 
+    /* Inspector panel (F — click-to-inspect) */
+    .inspector {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      width: 280px;
+      max-width: calc(100vw - 32px);
+      background: rgba(15, 22, 35, .95);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 14px 14px 12px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0,0,0,.45);
+      z-index: 11;
+      animation: inspectorIn .25s ease;
+    }
+    :root[data-theme="light"] .inspector {
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 8px 28px rgba(15,23,42,.15);
+    }
+    @keyframes inspectorIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .inspector-close {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 22px; height: 22px;
+      background: none;
+      border: none;
+      color: var(--dim);
+      cursor: pointer;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: color .15s, background .15s;
+    }
+    .inspector-close:hover { color: var(--red); background: rgba(248,113,113,.12); }
+    .inspector-close .icon { width: 13px; height: 13px; }
+    .inspector-kicker {
+      font: 600 9px 'JetBrains Mono', monospace;
+      letter-spacing: 2px;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .inspector-title {
+      font: 700 14px 'Outfit', sans-serif;
+      color: var(--text);
+      margin-bottom: 10px;
+      padding-right: 24px;
+    }
+    .inspector-body { font-size: 11px; }
+    .inspector-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 3px 0;
+      border-bottom: 1px dashed rgba(255,255,255,.06);
+    }
+    :root[data-theme="light"] .inspector-row { border-bottom-color: rgba(15,23,42,.08); }
+    .inspector-row:last-of-type { border-bottom: none; }
+    .inspector-row .lbl { color: var(--dim); font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+    .inspector-row .val { color: var(--text); font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+    .inspector-state {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      font: 600 11px 'Outfit', sans-serif;
+    }
+
+    /* Preset row: main button + small "listen" button */
+    .preset-row {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 3px;
+    }
+    .preset-row .xbtn { flex: 1; margin: 0; }
+    .listen-btn {
+      flex-shrink: 0;
+      width: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: rgba(255, 255, 255, .02);
+      color: var(--dim);
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .listen-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(34, 211, 238, .08);
+    }
+    .listen-btn.previewing {
+      border-color: var(--green);
+      color: var(--green);
+      background: rgba(52, 211, 153, .12);
+      animation: previewPulse 1.5s ease-in-out infinite;
+    }
+    .listen-btn .icon { width: 12px; height: 12px; }
+    @keyframes previewPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, .35); }
+      50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+    }
+
     .stage {
       background: var(--panel2);
       border: 1px solid var(--border);
@@ -1275,10 +1389,22 @@
     <div class="sec" id="secPresets">
       <div class="st" onclick="togSec(this)">Пресеты</div>
       <div class="sec-body">
-        <button class="xbtn" onclick="applyPreset('healthy')" style="width:100%;margin-bottom:3px"><svg class="icon" aria-hidden="true" style="color:var(--green)"><use href="#ic-check"/></svg> Всё исправно</button>
-        <button class="xbtn" onclick="applyPreset('chip_s1')" style="width:100%;margin-bottom:3px"><svg class="icon" aria-hidden="true" style="color:var(--orange)"><use href="#ic-warning"/></svg> Скол на S1</button>
-        <button class="xbtn" onclick="applyPreset('multi')" style="width:100%;margin-bottom:3px"><svg class="icon" aria-hidden="true" style="color:var(--red)"><use href="#ic-dot"/></svg> Множественные дефекты</button>
-        <button class="xbtn" onclick="applyPreset('bearing')" style="width:100%;margin-bottom:3px"><svg class="icon" aria-hidden="true" style="color:var(--purple)"><use href="#ic-dot"/></svg> Дефект подшипника</button>
+        <div class="preset-row">
+          <button class="xbtn" onclick="applyPreset('healthy')"><svg class="icon" aria-hidden="true" style="color:var(--green)"><use href="#ic-check"/></svg> Всё исправно</button>
+          <button class="listen-btn" type="button" title="Послушать (3 сек)" aria-label="Послушать норму" onclick="previewPresetSound('healthy', this)"><svg class="icon" aria-hidden="true"><use href="#ic-volume"/></svg></button>
+        </div>
+        <div class="preset-row">
+          <button class="xbtn" onclick="applyPreset('chip_s1')"><svg class="icon" aria-hidden="true" style="color:var(--orange)"><use href="#ic-warning"/></svg> Скол на S1</button>
+          <button class="listen-btn" type="button" title="Послушать (3 сек)" aria-label="Послушать скол зуба" onclick="previewPresetSound('chip_s1', this)"><svg class="icon" aria-hidden="true"><use href="#ic-volume"/></svg></button>
+        </div>
+        <div class="preset-row">
+          <button class="xbtn" onclick="applyPreset('multi')"><svg class="icon" aria-hidden="true" style="color:var(--red)"><use href="#ic-dot"/></svg> Множественные дефекты</button>
+          <button class="listen-btn" type="button" title="Послушать (3 сек)" aria-label="Послушать множественные дефекты" onclick="previewPresetSound('multi', this)"><svg class="icon" aria-hidden="true"><use href="#ic-volume"/></svg></button>
+        </div>
+        <div class="preset-row">
+          <button class="xbtn" onclick="applyPreset('bearing')"><svg class="icon" aria-hidden="true" style="color:var(--purple)"><use href="#ic-dot"/></svg> Дефект подшипника</button>
+          <button class="listen-btn" type="button" title="Послушать (3 сек)" aria-label="Послушать дефект подшипника" onclick="previewPresetSound('bearing', this)"><svg class="icon" aria-hidden="true"><use href="#ic-volume"/></svg></button>
+        </div>
       </div>
     </div>
     <div class="sec" id="secScenario">
@@ -1369,6 +1495,12 @@
       <div class="compare-divider"></div>
     </div>
     <div class="tooltip" id="tooltip"><div class="tt-title"></div><div class="tt-body"></div></div>
+    <div class="inspector" id="inspector" hidden>
+      <button class="inspector-close" type="button" onclick="closeInspector()" aria-label="Закрыть"><svg class="icon" aria-hidden="true"><use href="#ic-close"/></svg></button>
+      <div class="inspector-kicker" id="inspectorKicker">ВЫБРАННЫЙ УЗЕЛ</div>
+      <div class="inspector-title" id="inspectorTitle">—</div>
+      <div class="inspector-body" id="inspectorBody"></div>
+    </div>
     <div class="tour-guide-shell" id="tourGuideShell" aria-live="polite">
       <div class="tour-guide-head">
         <div>
@@ -2094,6 +2226,56 @@
       look: target.clone().add(new THREE.Vector3(0, kind === 'bearing' ? 0.05 : 0.12, 0)),
       dur: 780
     });
+    showInspector(obj, kind);
+  }
+
+  // Inspector panel (F)
+  function showInspector(obj, kind) {
+    const ins = document.getElementById('inspector');
+    if (!ins) return;
+    const idx = obj.userData.si;
+    const stg = stages[idx];
+    if (!stg) return;
+    const f = FAULTS.find(x => x.id === stg.fault);
+    const titleEl = document.getElementById('inspectorTitle');
+    const bodyEl = document.getElementById('inspectorBody');
+    const kicker = document.getElementById('inspectorKicker');
+    if (kind === 'bearing') {
+      const bpfo = (spd * 3.1 / (idx + 1)).toFixed(1);
+      const bpfi = (spd * 4.2 / (idx + 1)).toFixed(1);
+      const temp = (36 + ld * 0.28 + (['ball', 'inner', 'outer'].includes(stg.fault) ? 18 : 7) + spd * 0.14).toFixed(0);
+      kicker.textContent = 'ПОДШИПНИК';
+      titleEl.textContent = 'Опора вала · Ступень ' + (idx + 1);
+      bodyEl.innerHTML =
+        `<div class="inspector-row"><span class="lbl">BPFI</span><span class="val">${bpfi} Гц</span></div>` +
+        `<div class="inspector-row"><span class="lbl">BPFO</span><span class="val">${bpfo} Гц</span></div>` +
+        `<div class="inspector-row"><span class="lbl">Температура</span><span class="val" style="color:${+temp > 68 ? 'var(--red)' : +temp > 54 ? 'var(--orange)' : 'var(--green)'}">${temp}°C</span></div>` +
+        `<div class="inspector-row"><span class="lbl">Нагрузка</span><span class="val">${ld}%</span></div>` +
+        `<div class="inspector-state" style="color:${f.c}">● ${f.label}</div>`;
+    } else {
+      const r = stg.z2 / stg.z1;
+      let cum = 1;
+      for (let j = 0; j <= idx; j++) cum *= stages[j].z2 / stages[j].z1;
+      const fR = spd / cum;
+      const gmf = fR * stg.z1;
+      const isPinion = obj.userData.gt === 'pinion';
+      const temp = (40 + ld * 0.35 + (stg.fault !== 'normal' ? 15 : 0) + spd * 0.2).toFixed(0);
+      kicker.textContent = isPinion ? 'ВЕДУЩАЯ ШЕСТЕРНЯ' : 'ВЕДОМОЕ КОЛЕСО';
+      titleEl.textContent = (isPinion ? 'Шестерня' : 'Колесо') + ' · Ступень ' + (idx + 1);
+      bodyEl.innerHTML =
+        `<div class="inspector-row"><span class="lbl">Зубья Z</span><span class="val">${isPinion ? stg.z1 : stg.z2}</span></div>` +
+        `<div class="inspector-row"><span class="lbl">Передаточное</span><span class="val">${r.toFixed(2)}</span></div>` +
+        `<div class="inspector-row"><span class="lbl">Частота вращ.</span><span class="val">${fR.toFixed(1)} Гц</span></div>` +
+        `<div class="inspector-row"><span class="lbl">Зубчатая GMF</span><span class="val">${gmf.toFixed(0)} Гц</span></div>` +
+        `<div class="inspector-row"><span class="lbl">Температура</span><span class="val" style="color:${+temp > 70 ? 'var(--red)' : +temp > 55 ? 'var(--orange)' : 'var(--green)'}">${temp}°C</span></div>` +
+        `<div class="inspector-state" style="color:${f.c}">● ${f.label}</div>`;
+    }
+    ins.hidden = false;
+  }
+
+  function closeInspector() {
+    const ins = document.getElementById('inspector');
+    if (ins) ins.hidden = true;
   }
 
   function setHoverMesh(obj, info = null) {
@@ -2166,6 +2348,43 @@
       ls.style.opacity = '0';
       setTimeout(() => ls.remove(), 600)
     }
+    // Cinematic camera intro (A) — runs once per session
+    if (!sessionStorage.getItem('vmIntroPlayed')) {
+      sessionStorage.setItem('vmIntroPlayed', '1');
+      setTimeout(() => playCinematicIntro(), 350);
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════
+  // CINEMATIC CAMERA INTRO (A)
+  // Orbits the camera around the gearbox before user interaction.
+  // ═════════════════════════════════════════════════════════
+  let cinematicActive = false;
+  function playCinematicIntro(duration = 2400) {
+    if (cinematicActive) return;
+    cinematicActive = true;
+    // Save and lock user controls during intro
+    const savedAutoRotate = window.camAutoRotate || false;
+    const startTh = camTh, startPh = camPh, startDist = camDist;
+    const beginTh = startTh - 1.2;
+    const beginPh = 0.65;
+    const beginDist = 24;
+    camTh = beginTh; camPh = beginPh; camDist = beginDist;
+
+    const startTime = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - startTime) / duration);
+      const eased = 0.5 - Math.cos(t * Math.PI) / 2; // easeInOutSine
+      camTh = beginTh + (startTh - beginTh) * eased;
+      camPh = beginPh + (startPh - beginPh) * eased;
+      camDist = beginDist + (startDist - beginDist) * eased;
+      if (t < 1) requestAnimationFrame(step);
+      else {
+        camTh = startTh; camPh = startPh; camDist = startDist;
+        cinematicActive = false;
+      }
+    }
+    requestAnimationFrame(step);
   }
 
   function buildTypes() {
@@ -2206,6 +2425,7 @@
   }
 
   function setFault(i, f) {
+    snapshotSignalForMorph();
     stages[i].fault = f;
     renderStages();
     applyFaults();
@@ -3240,7 +3460,9 @@
         if (g && g.userData.mesh) {
           g.userData.mesh.material.color.setHex(g.userData.col);
           g.userData.mesh.material.emissive.setHex(0);
-          g.userData.mesh.material.emissiveIntensity = 0
+          g.userData.mesh.material.emissiveIntensity = 0;
+          g.userData.mesh.userData.faultPulse = false;
+          g.userData.mesh.userData.faultPulseColor = null;
         }
       });
       // Heat map at mesh point (always when running, stronger with load)
@@ -3260,6 +3482,15 @@
       so.faultAnchor = null;
       tgt.userData.mesh.material.emissive.set(fc);
       tgt.userData.mesh.material.emissiveIntensity = .15;
+      // Mark for pulsing heatmap (H)
+      tgt.userData.mesh.userData.faultPulseColor = fc.clone();
+      tgt.userData.mesh.userData.faultPulse = true;
+      if (so.g2 && so.g2.userData.mesh) {
+        so.g2.userData.mesh.userData.faultPulseColor = fc.clone();
+        so.g2.userData.mesh.userData.faultPulse = true;
+        so.g2.userData.mesh.material.emissive.set(fc);
+        so.g2.userData.mesh.material.emissiveIntensity = .08;
+      }
       let faultAnchor = ['ball', 'inner', 'outer'].includes(stg.fault) && so.brg && so.brg[0] ? so.brg[0] : tgt;
       // Tooth damage geometry
       if (['chip', 'miss', 'crack', 'wear'].includes(stg.fault)) {
@@ -4505,8 +4736,10 @@
       }
     }
     updateTourBeacon();
+    pulseFaultHeatmap(sT);
     composer.render();
     sigBuf = genSig(sT);
+    applyMorphToSigBuf();
     if (compareMode) {
       healthySigBuf = genSigForStages(getHealthyStages(), sT, 0.2);
       healthyFftBuf = doFFT(healthySigBuf);
@@ -5741,9 +5974,60 @@ pre{background:#f5f5f5;padding:10px;border-radius:4px;font-size:10px;line-height
       bearing: () => { stages.forEach(s => s.fault = 'normal'); stages[0].fault = 'ball'; }
     };
     if (presets[id]) {
+      snapshotSignalForMorph();
       presets[id]();
       renderStages(); applyFaults(); updInfo(); updateSoundParams();
       if (mlOk) runDiagnosis();
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════
+  // SIGNAL MORPH (E) — crossfade signal between old and new fault
+  // ═════════════════════════════════════════════════════════
+  let prevSigBufSnapshot = null;
+  let morphStartTime = -1;
+  const MORPH_DURATION = 0.55; // seconds
+  function snapshotSignalForMorph() {
+    if (typeof sigBuf !== 'undefined' && sigBuf && sigBuf.length) {
+      prevSigBufSnapshot = new Float32Array(sigBuf);
+      morphStartTime = (typeof sT !== 'undefined') ? sT : 0;
+    }
+  }
+  function applyMorphToSigBuf() {
+    if (!prevSigBufSnapshot) return;
+    const age = sT - morphStartTime;
+    if (age >= MORPH_DURATION || age < 0) {
+      prevSigBufSnapshot = null;
+      return;
+    }
+    const t = age / MORPH_DURATION;
+    const eased = t * t * (3 - 2 * t); // smoothstep
+    const oneMinus = 1 - eased;
+    const len = Math.min(sigBuf.length, prevSigBufSnapshot.length);
+    for (let i = 0; i < len; i++) {
+      sigBuf[i] = prevSigBufSnapshot[i] * oneMinus + sigBuf[i] * eased;
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════
+  // FAULT HEATMAP PULSE (H)
+  // Pulses emissive intensity on faulted gear meshes for visual emphasis.
+  // ═════════════════════════════════════════════════════════
+  function pulseFaultHeatmap(t) {
+    if (!stageObjs || !stageObjs.length) return;
+    // Pulse range 0.18..0.55 for primary, 0.08..0.28 for secondary
+    const pulse = 0.5 + 0.5 * Math.sin(t * 4.5);
+    for (const so of stageObjs) {
+      if (!so) continue;
+      const g1 = so.g1, g2 = so.g2;
+      if (g1 && g1.userData.mesh && g1.userData.mesh.userData.faultPulse) {
+        const intensity = 0.18 + 0.37 * pulse;
+        g1.userData.mesh.material.emissiveIntensity = intensity;
+      }
+      if (g2 && g2.userData.mesh && g2.userData.mesh.userData.faultPulse) {
+        const intensity = 0.08 + 0.20 * pulse;
+        g2.userData.mesh.material.emissiveIntensity = intensity;
+      }
     }
   }
 
@@ -5779,6 +6063,41 @@ pre{background:#f5f5f5;padding:10px;border-radius:4px;font-size:10px;line-height
     sndVol = +v;
     document.getElementById('volV').textContent = v + '%';
     if (sndNodes.master) sndNodes.master.gain.value = sndVol / 100 * 0.16;
+  }
+
+  // ═════════════════════════════════════════════════════════
+  // LISTEN PREVIEW (B) — apply preset and play sound for 3 sec
+  // ═════════════════════════════════════════════════════════
+  let previewTimer = null;
+  let previewBtnNode = null;
+  function previewPresetSound(presetId, btn) {
+    // Stop any in-flight preview
+    if (previewTimer) {
+      clearTimeout(previewTimer);
+      previewTimer = null;
+      if (previewBtnNode) previewBtnNode.classList.remove('previewing');
+      previewBtnNode = null;
+    }
+    // Apply preset (also shows defect in 3D + spectrum)
+    applyPreset(presetId);
+    // Ensure audio context exists and sound is on
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    const wasOn = sndOn;
+    if (!sndOn) togSnd();
+    const wasVol = sndVol;
+    setVol(Math.max(35, sndVol));
+    if (btn) {
+      btn.classList.add('previewing');
+      previewBtnNode = btn;
+    }
+    previewTimer = setTimeout(() => {
+      if (sndOn && !wasOn) togSnd();
+      if (wasOn) setVol(wasVol);
+      if (btn) btn.classList.remove('previewing');
+      previewBtnNode = null;
+      previewTimer = null;
+    }, 3000);
   }
 
   window.onload = init;
