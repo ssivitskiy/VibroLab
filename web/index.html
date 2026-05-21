@@ -515,6 +515,74 @@
     </div>
   </section>
 
+  <!-- ═════════════════════════════════════════════════════════════
+       SHOWCASE: CONFUSION MATRIX
+       ═════════════════════════════════════════════════════════════ -->
+  <section class="section showcase-section" id="section-confusion" style="padding-top:40px">
+    <div class="container">
+      <div class="showcase-head">
+        <div class="showcase-kicker">ГДЕ МОДЕЛЬ ОШИБАЕТСЯ</div>
+        <h2 class="showcase-title">Матрица ошибок: чему модель путает что</h2>
+        <p class="showcase-lead">
+          Зелёная диагональ — правильные диагнозы. Чем ярче ячейка вне диагонали — тем чаще модель
+          путает эти два класса. Наведите на любую ячейку, чтобы увидеть детали, кликните — раскрыть.
+        </p>
+      </div>
+      <div class="cm-shell" id="confusionMatrix">
+        <div class="cm-grid-wrap">
+          <div class="cm-grid"></div>
+          <div class="cm-tooltip"></div>
+        </div>
+        <aside class="cm-detail"></aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════
+       SHOWCASE: FEATURE IMPORTANCE
+       ═════════════════════════════════════════════════════════════ -->
+  <section class="section showcase-section" id="section-importance" style="padding-top:40px">
+    <div class="container">
+      <div class="showcase-head">
+        <div class="showcase-kicker">НА ЧТО МОДЕЛЬ ОБРАЩАЕТ ВНИМАНИЕ</div>
+        <h2 class="showcase-title">Топ-15 признаков для каждого класса дефекта</h2>
+        <p class="showcase-lead">
+          Из 53 признаков модель использует не все одинаково. Для дефекта подшипника — огибающая на BPFI;
+          для скола зуба — крест-фактор и боковые полосы. Переключайте класс, чтобы увидеть его «отпечаток».
+        </p>
+      </div>
+      <div class="fi-shell" id="featureImportance">
+        <div class="fi-tabs"></div>
+        <div class="fi-bars"></div>
+        <div class="fi-summary"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════
+       SHOWCASE: CLASS SPACE
+       ═════════════════════════════════════════════════════════════ -->
+  <section class="section showcase-section" id="section-class-space" style="padding-top:40px">
+    <div class="container">
+      <div class="showcase-head">
+        <div class="showcase-kicker">ПРОСТРАНСТВО ПРИЗНАКОВ</div>
+        <h2 class="showcase-title">9 классов в 2D — отчётливо разделены</h2>
+        <p class="showcase-lead">
+          Каждая точка — один сигнал, спроецированный из 53D в 2D через PCA. Классы образуют
+          компактные облака с минимальным пересечением — именно поэтому Random Forest даёт 98% точности.
+        </p>
+      </div>
+      <div class="cs-shell" id="classSpace">
+        <div class="cs-canvas-wrap"><canvas></canvas></div>
+        <aside class="cs-side">
+          <div class="cs-side-kicker">КЛАССЫ</div>
+          <div class="cs-legend"></div>
+          <div class="cs-summary"></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
   <!-- TRAINING RESULTS -->
   <section class="section" id="section-results">
     <div class="container">
