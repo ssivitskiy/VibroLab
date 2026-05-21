@@ -181,10 +181,9 @@
             <span class="btn-cta-icon" aria-hidden="true"><svg class="icon"><use href="#ic-bolt"/></svg></span>
             НАЧАТЬ АНАЛИЗ
           </button>
-          <a href="simulator.html?source=lab&amp;lab=intro_baseline" class="btn btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px">
-            <span aria-hidden="true"><svg class="icon"><use href="#ic-cube"/></svg></span> ВИРТУАЛЬНАЯ ЛАБОРАТОРИЯ
+          <a href="simulator.html" class="btn btn-ghost" style="text-decoration:none;display:inline-flex;align-items:center;gap:8px">
+            <span aria-hidden="true"><svg class="icon"><use href="#ic-cube"/></svg></span> ОТКРЫТЬ СИМУЛЯТОР
           </a>
-          <button class="btn btn-ghost" onclick="goHomeSection('section-quickstart')">ВЫБРАТЬ СЦЕНАРИЙ СТАРТА</button>
         </div>
         <div class="hero-proof">
           <div class="hero-proof-card">
@@ -263,40 +262,33 @@
           <div class="hero-stage-card">
             <div class="hero-stage-label">КАК РАБОТАЕТ ПРОДУКТ</div>
             <div class="hero-scenario-list">
-              <button class="hero-scenario" type="button" onclick="goHomeSection('section-problem')">
+              <button class="hero-scenario" type="button" onclick="document.getElementById('section-rf-voting')?.scrollIntoView({behavior:'smooth'})">
                 <div class="hero-scenario-top">
-                  <strong>Ценность для пользователя</strong>
+                  <strong>Как голосуют 500 деревьев</strong>
                   <span class="hero-scenario-badge">01</span>
                 </div>
-                <p>Система сокращает путь от сигнала до инженерного решения и делает диагностику доступной через браузер.</p>
+                <p>Каждое дерево решает само, итог — большинство. Визуализация показывает голоса вживую.</p>
               </button>
-              <button class="hero-scenario" type="button" onclick="goHomeSection('section-dataset')">
+              <button class="hero-scenario" type="button" onclick="document.getElementById('section-features')?.scrollIntoView({behavior:'smooth'})">
                 <div class="hero-scenario-top">
-                  <strong>Источник и качество данных</strong>
+                  <strong>53 признака из сигнала</strong>
                   <span class="hero-scenario-badge hero-scenario-badge--warning">02</span>
                 </div>
-                <p>SEU Gearbox Dataset, канал CH6, сегментация по 2560 точек и 53 физически интерпретируемых признака.</p>
+                <p>Сигнал режется на сегменты, считаются признаки во времени, частоте и огибающей.</p>
               </button>
-              <button class="hero-scenario" type="button" onclick="goHomeSection('section-results')">
+              <button class="hero-scenario" type="button" onclick="document.getElementById('section-slider')?.scrollIntoView({behavior:'smooth'})">
                 <div class="hero-scenario-top">
-                  <strong>Модель и точность</strong>
+                  <strong>Норма ↔ дефект в реальном времени</strong>
                   <span class="hero-scenario-badge hero-scenario-badge--critical">03</span>
                 </div>
-                <p>Random Forest, кросс-валидация, матрица ошибок и значимость признаков с привязкой к физике сигнала.</p>
+                <p>Slider от 0 до 100% позволяет увидеть, как сигнал и спектр перестают быть «нормальными».</p>
               </button>
               <button class="hero-scenario" type="button" onclick="goPage('diag')">
                 <div class="hero-scenario-top">
-                  <strong>Анализ в браузере</strong>
+                  <strong>Попробовать на своём файле</strong>
                   <span class="hero-scenario-badge hero-scenario-badge--warning">04</span>
                 </div>
-                <p>Загрузка реального файла, готовые кейсы, evidence-блок и понятный диагноз без внешнего ML-сервиса.</p>
-              </button>
-              <button class="hero-scenario" type="button" onclick="goPage('profile')">
-                <div class="hero-scenario-top">
-                  <strong>Профиль и история</strong>
-                  <span class="hero-scenario-badge">05</span>
-                </div>
-                <p>Сохранённые измерения, сравнение с эталоном, оповещения и единый рабочий кабинет для пользователя.</p>
+                <p>Загрузка реального сигнала и диагноз за 2 мс прямо в браузере. Без серверного ML.</p>
               </button>
             </div>
           </div>
