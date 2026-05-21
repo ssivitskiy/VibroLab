@@ -712,6 +712,54 @@
       gap: 3px;
       z-index: 10
     }
+    /* Quick-hint chip (replaces the old "?" onboarding) */
+    .quickhint {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 22, 35, .85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 14px 6px 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.4px;
+      color: var(--dim);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 480px;
+      z-index: 9;
+      pointer-events: auto;
+      animation: hintFadeIn .6s ease 1.4s both;
+    }
+    @keyframes hintFadeIn {
+      from { opacity: 0; transform: translate(-50%, 6px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+    .quickhint-close {
+      background: none;
+      border: none;
+      color: var(--dim);
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0 0 0 6px;
+      margin-left: 4px;
+      border-left: 1px solid var(--border);
+      transition: color .15s;
+    }
+    .quickhint-close:hover { color: var(--accent); }
+    :root[data-theme="light"] .quickhint {
+      background: rgba(255, 255, 255, .92);
+      box-shadow: 0 4px 16px rgba(15, 23, 42, .12);
+    }
+    @media (max-width: 600px) {
+      .quickhint { font-size: 9px; padding: 5px 10px; max-width: 90vw; }
+    }
     .cam-btn {
       background: rgba(15,22,35,.88);
       backdrop-filter: blur(8px);
@@ -1346,7 +1394,6 @@
     <h1><svg class="icon" aria-hidden="true" style="vertical-align:-0.18em"><use href="#ic-bolt"/></svg> VibroLab</h1><span class="ver">Симулятор</span>
     <button class="hamburger" id="menuBtn" onclick="togPanel('lp')" aria-label="Меню параметров"><svg class="icon" aria-hidden="true"><use href="#ic-gear"/></svg></button>
     <button class="hamburger" id="chartBtn" onclick="togPanel('rp')" aria-label="Графики"><svg class="icon" aria-hidden="true"><use href="#ic-chart"/></svg></button>
-    <button class="sim-help-btn" id="simHelpBtn" onclick="showOnboard()" aria-label="Показать мини-гид по симулятору" title="Мини-гид">?</button>
     <button class="theme-toggle" id="themeToggle" type="button" aria-label="Переключить тему" onclick="(function(b){var d=document.documentElement;var cur=d.getAttribute('data-theme')==='light'?'light':'dark';var next=cur==='light'?'dark':'light';d.setAttribute('data-theme',next);try{localStorage.setItem('vibrolab-theme',next);}catch(e){}b.setAttribute('aria-pressed',next==='light');})(this)">
       <svg class="icon theme-toggle-sun" aria-hidden="true"><use href="#ic-sun"/></svg>
       <svg class="icon theme-toggle-moon" aria-hidden="true"><use href="#ic-moon"/></svg>
@@ -1363,7 +1410,7 @@
         </div>
       </div>
     </div>
-    <div class="sec" id="secStages">
+    <div class="sec collapsed" id="secStages">
       <div class="st" onclick="togSec(this)">Ступени <span class="bsm" id="stC">2</span></div>
       <div class="sec-body">
         <div id="stL"></div>
@@ -1377,13 +1424,6 @@
                                                                                             max="60" value="20"></div>
         <div class="sg"><label>Нагрузка <span id="ldV">0%</span></label><input type="range" id="ldS" min="0" max="100"
                                                                                value="0"></div>
-      </div>
-    </div>
-    <div class="sec" id="secSound">
-      <div class="st" onclick="togSec(this)">Звук</div>
-      <div class="sec-body">
-        <div class="stgl" id="sndT" onclick="togSnd()"><span id="sndI"><svg class="icon" aria-hidden="true"><use href="#ic-volume-off"/></svg></span> Выкл</div>
-        <div class="sg" id="volBox" style="margin-top:4px;display:none"><label>Громкость <span id="volV">50%</span></label><input type="range" id="volS" min="0" max="100" value="50" oninput="setVol(this.value)"></div>
       </div>
     </div>
     <div class="sec" id="secPresets">
@@ -1407,7 +1447,7 @@
         </div>
       </div>
     </div>
-    <div class="sec" id="secScenario">
+    <div class="sec collapsed" id="secScenario">
       <div class="st" onclick="togSec(this)">Сценарий</div>
       <div class="sec-body">
         <button class="xbtn" id="degBtn" onclick="togDegradation()" style="width:100%"><svg class="icon" aria-hidden="true"><use href="#ic-play"/></svg> Деградация</button>
@@ -1429,26 +1469,6 @@
           <button class="xbtn" id="cmpBtn" onclick="togCompare()"><svg class="icon" aria-hidden="true"><use href="#ic-compare"/></svg> Сравнение</button>
         </div>
         <div class="mode-note">Повтор удара замедляет ударный момент, Рентген раскрывает корпус, Сравнение показывает норму и текущий режим одновременно.</div>
-      </div>
-    </div>
-    <div class="sec" id="secData">
-      <div class="st" onclick="togSec(this)">Данные</div>
-      <div class="sec-body">
-        <div class="upz" onclick="document.getElementById('fIn').click()"><svg class="icon" aria-hidden="true"><use href="#ic-folder"/></svg> CSV / WAV / TXT / MAT / NPY<input type="file" id="fIn"
-                                                                                                  accept=".csv,.wav,.txt,.mat,.npy,.npz,.dat,.uff"
-                                                                                                  onchange="onFile(event)">
-        </div>
-        <div id="upR" style="margin-top:4px;font-size:9px;color:var(--dim)"></div>
-        <div style="margin-top:4px;display:flex;gap:4px">
-          <button class="xbtn" onclick="exportSignal('wav')" style="flex:1"><svg class="icon" aria-hidden="true"><use href="#ic-save"/></svg> WAV</button>
-          <button class="xbtn" onclick="exportSignal('csv')" style="flex:1"><svg class="icon" aria-hidden="true"><use href="#ic-save"/></svg> CSV</button>
-        </div>
-      </div>
-    </div>
-    <div class="sec" id="secReport">
-      <div class="st" onclick="togSec(this)">Отчёт</div>
-      <div class="sec-body">
-        <button class="xbtn" onclick="exportPDF()" style="width:100%"><svg class="icon" aria-hidden="true"><use href="#ic-file-text"/></svg> Скачать PDF-отчёт</button>
       </div>
     </div>
   </div>
@@ -1487,6 +1507,10 @@
       <button class="cam-btn" onclick="camPreset('iso')" title="Изометрия">3D</button>
       <button class="cam-btn" onclick="camPreset('reset')" title="Сброс камеры" aria-label="Сброс камеры" style="border-color:var(--accent);color:var(--accent)"><svg class="icon" aria-hidden="true"><use href="#ic-refresh"/></svg></button>
     </div>
+    <div class="quickhint" id="quickHint">
+      <button class="quickhint-close" type="button" onclick="this.parentElement.style.display='none'" aria-label="Скрыть подсказку">×</button>
+      <span>Покрутите мышью · колесо — масштаб · клик по шестерне — инспектор</span>
+    </div>
     <div class="replay-badge" id="replayBadge">Повтор удара · 0.25×</div>
     <div class="xray-badge" id="xrayBadge">Рентген-разрез</div>
     <div class="compare-hud" id="compareHud">
@@ -1500,26 +1524,6 @@
       <div class="inspector-kicker" id="inspectorKicker">ВЫБРАННЫЙ УЗЕЛ</div>
       <div class="inspector-title" id="inspectorTitle">—</div>
       <div class="inspector-body" id="inspectorBody"></div>
-    </div>
-    <div class="tour-guide-shell" id="tourGuideShell" aria-live="polite">
-      <div class="tour-guide-head">
-        <div>
-          <div class="tour-guide-kicker" id="tourGuideKicker">УЧЕБНАЯ ЭКСКУРСИЯ</div>
-          <strong class="tour-guide-title" id="tourGuideTitle">Начните с базового режима</strong>
-        </div>
-        <span class="tour-guide-state" id="tourGuideState">1 / 3</span>
-      </div>
-      <p class="tour-guide-copy" id="tourGuideCopy">Тур проведёт вас по ключевым точкам сценария и сам сфокусирует камеру на нужном узле.</p>
-      <div class="tour-guide-progress"><span id="tourGuideProgress"></span></div>
-      <div class="tour-guide-actions">
-        <button class="tour-guide-btn" id="tourGuidePrev" type="button">← Назад</button>
-        <button class="tour-guide-btn" id="tourGuideFocus" type="button">Фокус</button>
-        <button class="tour-guide-btn tour-guide-btn--primary" id="tourGuideNext" type="button">Дальше →</button>
-      </div>
-    </div>
-    <div class="tour-beacon" id="tourBeacon">
-      <span class="tour-beacon-pulse" aria-hidden="true"></span>
-      <span class="tour-beacon-label" id="tourBeaconLabel">Точка интереса</span>
     </div>
   </div>
   <div class="mob-overlay" id="mobOverlay" onclick="closePanel()"></div>
@@ -1542,46 +1546,6 @@
     <div class="fi" id="infoBox"><h3 id="fiT">Исправен</h3>
       <p id="fiD">Все ступени в норме.</p>
       <div id="stI"></div>
-    </div>
-    <div class="fi lab-guide-panel" id="labGuidePanel">
-      <div class="lab-guide-kicker" id="labGuideKicker">ВИРТУАЛЬНАЯ ЛАБОРАТОРИЯ</div>
-      <h3 id="labGuideTitle">Норма как точка отсчёта</h3>
-      <p class="lab-guide-lead" id="labGuideLead">Сначала посмотрите, как выглядит спокойная работа редуктора, а затем переходите к дефектам.</p>
-      <div class="lab-guide-tags" id="labGuideTags"></div>
-      <div class="lab-guide-steps" id="labGuideSteps"></div>
-      <div class="lab-guide-theory" id="labGuideTheory"></div>
-      <div class="lab-guide-actions" id="labGuideActions"></div>
-    </div>
-  </div>
-  <div id="onboardHint" class="sim-onboard" style="display:none">
-    <div class="sim-onboard-box" role="dialog" aria-labelledby="simOnboardTitle" aria-modal="true">
-      <div id="simOnboardTitle" class="sim-onboard-title"><svg class="icon" aria-hidden="true" style="color:var(--accent);vertical-align:-0.2em"><use href="#ic-bolt"/></svg> VibroLab 3D · мини-гид</div>
-      <p class="sim-onboard-lead">Симулятор — это учебный стенд. Покрутите ручки и смотрите, как меняются графики.</p>
-      <div class="sim-onboard-step">
-        <span class="sim-onboard-step-num">1</span>
-        <div>
-          <strong>Выберите дефект</strong>
-          <p>Слева в блоке «Пресеты» нажмите «Скол на S1» или «Множ. дефекты» — поза зубов и спектр изменятся сразу.</p>
-        </div>
-      </div>
-      <div class="sim-onboard-step">
-        <span class="sim-onboard-step-num">2</span>
-        <div>
-          <strong>Смотрите графики</strong>
-          <p>Справа — временной сигнал, FFT и огибающая. Сравните паттерны дефектов с нормой.</p>
-        </div>
-      </div>
-      <div class="sim-onboard-step">
-        <span class="sim-onboard-step-num">3</span>
-        <div>
-          <strong>Покрутите модель</strong>
-          <p>Левая кнопка мыши — вращение, колесо — масштаб. Кнопка «Разборка» покажет взрыв-схему.</p>
-        </div>
-      </div>
-      <div class="sim-onboard-actions">
-        <button class="sim-onboard-primary" onclick="dismissOnboard()">Начать</button>
-      </div>
-      <div class="sim-onboard-hint">Вернуться к подсказкам можно кнопкой <strong>?</strong> в шапке</div>
     </div>
   </div>
 </div>
@@ -3587,12 +3551,18 @@
   function togSnd() {
     sndOn = !sndOn;
     const b = document.getElementById('sndT');
-    b.classList.toggle('on', sndOn);
-    document.getElementById('sndI').innerHTML = sndOn
-      ? '<svg class="icon" aria-hidden="true"><use href="#ic-volume"/></svg>'
-      : '<svg class="icon" aria-hidden="true"><use href="#ic-volume-off"/></svg>';
-    b.lastChild.textContent = sndOn ? ' Вкл' : ' Выкл';
-    document.getElementById('volBox').style.display = sndOn ? '' : 'none';
+    if (b) {
+      b.classList.toggle('on', sndOn);
+      const ico = document.getElementById('sndI');
+      if (ico) {
+        ico.innerHTML = sndOn
+          ? '<svg class="icon" aria-hidden="true"><use href="#ic-volume"/></svg>'
+          : '<svg class="icon" aria-hidden="true"><use href="#ic-volume-off"/></svg>';
+      }
+      if (b.lastChild) b.lastChild.textContent = sndOn ? ' Вкл' : ' Выкл';
+    }
+    const vb = document.getElementById('volBox');
+    if (vb) vb.style.display = sndOn ? '' : 'none';
     if (sndOn) {
       if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
       startContinuousSound();
@@ -6061,7 +6031,8 @@ pre{background:#f5f5f5;padding:10px;border-radius:4px;font-size:10px;line-height
   // ═════════════════════════════════════════════════════════
   function setVol(v) {
     sndVol = +v;
-    document.getElementById('volV').textContent = v + '%';
+    const vv = document.getElementById('volV');
+    if (vv) vv.textContent = v + '%';
     if (sndNodes.master) sndNodes.master.gain.value = sndVol / 100 * 0.16;
   }
 
