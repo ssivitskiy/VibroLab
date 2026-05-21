@@ -2898,7 +2898,7 @@ const App = (() => {
     const chip = el('headerProfileChip');
     if (!chip) return;
     if (!apiReady) {
-      chip.textContent = 'BACKEND OFFLINE';
+      chip.textContent = 'СЕРВЕР НЕДОСТУПЕН';
       chip.classList.remove('profile-chip--active');
       return;
     }
@@ -2906,7 +2906,7 @@ const App = (() => {
       chip.textContent = `${authState.name.toUpperCase()}${authState.role ? ' · ' + authState.role.toUpperCase() : ''}`;
       chip.classList.add('profile-chip--active');
     } else {
-      chip.textContent = 'АККАУНТ · ГОСТЬ';
+      chip.textContent = 'ВОЙТИ';
       chip.classList.remove('profile-chip--active');
     }
   }

@@ -7846,3 +7846,361 @@ textarea:focus-visible {
     letter-spacing: 1.5px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   HOME SHOWCASE — RF voting, feature extraction, fault slider
+   ═══════════════════════════════════════════════════════════════ */
+
+.showcase-section {
+  padding: 80px 0;
+}
+.showcase-head {
+  text-align: center;
+  margin-bottom: 36px;
+}
+.showcase-kicker {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--cyan);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.showcase-title {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.05;
+  letter-spacing: 1px;
+  color: var(--text-strong);
+  margin-bottom: 10px;
+}
+.showcase-lead {
+  font-size: 15px;
+  color: var(--muted-hi);
+  max-width: 640px;
+  margin: 0 auto;
+  line-height: 1.55;
+}
+
+/* 1) RF VOTING ───────────────────────────────────────────────── */
+.rf-shell {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 28px;
+  align-items: start;
+}
+.rf-grid-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+}
+.rf-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.rf-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--muted-hi);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color .2s, color .2s, background .2s;
+}
+.rf-tab:hover { color: var(--text); border-color: var(--border-hi); }
+.rf-tab.is-active { background: var(--surface3); color: var(--text-strong); border-color: var(--border-hi); }
+.rf-tab-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.rf-grid {
+  display: grid;
+  grid-template-columns: repeat(25, 1fr);
+  gap: 3px;
+  padding: 6px;
+  background: var(--bg);
+  border-radius: 4px;
+  min-height: 280px;
+}
+.rf-dot {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--surface3);
+  border-radius: 2px;
+  transition: background .35s ease, box-shadow .35s ease;
+}
+.rf-result {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rf-result-kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.rf-winner-count {
+  font-family: var(--mono);
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-strong);
+}
+.rf-winner-label {
+  font-family: var(--font-display);
+  font-size: 22px;
+  letter-spacing: 1px;
+}
+.rf-winner-desc {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  opacity: 0.85;
+}
+.rf-breakdown {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rf-bd-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+.rf-bd-dot { width: 8px; height: 8px; border-radius: 50%; }
+.rf-bd-label { flex: 1; color: var(--text); }
+.rf-bd-count {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--text-strong);
+}
+@media (max-width: 880px) {
+  .rf-shell { grid-template-columns: 1fr; }
+  .rf-grid { grid-template-columns: repeat(20, 1fr); }
+}
+
+/* 2) FEATURE FLOW ───────────────────────────────────────────── */
+.ff-shell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 22px;
+}
+.ff-step-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.ff-step-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--cyan);
+  text-transform: uppercase;
+}
+.ff-play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+  transition: color .2s, border-color .2s;
+}
+.ff-play-btn:hover { color: var(--cyan); border-color: var(--cyan); }
+.ff-stages {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 14px;
+  align-items: stretch;
+}
+.ff-stage {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+.ff-stage-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.ff-signal canvas, .ff-segments canvas {
+  width: 100%;
+  height: 110px;
+  display: block;
+}
+.ff-features-grid {
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  gap: 2px;
+  flex: 1;
+}
+.ff-feat-cell {
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 8px;
+  padding: 2px 0;
+  color: var(--muted);
+  background: var(--surface2);
+  min-height: 16px;
+  transition: color .2s, background .2s;
+}
+.ff-feat-cell.is-on {
+  color: var(--text-strong);
+  background: var(--surface3);
+}
+@media (max-width: 880px) {
+  .ff-stages { grid-template-columns: 1fr; }
+  .ff-features-grid { grid-template-columns: repeat(8, 1fr); }
+}
+
+/* 3) NORM ↔ FAULT SLIDER ────────────────────────────────────── */
+.fs-shell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 22px;
+}
+.fs-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.fs-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--muted-hi);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color .2s, color .2s;
+}
+.fs-tab:hover { color: var(--text); border-color: var(--border-hi); }
+.fs-tab.is-active { background: var(--surface3); color: var(--text-strong); border-color: var(--border-hi); }
+.fs-tab-dot { width: 8px; height: 8px; border-radius: 50%; }
+.fs-control {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.fs-control input[type="range"] {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(90deg, var(--green), var(--yellow), var(--red));
+  border-radius: 3px;
+  outline: none;
+}
+.fs-control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--text-strong);
+  border: 3px solid var(--bg);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  cursor: pointer;
+}
+.fs-control input[type="range"]::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--text-strong);
+  border: 3px solid var(--bg);
+  cursor: pointer;
+}
+.fs-value {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 700;
+  min-width: 70px;
+  text-align: right;
+}
+.fs-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.fs-chart-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+}
+.fs-chart-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.fs-waveform, .fs-spectrum {
+  width: 100%;
+  height: 130px;
+  display: block;
+}
+.fs-verdict {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 1px;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-align: center;
+  transition: color .25s;
+}
+@media (max-width: 700px) {
+  .fs-charts { grid-template-columns: 1fr; }
+  .fs-control { flex-direction: column; align-items: stretch; gap: 10px; }
+  .fs-value { text-align: center; }
+}
