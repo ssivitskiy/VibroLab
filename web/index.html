@@ -583,6 +583,66 @@
     </div>
   </section>
 
+  <!-- ═════════════════════════════════════════════════════════════
+       SHOWCASE: SPECTROGRAM WATERFALL
+       ═════════════════════════════════════════════════════════════ -->
+  <section class="section showcase-section" id="section-spectrogram" style="padding-top:40px">
+    <div class="container">
+      <div class="showcase-head">
+        <div class="showcase-kicker">ВРЕМЯ × ЧАСТОТА</div>
+        <h2 class="showcase-title">Спектрограмма-водопад — паттерн каждого дефекта</h2>
+        <p class="showcase-lead">
+          Горизонтальная ось — время, вертикальная — частота. Цвет показывает энергию в каждой точке.
+          Переключайте класс — рисунок водопада меняется характерным для дефекта образом.
+        </p>
+      </div>
+      <div class="sg-shell" id="spectrogramWaterfall">
+        <div class="sg-tabs"></div>
+        <div class="sg-canvas-wrap">
+          <canvas></canvas>
+          <span class="sg-axis-label sg-axis-y">Частота ↑</span>
+          <span class="sg-axis-label sg-axis-x">Время →</span>
+        </div>
+        <div class="sg-colorbar">
+          <span>0</span>
+          <div class="sg-colorbar-grad"></div>
+          <span>МАКС</span>
+        </div>
+        <div class="sg-caption"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════
+       SHOWCASE: RADAR FINGERPRINT
+       ═════════════════════════════════════════════════════════════ -->
+  <section class="section showcase-section" id="section-radar" style="padding-top:40px">
+    <div class="container">
+      <div class="showcase-head">
+        <div class="showcase-kicker">ОТПЕЧАТОК КЛАССА</div>
+        <h2 class="showcase-title">Каждый дефект — свой узнаваемый «силуэт»</h2>
+        <p class="showcase-lead">
+          Девять осей — категории признаков. У каждого класса свой характерный многоугольник.
+          Включите режим сравнения и выберите второй класс — увидите, чем они отличаются.
+        </p>
+      </div>
+      <div class="rd-shell" id="radarFingerprint">
+        <div class="rd-canvas-wrap">
+          <svg class="radar-svg" aria-hidden="true"></svg>
+        </div>
+        <aside class="rd-side">
+          <div class="rd-side-kicker">КЛАССЫ</div>
+          <div class="rd-tabs"></div>
+          <label class="rd-compare-row">
+            <input type="checkbox" class="rd-compare-toggle" />
+            Режим сравнения
+          </label>
+          <div class="rd-detail"></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
   <!-- TRAINING RESULTS -->
   <section class="section" id="section-results">
     <div class="container">

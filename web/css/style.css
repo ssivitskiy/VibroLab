@@ -8505,3 +8505,245 @@ textarea:focus-visible {
   .cs-shell { grid-template-columns: 1fr; }
   .cs-canvas-wrap { min-height: 320px; }
 }
+
+/* 7) SPECTROGRAM WATERFALL ──────────────────────────────────── */
+.sg-shell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 22px;
+}
+.sg-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.sg-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--muted-hi);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color .2s, color .2s, background .2s;
+}
+.sg-tab:hover { color: var(--text); border-color: var(--border-hi); }
+.sg-tab.is-active { background: var(--surface3); color: var(--text-strong); border-color: var(--border-hi); }
+.sg-tab-dot { width: 8px; height: 8px; border-radius: 50%; }
+.sg-canvas-wrap {
+  position: relative;
+  background: #0a0d14;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0;
+  overflow: hidden;
+}
+.sg-canvas-wrap canvas {
+  width: 100%;
+  height: 260px;
+  display: block;
+}
+.sg-axis-label {
+  position: absolute;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--muted-hi);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.sg-axis-label.sg-axis-y {
+  left: 8px;
+  top: 8px;
+}
+.sg-axis-label.sg-axis-x {
+  right: 8px;
+  bottom: 8px;
+}
+.sg-caption {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--surface2);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.sg-colorbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted-hi);
+  text-transform: uppercase;
+}
+.sg-colorbar-grad {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #0a0e1a, #0c2f5c, #168ab2, #34d399, #fbbf24, #f87171);
+}
+
+/* 8) RADAR FINGERPRINT ───────────────────────────────────────── */
+.rd-shell {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 22px;
+  align-items: stretch;
+}
+.rd-canvas-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rd-canvas-wrap svg.radar-svg {
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  aspect-ratio: 1;
+}
+.rd-ring {
+  fill: none;
+  stroke: rgba(255,255,255,0.08);
+  stroke-width: 1;
+}
+:root[data-theme="light"] .rd-ring { stroke: rgba(15,23,42,0.10); }
+.rd-axis {
+  stroke: rgba(255,255,255,0.06);
+  stroke-width: 1;
+}
+:root[data-theme="light"] .rd-axis { stroke: rgba(15,23,42,0.08); }
+.rd-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  fill: var(--muted-hi);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.rd-poly {
+  stroke-width: 2;
+  fill-opacity: 0.18;
+  transition: fill-opacity .2s, stroke-width .2s;
+}
+.rd-poly-current { fill-opacity: 0.22; }
+.rd-poly-compare { fill-opacity: 0.10; stroke-dasharray: 4 4; }
+.rd-vertex {
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+.rd-side {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rd-side-kicker {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.rd-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rd-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .2s, background .2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.rd-tab:hover { background: var(--surface2); }
+.rd-tab.is-active {
+  border-color: var(--border-hi);
+  background: var(--surface3);
+}
+.rd-tab.is-compare {
+  border-color: var(--border-hi);
+  background: var(--surface2);
+}
+.rd-tab.is-compare::after {
+  content: '· сравн.';
+  margin-left: auto;
+  font-size: 8px;
+  color: var(--muted);
+}
+.rd-tab-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.rd-compare-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted-hi);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.rd-compare-toggle {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--cyan);
+}
+.rd-detail {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rd-detail-main, .rd-detail-compare {
+  padding: 10px 12px;
+  background: var(--surface2);
+  border-radius: 4px;
+  border-left: 3px solid var(--cyan);
+  font-size: 11px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.rd-detail-main strong, .rd-detail-compare strong {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.rd-detail-main p, .rd-detail-compare p { margin: 0; }
+@media (max-width: 880px) {
+  .rd-shell { grid-template-columns: 1fr; }
+  .rd-tabs { flex-direction: row; flex-wrap: wrap; }
+  .rd-tab { flex: 1 1 40%; min-width: 110px; }
+}

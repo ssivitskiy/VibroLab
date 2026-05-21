@@ -821,6 +821,502 @@
     updateSummary();
   }
 
+  // ═════════════════════════════════════════════════════════════
+  // 7) SPECTROGRAM WATERFALL (block 8)
+  // ═════════════════════════════════════════════════════════════
+  function initSpectrogram() {
+    const root = document.getElementById('spectrogramWaterfall');
+    if (!root) return;
+    const canvas = root.querySelector('canvas');
+    const tabs = root.querySelector('.sg-tabs');
+    const captionEl = root.querySelector('.sg-caption');
+
+    const COLS = 140;
+    const ROWS = 64;
+
+    const PROFILES = [
+      { id: 'normal',     label: 'Норма',          color: '#34d399',
+        caption: 'Тонкие горизонтальные полосы — гармоники зубчатой частоты. Без ударов.' },
+      { id: 'tooth_miss', label: 'Нет зуба',       color: '#f87171',
+        caption: 'Вертикальные «всполохи» с регулярным шагом — удар при прохождении пропущенного зуба.' },
+      { id: 'tooth_chip', label: 'Скол зуба',      color: '#fb923c',
+        caption: 'Мягкие импульсы. Гармоники GMF становятся «волнистыми» — появляются боковые полосы.' },
+      { id: 'gear_wear',  label: 'Износ',          color: '#fbbf24',
+        caption: 'Сплошной тёплый фон — поднимается широкополосный шум. GMF плохо разделяется.' },
+      { id: 'crack',      label: 'Трещина',        color: '#a78bfa',
+        caption: 'Полосы пульсируют с низкой частотой — амплитудная модуляция от трещины.' },
+      { id: 'bearing_inner', label: 'Вн.обойма',   color: '#60a5fa',
+        caption: 'Узкая полоса на BPFI с боковыми полосами — модуляция при прохождении зоны нагрузки.' },
+      { id: 'bearing_outer', label: 'Нар.обойма',  color: '#f472b6',
+        caption: 'Стабильная узкая полоса на BPFO. Идёт постоянно, без модуляции.' },
+      { id: 'bearing_ball',  label: 'Шарик',       color: '#22d3ee',
+        caption: 'Полоса на BSF, более «дышащая» чем у обойм — модуляция сепаратором.' },
+      { id: 'combo',      label: 'Комбин.',        color: '#fb7185',
+        caption: 'Сразу несколько паттернов накладываются. Спектрограмма теряет чистую структуру.' },
+    ];
+
+    let currentProfile = PROFILES[0];
+
+    tabs.innerHTML = PROFILES.map((p, i) =>
+      `<button class="sg-tab${i === 0 ? ' is-active' : ''}" data-sg-class="${p.id}" type="button">
+        <span class="sg-tab-dot" style="background:${p.color}"></span>${p.label}
+       </button>`
+    ).join('');
+
+    // Generate one column of 64 values [0..1] for given class and time
+    function column(classId, t) {
+      const col = new Float32Array(ROWS);
+      // Add baseline floor
+      for (let r = 0; r < ROWS; r++) col[r] = 0.04 + Math.random() * 0.04;
+
+      function bandPeak(row, width, mag) {
+        for (let r = Math.max(0, row - width); r <= Math.min(ROWS - 1, row + width); r++) {
+          const dist = Math.abs(r - row);
+          col[r] += mag * Math.exp(-(dist * dist) / (2 * width * width));
+        }
+      }
+
+      // Common GMF harmonics (rows mapped to bins, frequency ranging 0..2.5 kHz)
+      const gmfBase = 12; // bin for ~470 Hz GMF
+      bandPeak(gmfBase, 1.0, 0.32);
+      bandPeak(gmfBase * 2, 1.0, 0.20);
+      bandPeak(gmfBase * 3, 1.0, 0.10);
+
+      switch (classId) {
+        case 'normal':
+          break;
+        case 'tooth_miss': {
+          // periodic impulse — every period_t add broadband spike (wide vertical column)
+          const period = 1.4;
+          const ph = (t / period) % 1;
+          if (ph < 0.06) {
+            for (let r = 4; r < ROWS; r++) {
+              const decay = Math.exp(-r / 30);
+              col[r] += 1.05 * decay * Math.exp(-((ph * 30) ** 2));
+            }
+          }
+          // sidebands around GMF
+          bandPeak(gmfBase - 3, 0.8, 0.18);
+          bandPeak(gmfBase + 3, 0.8, 0.18);
+          break;
+        }
+        case 'tooth_chip': {
+          const period = 1.2;
+          const ph = (t / period) % 1;
+          if (ph < 0.05) {
+            for (let r = 8; r < ROWS; r++) {
+              const decay = Math.exp(-r / 26);
+              col[r] += 0.55 * decay * Math.exp(-((ph * 28) ** 2));
+            }
+          }
+          bandPeak(gmfBase - 2, 0.7, 0.15);
+          bandPeak(gmfBase + 2, 0.7, 0.15);
+          break;
+        }
+        case 'gear_wear':
+          // broadband noise rise
+          for (let r = 0; r < ROWS; r++) col[r] += 0.22 * Math.exp(-r / 40);
+          bandPeak(gmfBase, 2.5, 0.20); // GMF smeared
+          break;
+        case 'crack': {
+          // amplitude modulation of GMF
+          const m = 0.5 + 0.5 * Math.sin(2 * Math.PI * t * 0.6);
+          bandPeak(gmfBase, 1.0, 0.32 * m);
+          bandPeak(gmfBase * 2, 1.0, 0.20 * m);
+          bandPeak(8, 1.5, 0.18);
+          break;
+        }
+        case 'bearing_inner': {
+          const bpfi = 22;
+          const m = 0.55 + 0.45 * Math.sin(2 * Math.PI * t * 1.2);
+          bandPeak(bpfi, 0.8, 0.65 * m);
+          bandPeak(bpfi + 4, 0.7, 0.32 * m);
+          bandPeak(bpfi - 4, 0.7, 0.32 * m);
+          break;
+        }
+        case 'bearing_outer': {
+          const bpfo = 34;
+          bandPeak(bpfo, 0.8, 0.72);
+          bandPeak(bpfo * 2, 0.8, 0.30);
+          break;
+        }
+        case 'bearing_ball': {
+          const bsf = 28;
+          const m = 0.6 + 0.4 * Math.sin(2 * Math.PI * t * 0.8);
+          bandPeak(bsf, 1.0, 0.6 * m);
+          break;
+        }
+        case 'combo':
+          bandPeak(22, 0.8, 0.45);
+          bandPeak(gmfBase, 1.0, 0.30);
+          for (let r = 0; r < ROWS; r++) col[r] += 0.10 * Math.exp(-r / 35);
+          break;
+      }
+      return col;
+    }
+
+    // Colormap: dark blue → cyan → green → yellow → red
+    function magToColor(v) {
+      const t = Math.max(0, Math.min(1, v));
+      // Five-stop interpolation
+      const stops = [
+        [10, 14, 26],     // 0 — almost black
+        [12, 47, 92],     // 0.2 — deep blue
+        [22, 145, 178],   // 0.45 — teal
+        [52, 211, 153],   // 0.65 — green
+        [251, 191, 36],   // 0.82 — yellow
+        [248, 113, 113],  // 1.0 — red
+      ];
+      const positions = [0, 0.2, 0.45, 0.65, 0.82, 1.0];
+      for (let i = 0; i < positions.length - 1; i++) {
+        if (t >= positions[i] && t <= positions[i + 1]) {
+          const u = (t - positions[i]) / (positions[i + 1] - positions[i]);
+          const a = stops[i], b = stops[i + 1];
+          return [
+            Math.round(a[0] + (b[0] - a[0]) * u),
+            Math.round(a[1] + (b[1] - a[1]) * u),
+            Math.round(a[2] + (b[2] - a[2]) * u),
+          ];
+        }
+      }
+      return stops[stops.length - 1];
+    }
+
+    // Internal pixel buffer
+    const buffer = new Uint8ClampedArray(COLS * ROWS * 4);
+    // Initialize buffer to baseline
+    for (let i = 0; i < buffer.length; i += 4) {
+      buffer[i] = 10; buffer[i + 1] = 14; buffer[i + 2] = 26; buffer[i + 3] = 255;
+    }
+
+    function fitCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * dpr;
+      canvas.height = canvas.clientHeight * dpr;
+      return canvas.getContext('2d');
+    }
+    let ctx = fitCanvas();
+
+    // Off-screen heatmap canvas
+    const off = document.createElement('canvas');
+    off.width = COLS; off.height = ROWS;
+    const offCtx = off.getContext('2d');
+
+    let t = 0;
+    let lastFrame = performance.now();
+    let rafId = null;
+    let running = true;
+
+    function step(now) {
+      const dt = Math.min(0.1, (now - lastFrame) / 1000);
+      lastFrame = now;
+      t += dt;
+      // shift buffer left by 1 column
+      // copy buffer[1..COLS] over buffer[0..COLS-1]
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS - 1; c++) {
+          const srcIdx = (r * COLS + c + 1) * 4;
+          const dstIdx = (r * COLS + c) * 4;
+          buffer[dstIdx] = buffer[srcIdx];
+          buffer[dstIdx + 1] = buffer[srcIdx + 1];
+          buffer[dstIdx + 2] = buffer[srcIdx + 2];
+        }
+      }
+      // new rightmost column
+      const newCol = column(currentProfile.id, t);
+      for (let r = 0; r < ROWS; r++) {
+        const v = newCol[r];
+        const rgb = magToColor(v);
+        const idx = (r * COLS + (COLS - 1)) * 4;
+        buffer[idx] = rgb[0];
+        buffer[idx + 1] = rgb[1];
+        buffer[idx + 2] = rgb[2];
+      }
+      // Draw
+      const imgData = new ImageData(buffer, COLS, ROWS);
+      offCtx.putImageData(imgData, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(off, 0, 0, canvas.width, canvas.height);
+
+      if (running) rafId = requestAnimationFrame(step);
+    }
+
+    function start() {
+      if (rafId) return;
+      running = true;
+      lastFrame = performance.now();
+      rafId = requestAnimationFrame(step);
+    }
+    function stop() {
+      running = false;
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    function setClass(profile) {
+      currentProfile = profile;
+      captionEl.innerHTML = `<strong style="color:${profile.color}">${profile.label}</strong> · ${profile.caption}`;
+    }
+
+    tabs.addEventListener('click', e => {
+      const btn = e.target.closest('.sg-tab');
+      if (!btn) return;
+      tabs.querySelectorAll('.sg-tab').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      const p = PROFILES.find(p => p.id === btn.dataset.sgClass);
+      if (p) setClass(p);
+    });
+
+    window.addEventListener('resize', () => { ctx = fitCanvas(); });
+
+    // Pause when not visible
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(e => { if (e.isIntersecting) start(); else stop(); });
+      }, { threshold: 0.15 });
+      io.observe(root);
+    } else {
+      start();
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') stop(); else start();
+    });
+
+    setClass(currentProfile);
+  }
+
+  // ═════════════════════════════════════════════════════════════
+  // 8) RADAR FINGERPRINT (block 9)
+  // ═════════════════════════════════════════════════════════════
+  function initRadarFingerprint() {
+    const root = document.getElementById('radarFingerprint');
+    if (!root) return;
+    const svg = root.querySelector('svg.radar-svg');
+    const tabs = root.querySelector('.rd-tabs');
+    const compareToggle = root.querySelector('.rd-compare-toggle');
+    const detailEl = root.querySelector('.rd-detail');
+
+    const AXES = [
+      { key: 'time',     label: 'Время' },
+      { key: 'freq',     label: 'Частота' },
+      { key: 'env',      label: 'Огибающая' },
+      { key: 'bpfi',     label: 'BPFI' },
+      { key: 'bpfo',     label: 'BPFO' },
+      { key: 'bsf',      label: 'BSF' },
+      { key: 'gmf',      label: 'GMF' },
+      { key: 'sideband', label: 'Боковые полосы' },
+      { key: 'impact',   label: 'Удары' },
+    ];
+
+    // Each class has a fingerprint vector (0..1) on the 9 axes
+    const FINGERPRINTS = {
+      normal:        [0.18, 0.22, 0.20, 0.10, 0.10, 0.10, 0.60, 0.12, 0.05],
+      tooth_miss:    [0.85, 0.62, 0.55, 0.15, 0.12, 0.10, 0.78, 0.80, 0.95],
+      tooth_chip:    [0.62, 0.50, 0.42, 0.15, 0.12, 0.10, 0.70, 0.72, 0.70],
+      gear_wear:     [0.55, 0.78, 0.45, 0.15, 0.12, 0.10, 0.50, 0.30, 0.25],
+      crack:         [0.45, 0.40, 0.50, 0.15, 0.15, 0.12, 0.55, 0.45, 0.35],
+      bearing_inner: [0.42, 0.55, 0.92, 0.95, 0.20, 0.18, 0.30, 0.55, 0.50],
+      bearing_outer: [0.38, 0.50, 0.88, 0.20, 0.92, 0.18, 0.30, 0.42, 0.62],
+      bearing_ball:  [0.32, 0.42, 0.78, 0.20, 0.20, 0.88, 0.30, 0.48, 0.40],
+      combo:         [0.70, 0.62, 0.75, 0.55, 0.55, 0.45, 0.55, 0.65, 0.65],
+    };
+
+    const CLASSES_RD = [
+      { id: 'normal',        label: 'Норма',          color: '#34d399' },
+      { id: 'tooth_miss',    label: 'Нет зуба',       color: '#f87171' },
+      { id: 'tooth_chip',    label: 'Скол зуба',      color: '#fb923c' },
+      { id: 'gear_wear',     label: 'Износ',          color: '#fbbf24' },
+      { id: 'crack',         label: 'Трещина',        color: '#a78bfa' },
+      { id: 'bearing_inner', label: 'Вн.обойма',      color: '#60a5fa' },
+      { id: 'bearing_outer', label: 'Нар.обойма',     color: '#f472b6' },
+      { id: 'bearing_ball',  label: 'Шарик',          color: '#22d3ee' },
+      { id: 'combo',         label: 'Комбин.',        color: '#fb7185' },
+    ];
+
+    let currentClass = CLASSES_RD[0];
+    let compareClass = null;
+    let currentVals = new Array(AXES.length).fill(0);
+    let targetVals = FINGERPRINTS.normal.slice();
+    let compareVals = null;
+    let compareTarget = null;
+
+    tabs.innerHTML = CLASSES_RD.map((c, i) =>
+      `<button class="rd-tab${i === 0 ? ' is-active' : ''}" data-rd-class="${c.id}" type="button">
+        <span class="rd-tab-dot" style="background:${c.color}"></span>${c.label}
+       </button>`
+    ).join('');
+
+    // SVG infrastructure
+    const SIZE = 360;
+    const CENTER = SIZE / 2;
+    const MAX_R = SIZE / 2 - 36;
+    const RING_COUNT = 4;
+    svg.setAttribute('viewBox', `0 0 ${SIZE} ${SIZE}`);
+
+    function polarToXY(axisIdx, value) {
+      const angle = -Math.PI / 2 + (axisIdx / AXES.length) * Math.PI * 2;
+      const r = value * MAX_R;
+      return { x: CENTER + Math.cos(angle) * r, y: CENTER + Math.sin(angle) * r };
+    }
+
+    // Build static grid + axes + labels
+    function buildGrid() {
+      let grid = '';
+      // Rings
+      for (let i = 1; i <= RING_COUNT; i++) {
+        const r = (i / RING_COUNT) * MAX_R;
+        let poly = '';
+        for (let a = 0; a < AXES.length; a++) {
+          const pt = polarToXY(a, i / RING_COUNT);
+          poly += `${pt.x.toFixed(1)},${pt.y.toFixed(1)} `;
+        }
+        grid += `<polygon class="rd-ring" points="${poly.trim()}"/>`;
+      }
+      // Axes
+      for (let a = 0; a < AXES.length; a++) {
+        const pt = polarToXY(a, 1);
+        grid += `<line class="rd-axis" x1="${CENTER}" y1="${CENTER}" x2="${pt.x.toFixed(1)}" y2="${pt.y.toFixed(1)}"/>`;
+      }
+      // Labels
+      for (let a = 0; a < AXES.length; a++) {
+        const pt = polarToXY(a, 1.13);
+        const anchor =
+          pt.x < CENTER - 4 ? 'end' :
+          pt.x > CENTER + 4 ? 'start' : 'middle';
+        grid += `<text class="rd-label" x="${pt.x.toFixed(1)}" y="${pt.y.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="middle">${AXES[a].label}</text>`;
+      }
+      // Polygons (current + compare) — created dynamically later
+      grid += `<polygon class="rd-poly rd-poly-compare" id="rdPolyCompare" style="display:none"/>`;
+      grid += `<polygon class="rd-poly rd-poly-current" id="rdPolyCurrent"/>`;
+      // Vertex dots
+      for (let a = 0; a < AXES.length; a++) {
+        grid += `<circle class="rd-vertex" id="rdVertex-${a}" r="4"/>`;
+      }
+      svg.innerHTML = grid;
+    }
+    buildGrid();
+
+    const polyCurrent = svg.querySelector('#rdPolyCurrent');
+    const polyCompare = svg.querySelector('#rdPolyCompare');
+    const vertices = Array.from({ length: AXES.length }, (_, a) => svg.querySelector('#rdVertex-' + a));
+
+    function updatePolygons() {
+      let pts = '';
+      for (let a = 0; a < AXES.length; a++) {
+        const pt = polarToXY(a, currentVals[a]);
+        pts += `${pt.x.toFixed(1)},${pt.y.toFixed(1)} `;
+        vertices[a].setAttribute('cx', pt.x.toFixed(1));
+        vertices[a].setAttribute('cy', pt.y.toFixed(1));
+        vertices[a].setAttribute('fill', currentClass.color);
+      }
+      polyCurrent.setAttribute('points', pts.trim());
+      polyCurrent.setAttribute('stroke', currentClass.color);
+      polyCurrent.setAttribute('fill', currentClass.color);
+
+      if (compareClass && compareVals) {
+        let cpts = '';
+        for (let a = 0; a < AXES.length; a++) {
+          const pt = polarToXY(a, compareVals[a]);
+          cpts += `${pt.x.toFixed(1)},${pt.y.toFixed(1)} `;
+        }
+        polyCompare.setAttribute('points', cpts.trim());
+        polyCompare.setAttribute('stroke', compareClass.color);
+        polyCompare.setAttribute('fill', compareClass.color);
+        polyCompare.style.display = '';
+      } else {
+        polyCompare.style.display = 'none';
+      }
+    }
+
+    let animId = null;
+    function animateTo(targets) {
+      cancelAnimationFrame(animId);
+      const start = currentVals.slice();
+      const startCompare = compareVals ? compareVals.slice() : null;
+      const startTime = performance.now();
+      const duration = 600;
+      function tick(now) {
+        const t = Math.min(1, (now - startTime) / duration);
+        const eased = t * t * (3 - 2 * t);
+        for (let a = 0; a < AXES.length; a++) {
+          currentVals[a] = start[a] + (targets[a] - start[a]) * eased;
+          if (startCompare && compareTarget) {
+            compareVals[a] = startCompare[a] + (compareTarget[a] - startCompare[a]) * eased;
+          }
+        }
+        updatePolygons();
+        if (t < 1) animId = requestAnimationFrame(tick);
+      }
+      animId = requestAnimationFrame(tick);
+    }
+
+    function pickClass(cls) {
+      if (compareToggle.checked && currentClass.id !== cls.id) {
+        // set as compare
+        compareClass = cls;
+        compareTarget = FINGERPRINTS[cls.id].slice();
+        if (!compareVals) compareVals = new Array(AXES.length).fill(0);
+        animateTo(targetVals);
+      } else {
+        currentClass = cls;
+        targetVals = FINGERPRINTS[cls.id].slice();
+        animateTo(targetVals);
+      }
+      tabs.querySelectorAll('.rd-tab').forEach(b => {
+        b.classList.toggle('is-active', b.dataset.rdClass === currentClass.id);
+        b.classList.toggle('is-compare', !!compareClass && b.dataset.rdClass === compareClass.id);
+      });
+      updateDetail();
+    }
+
+    function updateDetail() {
+      const main = currentClass;
+      let html = `<div class="rd-detail-main" style="border-left-color:${main.color}">
+                    <strong style="color:${main.color}">${main.label}</strong>
+                    <p>${describe(targetVals)}</p>
+                  </div>`;
+      if (compareClass) {
+        html += `<div class="rd-detail-compare" style="border-left-color:${compareClass.color}">
+                   <strong style="color:${compareClass.color}">${compareClass.label}</strong>
+                   <p>${describe(compareTarget)}</p>
+                 </div>`;
+      }
+      detailEl.innerHTML = html;
+    }
+
+    function describe(vals) {
+      // Find top-2 axes
+      const pairs = vals.map((v, i) => ({ v, label: AXES[i].label })).sort((a, b) => b.v - a.v);
+      const top = pairs.slice(0, 2).map(p => p.label).join(', ');
+      return `Сильнее всего проявляется в осях: <strong>${top}</strong>.`;
+    }
+
+    tabs.addEventListener('click', e => {
+      const btn = e.target.closest('.rd-tab');
+      if (!btn) return;
+      const cls = CLASSES_RD.find(c => c.id === btn.dataset.rdClass);
+      if (cls) pickClass(cls);
+    });
+
+    compareToggle.addEventListener('change', () => {
+      if (!compareToggle.checked) {
+        compareClass = null;
+        compareVals = null;
+        compareTarget = null;
+        tabs.querySelectorAll('.rd-tab').forEach(b => b.classList.remove('is-compare'));
+        updatePolygons();
+        updateDetail();
+      }
+    });
+
+    // Initial animate-in
+    currentVals = new Array(AXES.length).fill(0);
+    targetVals = FINGERPRINTS[currentClass.id].slice();
+    animateTo(targetVals);
+    updateDetail();
+  }
+
   function init() {
     initRFVoting();
     initFeatureFlow();
@@ -828,6 +1324,8 @@
     initConfusionMatrix();
     initFeatureImportance();
     initClassSpace();
+    initSpectrogram();
+    initRadarFingerprint();
   }
 
   if (document.readyState === 'loading') {
