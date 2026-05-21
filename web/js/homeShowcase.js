@@ -161,7 +161,7 @@
     }
 
     function drawSignal(ctx, sig, color, opts = {}) {
-      const w = ctx.canvas.width, h = ctx.canvas.height;
+      const w = ctx.canvas.clientWidth, h = ctx.canvas.clientHeight;
       ctx.clearRect(0, 0, w, h);
       ctx.lineWidth = 1.6;
       ctx.strokeStyle = color;
@@ -373,7 +373,7 @@
     });
 
     function drawWaveform(ctx, sig, color) {
-      const w = ctx.canvas.width, h = ctx.canvas.height;
+      const w = ctx.canvas.clientWidth, h = ctx.canvas.clientHeight;
       ctx.clearRect(0, 0, w, h);
       ctx.lineWidth = 1.6;
       ctx.strokeStyle = color;
@@ -388,7 +388,7 @@
     }
 
     function drawSpectrum(ctx, spec, color) {
-      const w = ctx.canvas.width, h = ctx.canvas.height;
+      const w = ctx.canvas.clientWidth, h = ctx.canvas.clientHeight;
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = color;
       const max = Math.max(...spec, 0.05);

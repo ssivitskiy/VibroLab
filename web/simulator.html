@@ -5126,32 +5126,8 @@
   }
 
   function renderTourGuide() {
-    const steps = resolveTourSteps();
-    const shell = document.getElementById('tourGuideShell');
-    const kickerNode = document.getElementById('tourGuideKicker');
-    const titleNode = document.getElementById('tourGuideTitle');
-    const copyNode = document.getElementById('tourGuideCopy');
-    const stateNode = document.getElementById('tourGuideState');
-    const progressNode = document.getElementById('tourGuideProgress');
-    const prevBtn = document.getElementById('tourGuidePrev');
-    const nextBtn = document.getElementById('tourGuideNext');
-    if (!shell || !titleNode || !copyNode || !stateNode || !progressNode || !prevBtn || !nextBtn) return;
-
-    if (!steps.length) {
-      shell.style.display = 'none';
-      return;
-    }
-
-    shell.style.display = '';
-    const safeIndex = Math.max(0, Math.min(tourStepIndex, steps.length - 1));
-    const step = steps[safeIndex];
-    if (kickerNode) kickerNode.textContent = `${currentLabScenario?.kicker || 'GUIDED TOUR'} · TOUR`;
-    titleNode.textContent = step.title || 'Guided tour';
-    copyNode.textContent = step.copy || '';
-    stateNode.textContent = `${safeIndex + 1} / ${steps.length}`;
-    progressNode.style.width = `${((safeIndex + 1) / steps.length) * 100}%`;
-    prevBtn.disabled = safeIndex === 0;
-    nextBtn.textContent = safeIndex === steps.length - 1 ? 'С начала ↺' : 'Дальше →';
+    // Tour deprecated: forcibly strip any cached DOM and bail out.
+    document.querySelectorAll('.tour-guide-shell, .tour-beacon').forEach(el => el.remove());
   }
 
   function applyTourStep(index) {
@@ -5268,34 +5244,9 @@
   }
 
   function renderLabGuide(scenario) {
+    // Lab guide deprecated: forcibly strip any cached DOM.
     currentLabScenario = scenario || LAB_SCENARIOS.intro_baseline;
-    const kickerNode = document.getElementById('labGuideKicker');
-    const titleNode = document.getElementById('labGuideTitle');
-    const leadNode = document.getElementById('labGuideLead');
-    const tagsNode = document.getElementById('labGuideTags');
-    const stepsNode = document.getElementById('labGuideSteps');
-    const theoryNode = document.getElementById('labGuideTheory');
-    const actionsNode = document.getElementById('labGuideActions');
-    if (!kickerNode || !titleNode || !leadNode || !tagsNode || !stepsNode || !theoryNode || !actionsNode) return;
-
-    kickerNode.textContent = currentLabScenario.kicker || 'ВИРТУАЛЬНАЯ ЛАБОРАТОРИЯ';
-    titleNode.textContent = currentLabScenario.title || 'Норма как точка отсчёта';
-    leadNode.textContent = currentLabScenario.lead || '';
-    tagsNode.innerHTML = (currentLabScenario.tags || []).map(tag => `<span class="lab-guide-tag">${esc(tag)}</span>`).join('');
-    stepsNode.innerHTML = (currentLabScenario.steps || []).map((step, index) => `
-      <div class="lab-guide-step${index === tourStepIndex ? ' is-active' : ''}">
-        <span class="lab-guide-step-label">${esc(step.label || '01')}</span>
-        <div>
-          <strong>${esc(step.title || '')}</strong>
-          <p>${esc(step.note || '')}</p>
-        </div>
-      </div>
-    `).join('');
-    theoryNode.innerHTML = `
-      <strong>${esc(currentLabScenario.theoryTitle || 'Что наблюдать')}</strong>
-      <p>${esc(currentLabScenario.theory || '')}</p>
-    `;
-    actionsNode.innerHTML = (currentLabScenario.actions || []).map(buildLabActionMarkup).join('');
+    document.querySelectorAll('.lab-guide-panel').forEach(el => el.remove());
   }
 
   function runLabAction(kind, dataset = {}) {
