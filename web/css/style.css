@@ -8747,3 +8747,268 @@ textarea:focus-visible {
   .rd-tabs { flex-direction: row; flex-wrap: wrap; }
   .rd-tab { flex: 1 1 40%; min-width: 110px; }
 }
+
+/* Interactive pipeline (E) — make pipe-steps clickable */
+.pipeline.pipeline--interactive .pipe-step {
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  border-radius: 0;
+  position: relative;
+}
+.pipeline.pipeline--interactive .pipe-step:hover {
+  transform: translateY(-2px);
+  background: var(--tint-cyan-weak);
+  z-index: 2;
+}
+.pipeline.pipeline--interactive .pipe-step:hover .pipe-step-cta {
+  opacity: 1;
+}
+.pipe-step-cta {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--cyan);
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity .2s;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANALYSIS EXTRAS (A / B / C / D)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* A — Live stats */
+.live-stats {
+  display: none;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 18px 0;
+}
+.live-stats.show { display: grid; }
+.live-stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  text-align: center;
+}
+.live-stat-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.live-stat-val {
+  font-family: var(--mono);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--muted);
+  transition: color .3s;
+  margin-bottom: 4px;
+}
+.live-stat-hint {
+  font-size: 10px;
+  color: var(--muted-hi);
+  line-height: 1.3;
+}
+@media (max-width: 700px) {
+  .live-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* B — Spectrum annotations overlay */
+.signal-canvas-wrap {
+  position: relative;
+}
+.spec-annotations {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.spec-annot {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.spec-annot-line {
+  position: absolute;
+  top: 20%;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  background: rgba(0, 229, 255, 0.45);
+  transform: translateX(-50%);
+}
+.spec-annot--known .spec-annot-line { background: rgba(52, 211, 153, 0.7); }
+.spec-annot-pill {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 22, 35, 0.92);
+  border: 1px solid rgba(0, 229, 255, 0.4);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  color: var(--cyan);
+  white-space: nowrap;
+  text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+  min-width: 38px;
+}
+.spec-annot--known .spec-annot-pill {
+  border-color: rgba(52, 211, 153, 0.6);
+  color: var(--green);
+}
+.spec-annot-pill strong { font-weight: 700; }
+.spec-annot-pill span {
+  font-size: 8px;
+  color: var(--muted-hi);
+  font-weight: 400;
+  margin-top: 1px;
+}
+:root[data-theme="light"] .spec-annot-pill {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+}
+
+/* C — Explainability */
+.diag-explainability {
+  display: none;
+  margin: 16px 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--cyan);
+  border-radius: 8px;
+  padding: 20px 22px;
+}
+.diag-explainability.show { display: block; }
+.diag-expl-kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--cyan);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.diag-expl-lead {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+.diag-expl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.diag-expl-row {
+  opacity: 0;
+  animation: explRowIn 0.5s ease forwards;
+}
+@keyframes explRowIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.diag-expl-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+.diag-expl-head strong {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-strong);
+  letter-spacing: 0.5px;
+}
+.diag-expl-stars {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--cyan);
+  letter-spacing: 1px;
+}
+.diag-expl-bar {
+  height: 8px;
+  background: var(--surface2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.diag-expl-fill {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+  border-radius: 4px;
+  animation: explFill 0.7s ease 0.1s forwards;
+}
+@keyframes explFill {
+  from { width: 0; }
+}
+.diag-expl-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  font-size: 11px;
+}
+.diag-expl-meaning {
+  color: var(--muted-hi);
+  font-style: italic;
+}
+.diag-expl-val {
+  font-family: var(--mono);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* D — Mini-spectrogram */
+.mini-spectrogram-wrap {
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  margin: 12px 0 18px;
+}
+.mini-spectrogram-wrap.show { display: block; }
+.mini-spectrogram-canvas {
+  width: 100%;
+  height: 180px;
+  display: block;
+  background: #06090f;
+  border-radius: 4px;
+  margin-top: 10px;
+  image-rendering: pixelated;
+}
+.mini-spectrogram-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--muted-hi);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.mini-spectrogram-bar {
+  flex: 1;
+  height: 6px;
+  background: linear-gradient(90deg, #0a0e1a, #0c2f5c, #168ab2, #34d399, #fbbf24, #f87171);
+  border-radius: 3px;
+}

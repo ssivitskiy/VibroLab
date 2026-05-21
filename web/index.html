@@ -335,38 +335,47 @@
 
   <section class="section" id="section-method">
     <div class="container">
-      <div class="label" style="margin-bottom:32px">Признаки, модель и архитектура решения</div>
-      <div class="pipeline">
-        <div class="pipe-step lit">
+      <div class="label" style="margin-bottom:12px">Признаки, модель и архитектура решения</div>
+      <p style="font-size:13px;color:var(--muted-hi);margin-bottom:24px;max-width:680px">
+        Платформа делает 5 шагов от сырого сигнала до диагноза. Кликните на любой шаг ниже —
+        прокрутит к интерактивному блоку с этим этапом.
+      </p>
+      <div class="pipeline pipeline--interactive">
+        <button class="pipe-step lit" type="button" onclick="document.getElementById('section-slider')?.scrollIntoView({behavior:'smooth'})">
           <div class="pipe-num">01</div>
           <span class="pipe-icon"><svg class="icon" aria-hidden="true"><use href="#ic-broadcast"/></svg></span>
           <div class="pipe-title" style="color:var(--cyan)">СЫРЫЕ ДАННЫЕ</div>
           <div class="pipe-desc">SEU DDS<br>CH6 акселерометр<br>2 режима</div>
-          <span class="pipe-arrow" style="opacity:1">›</span></div>
-        <div class="pipe-step lit">
+          <span class="pipe-step-cta">смотреть ↓</span>
+          <span class="pipe-arrow" style="opacity:1">›</span></button>
+        <button class="pipe-step lit" type="button" onclick="document.getElementById('section-features')?.scrollIntoView({behavior:'smooth'})">
           <div class="pipe-num">02</div>
           <span class="pipe-icon"><svg class="icon" aria-hidden="true"><use href="#ic-scissors"/></svg></span>
           <div class="pipe-title" style="color:var(--cyan)">СЕГМЕНТАЦИЯ</div>
           <div class="pipe-desc">2560 точек<br>перекрытие 50%<br>7200 сегментов</div>
-          <span class="pipe-arrow" style="opacity:1">›</span></div>
-        <div class="pipe-step lit">
+          <span class="pipe-step-cta">смотреть ↓</span>
+          <span class="pipe-arrow" style="opacity:1">›</span></button>
+        <button class="pipe-step lit" type="button" onclick="document.getElementById('section-importance')?.scrollIntoView({behavior:'smooth'})">
           <div class="pipe-num">03</div>
           <span class="pipe-icon"><svg class="icon" aria-hidden="true"><use href="#ic-microscope"/></svg></span>
           <div class="pipe-title" style="color:var(--cyan)">ПРИЗНАКИ</div>
           <div class="pipe-desc">53 признака<br>время + частота + огибающая<br>Гильбертова огибающая</div>
-          <span class="pipe-arrow" style="opacity:1">›</span></div>
-        <div class="pipe-step lit">
+          <span class="pipe-step-cta">смотреть ↓</span>
+          <span class="pipe-arrow" style="opacity:1">›</span></button>
+        <button class="pipe-step lit" type="button" onclick="document.getElementById('section-rf-voting')?.scrollIntoView({behavior:'smooth'})">
           <div class="pipe-num">04</div>
           <span class="pipe-icon"><svg class="icon" aria-hidden="true"><use href="#ic-brain"/></svg></span>
           <div class="pipe-title" style="color:var(--cyan)">ОБУЧЕНИЕ</div>
           <div class="pipe-desc">Нормализация<br>Random Forest, 500 деревьев<br>5-кратная кросс-валидация</div>
-          <span class="pipe-arrow" style="opacity:1">›</span></div>
-        <div class="pipe-step lit">
+          <span class="pipe-step-cta">смотреть ↓</span>
+          <span class="pipe-arrow" style="opacity:1">›</span></button>
+        <button class="pipe-step lit" type="button" onclick="document.getElementById('section-confusion')?.scrollIntoView({behavior:'smooth'})">
           <div class="pipe-num">05</div>
           <span class="pipe-icon"><svg class="icon" aria-hidden="true"><use href="#ic-globe"/></svg></span>
           <div class="pipe-title" style="color:var(--cyan)">ИНФЕРЕНС В БРАУЗЕРЕ</div>
           <div class="pipe-desc">Экспорт в JSON<br>локально в браузере<br>~15 мс</div>
-        </div>
+          <span class="pipe-step-cta">смотреть ↓</span>
+        </button>
       </div>
 
       <div class="two-col" style="gap:24px;margin-top:24px">
@@ -792,8 +801,49 @@
                                                                                                         id="specStatus"
                                                                                                         style="font-size:9px;color:var(--muted)">—</span>
           </div>
-          <canvas class="signal-canvas" id="specCanvas"></canvas>
+          <div class="signal-canvas-wrap">
+            <canvas class="signal-canvas" id="specCanvas"></canvas>
+            <div class="spec-annotations" id="specAnnotations" aria-hidden="true"></div>
+          </div>
           <p id="specDesc" style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6"></p>
+        </div>
+      </div>
+
+      <!-- A — Live stats -->
+      <div class="live-stats" id="liveStats">
+        <div class="live-stat" data-metric="rms">
+          <div class="live-stat-label">RMS</div>
+          <div class="live-stat-val">—</div>
+          <div class="live-stat-hint">средний уровень вибрации</div>
+        </div>
+        <div class="live-stat" data-metric="peak">
+          <div class="live-stat-label">ПИК</div>
+          <div class="live-stat-val">—</div>
+          <div class="live-stat-hint">максимальное отклонение</div>
+        </div>
+        <div class="live-stat" data-metric="kurtosis">
+          <div class="live-stat-label">ЭКСЦЕСС</div>
+          <div class="live-stat-val">—</div>
+          <div class="live-stat-hint">острота пиков · 0 = норма</div>
+        </div>
+        <div class="live-stat" data-metric="crest">
+          <div class="live-stat-label">КРЕСТ-ФАКТОР</div>
+          <div class="live-stat-val">—</div>
+          <div class="live-stat-hint">пик / RMS · ~3 = норма</div>
+        </div>
+      </div>
+
+      <!-- D — Mini-spectrogram of loaded signal -->
+      <div class="mini-spectrogram-wrap" id="miniSpectrogramWrap">
+        <div class="signal-header">
+          <span class="label" style="margin:0">Спектрограмма · время × частота</span>
+          <span class="mono" style="font-size:9px;color:var(--muted)">0 — <span id="miniSpectrogramMaxFreq">2.5 кГц</span></span>
+        </div>
+        <canvas class="mini-spectrogram-canvas" id="miniSpectrogramCanvas"></canvas>
+        <div class="mini-spectrogram-legend">
+          <span>низкая энергия</span>
+          <div class="mini-spectrogram-bar"></div>
+          <span>высокая</span>
         </div>
       </div>
 
@@ -834,6 +884,9 @@
 
       <!-- PRIMARY DIAGNOSIS -->
       <div class="diagnosis-result" id="diagResult"></div>
+
+      <!-- C — Explainability -->
+      <div class="diag-explainability" id="diagExplainability"></div>
 
       <div class="workspace-empty workspace-empty--cta">
         Хотите посмотреть тот же дефект на 3D-модели? Откройте симулятор.
@@ -943,7 +996,8 @@
 <script src="js/viz.js?v=20260410-fft-fix"></script>
 <script src="js/uiStates.js?v=20260520-ui-states-3"></script>
 <script src="js/presentation.js?v=20260520-presentation-1"></script>
-<script src="js/homeShowcase.js?v=20260520-showcase-1"></script>
+<script src="js/homeShowcase.js?v=20260521-showcase-2"></script>
+<script src="js/analysisExtras.js?v=20260522-extras-1"></script>
 <script src="js/app.js?v=20260501-subpath-fix-1"></script>
 <!-- Notification toast container -->
 <div id="toastContainer" class="toast-container"></div>

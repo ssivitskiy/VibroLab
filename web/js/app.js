@@ -5002,6 +5002,12 @@ const App = (() => {
     renderStudyLabShell();
     renderAnalysisWizard();
     scheduleJourneyDraftSave('clear-diagnosis');
+    // Reset analysis-extras blocks when starting a new analysis
+    if (typeof AnalysisExtras !== 'undefined') {
+      AnalysisExtras.clearAnnotations();
+      AnalysisExtras.clearExplainability();
+      AnalysisExtras.clearMiniSpectrogram();
+    }
   }
 
   function buildSessionRecord() {
@@ -6110,6 +6116,14 @@ const App = (() => {
         x: rect.left + rect.width / 2,
         y: Math.max(80, rect.top + 40),
       });
+    }
+    // C — Explainability + D — mini-spectrogram (analysis extras)
+    if (typeof AnalysisExtras !== 'undefined') {
+      try {
+        AnalysisExtras.renderExplainability(cls, features);
+        const sr = (currentSignalData && currentSignalData.sampleRate) || VM.FS;
+        AnalysisExtras.renderMiniSpectrogram(signal, sr);
+      } catch (e) { console.warn('[Extras] render failed', e); }
     }
     const confidence = probs[cls] || 0;
     const playbook = getPlaybook(cls);
