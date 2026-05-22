@@ -522,6 +522,67 @@
   </section>
 
   <!-- ═════════════════════════════════════════════════════════════
+       SHOWCASE: SIGNAL MIXER (D)
+       ═════════════════════════════════════════════════════════════ -->
+  <section class="section showcase-section" id="section-mixer" style="padding-top:40px">
+    <div class="container">
+      <div class="showcase-head">
+        <div class="showcase-kicker">СОБЕРИТЕ СВОЙ СИГНАЛ</div>
+        <h2 class="showcase-title">Покрутите параметры — модель сразу поставит диагноз</h2>
+        <p class="showcase-lead">
+          Пять ползунков управляют компонентами сигнала: уровень зубчатой частоты, обороты вала,
+          ударные импульсы, шумовой фон и амплитудная модуляция. Можно начать с готового пресета
+          или собрать «свой» дефект и посмотреть, как модель его прочитает.
+        </p>
+      </div>
+      <div class="mx-shell" id="signalMixer">
+        <div class="mx-presets">
+          <span style="font-family:var(--mono);font-size:10px;letter-spacing:1.5px;color:var(--muted);margin-right:4px;text-transform:uppercase">Пресеты:</span>
+          <button class="mx-preset" type="button" data-mx-preset="normal">Норма</button>
+          <button class="mx-preset" type="button" data-mx-preset="chip">Скол зуба</button>
+          <button class="mx-preset" type="button" data-mx-preset="crack">Трещина</button>
+          <button class="mx-preset" type="button" data-mx-preset="wear">Износ</button>
+        </div>
+        <div class="mx-grid">
+          <div class="mx-sliders">
+            <div class="mx-slider">
+              <div class="mx-slider-head"><strong>Амплитуда GMF</strong><span class="mx-slider-val" data-mx-val="gmf">60%</span></div>
+              <input type="range" min="0" max="100" data-mx-param="gmf">
+            </div>
+            <div class="mx-slider">
+              <div class="mx-slider-head"><strong>Скорость вала</strong><span class="mx-slider-val" data-mx-val="rot">22 Гц</span></div>
+              <input type="range" min="10" max="50" data-mx-param="rot">
+            </div>
+            <div class="mx-slider">
+              <div class="mx-slider-head"><strong>Ударные импульсы</strong><span class="mx-slider-val" data-mx-val="impact">0%</span></div>
+              <input type="range" min="0" max="100" data-mx-param="impact">
+            </div>
+            <div class="mx-slider">
+              <div class="mx-slider-head"><strong>Шумовой фон</strong><span class="mx-slider-val" data-mx-val="noise">10%</span></div>
+              <input type="range" min="0" max="100" data-mx-param="noise">
+            </div>
+            <div class="mx-slider">
+              <div class="mx-slider-head"><strong>Амп.модуляция</strong><span class="mx-slider-val" data-mx-val="modulation">0%</span></div>
+              <input type="range" min="0" max="100" data-mx-param="modulation">
+            </div>
+          </div>
+          <div class="mx-charts">
+            <div class="mx-chart-box">
+              <div class="mx-chart-label">Временной сигнал</div>
+              <canvas class="mx-waveform"></canvas>
+            </div>
+            <div class="mx-chart-box">
+              <div class="mx-chart-label">Спектр</div>
+              <canvas class="mx-spectrum"></canvas>
+            </div>
+            <div class="mx-verdict"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════
        SHOWCASE: NORM ↔ FAULT SLIDER
        ═════════════════════════════════════════════════════════════ -->
   <section class="section showcase-section" id="section-slider" style="padding-top:40px">
@@ -595,6 +656,38 @@
         <div class="fi-tabs"></div>
         <div class="fi-bars"></div>
         <div class="fi-summary"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════
+       SHOWCASE: DEFECT QUIZ (A)
+       ═════════════════════════════════════════════════════════════ -->
+  <section class="section showcase-section" id="section-quiz" style="padding-top:40px">
+    <div class="container">
+      <div class="showcase-head">
+        <div class="showcase-kicker">МИНИ-ВИКТОРИНА</div>
+        <h2 class="showcase-title">Сможете определить дефект по спектру?</h2>
+        <p class="showcase-lead">
+          Покажем вам случайный спектр без подписи — а вы попробуйте угадать класс дефекта.
+          После ответа разберём, по каким признакам это можно было увидеть.
+        </p>
+      </div>
+      <div class="quiz-shell" id="defectQuiz">
+        <div class="quiz-head">
+          <span class="quiz-question-num">Вопрос 1 из 8</span>
+          <span class="quiz-score">0 / 0</span>
+        </div>
+        <div class="quiz-spectrum-wrap">
+          <div class="quiz-spectrum-label">Спектр без подписи · что это?</div>
+          <canvas class="quiz-spectrum"></canvas>
+        </div>
+        <p class="quiz-prompt">Выберите класс, к которому относится этот сигнал:</p>
+        <div class="quiz-options"></div>
+        <div class="quiz-feedback"></div>
+        <div class="quiz-controls">
+          <button class="quiz-next" type="button" disabled>Следующий вопрос →</button>
+        </div>
       </div>
     </div>
   </section>
@@ -679,6 +772,79 @@
           </label>
           <div class="rd-detail"></div>
         </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════
+       SHOWCASE: BEARING FREQUENCY CALCULATOR (B)
+       ═════════════════════════════════════════════════════════════ -->
+  <section class="section showcase-section" id="section-bearing" style="padding-top:40px">
+    <div class="container">
+      <div class="showcase-head">
+        <div class="showcase-kicker">ФИЗИКА ПОДШИПНИКА</div>
+        <h2 class="showcase-title">Калькулятор характеристических частот</h2>
+        <p class="showcase-lead">
+          BPFI, BPFO, BSF и FTF — это не случайные цифры, а конкретные физические частоты,
+          зависящие от геометрии подшипника. Покрутите параметры, посмотрите как смещаются частоты дефектов.
+        </p>
+      </div>
+      <div class="bc-shell" id="bearingCalc">
+        <div class="bc-visual">
+          <svg class="bc-svg" viewBox="0 0 220 220"></svg>
+          <div class="bc-strip"></div>
+        </div>
+        <div class="bc-controls">
+          <div class="bc-sliders">
+            <div class="bc-slider">
+              <div class="bc-slider-head"><span>Число шариков</span><span class="bc-slider-val" data-bc-val="N">9</span></div>
+              <input type="range" min="6" max="15" step="1" data-bc-param="N">
+            </div>
+            <div class="bc-slider">
+              <div class="bc-slider-head"><span>Скорость вала</span><span class="bc-slider-val" data-bc-val="rpm">1500 об/мин</span></div>
+              <input type="range" min="300" max="3500" step="50" data-bc-param="rpm">
+            </div>
+            <div class="bc-slider">
+              <div class="bc-slider-head"><span>Диаметр шарика</span><span class="bc-slider-val" data-bc-val="d">8 мм</span></div>
+              <input type="range" min="4" max="16" step="0.5" data-bc-param="d">
+            </div>
+            <div class="bc-slider">
+              <div class="bc-slider-head"><span>Делительный D</span><span class="bc-slider-val" data-bc-val="D">52 мм</span></div>
+              <input type="range" min="30" max="100" step="1" data-bc-param="D">
+            </div>
+            <div class="bc-slider" style="grid-column:span 2">
+              <div class="bc-slider-head"><span>Угол контакта α</span><span class="bc-slider-val" data-bc-val="alpha">0°</span></div>
+              <input type="range" min="0" max="30" step="1" data-bc-param="alpha">
+            </div>
+          </div>
+          <div class="bc-formulas">
+            <div class="bc-formula-card">
+              <div class="bc-formula-name">fR · ВАЛ</div>
+              <div class="bc-formula-value" data-bc-out="f">25.0 Гц</div>
+              <div class="bc-formula-eq">fR = RPM / 60</div>
+            </div>
+            <div class="bc-formula-card bc-ftf">
+              <div class="bc-formula-name">FTF · СЕПАРАТОР</div>
+              <div class="bc-formula-value" data-bc-out="ftf">10.6 Гц</div>
+              <div class="bc-formula-eq">FTF = ½ · (1 − d/D·cos α) · fR</div>
+            </div>
+            <div class="bc-formula-card bc-bsf">
+              <div class="bc-formula-name">BSF · ШАРИК</div>
+              <div class="bc-formula-value" data-bc-out="bsf">76.4 Гц</div>
+              <div class="bc-formula-eq">BSF = D/(2d) · (1 − (d/D·cos α)²) · fR</div>
+            </div>
+            <div class="bc-formula-card bc-bpfo">
+              <div class="bc-formula-name">BPFO · НАРУЖНАЯ</div>
+              <div class="bc-formula-value" data-bc-out="bpfo">95.6 Гц</div>
+              <div class="bc-formula-eq">BPFO = N/2 · (1 − d/D·cos α) · fR</div>
+            </div>
+            <div class="bc-formula-card bc-bpfi" style="grid-column:span 2">
+              <div class="bc-formula-name">BPFI · ВНУТРЕННЯЯ</div>
+              <div class="bc-formula-value" data-bc-out="bpfi">129.4 Гц</div>
+              <div class="bc-formula-eq">BPFI = N/2 · (1 + d/D·cos α) · fR</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -1247,7 +1413,7 @@
 <script src="js/viz.js?v=20260522-hero-script"></script>
 <script src="js/uiStates.js?v=20260520-ui-states-3"></script>
 <script src="js/presentation.js?v=20260520-presentation-1"></script>
-<script src="js/homeShowcase.js?v=20260522-showcase-5"></script>
+<script src="js/homeShowcase.js?v=20260522-showcase-6"></script>
 <script src="js/analysisExtras.js?v=20260522-extras-1"></script>
 <script src="js/app.js?v=20260501-subpath-fix-1"></script>
 <!-- Notification toast container -->

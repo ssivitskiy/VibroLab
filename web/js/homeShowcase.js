@@ -1429,6 +1429,537 @@
     draw();
   }
 
+  // ═════════════════════════════════════════════════════════════
+  // 11) SIGNAL MIXER — soberite your own signal
+  // ═════════════════════════════════════════════════════════════
+  function initSignalMixer() {
+    const root = document.getElementById('signalMixer');
+    if (!root) return;
+    const wfCanvas = root.querySelector('.mx-waveform');
+    const sgCanvas = root.querySelector('.mx-spectrum');
+    const verdictEl = root.querySelector('.mx-verdict');
+    const sliders = root.querySelectorAll('input[type="range"]');
+    const valueLabels = root.querySelectorAll('.mx-slider-val');
+
+    const state = {
+      gmf: 60,        // base GMF amplitude %
+      rot: 22,        // rotation Hz (10–50)
+      impact: 0,      // impulses strength
+      noise: 10,      // noise floor
+      modulation: 0,  // AM modulation depth
+    };
+
+    function fitCanvas(c) {
+      const dpr = window.devicePixelRatio || 1;
+      c.width = c.clientWidth * dpr;
+      c.height = c.clientHeight * dpr;
+      const ctx = c.getContext('2d');
+      ctx.scale(dpr, dpr);
+      return ctx;
+    }
+    let wfCtx = fitCanvas(wfCanvas);
+    let sgCtx = fitCanvas(sgCanvas);
+    window.addEventListener('resize', () => {
+      wfCtx = fitCanvas(wfCanvas);
+      sgCtx = fitCanvas(sgCanvas);
+      render();
+    });
+
+    function genMixSignal(N = 512) {
+      const sig = new Float32Array(N);
+      const gmfAmp = state.gmf / 100;
+      const F_GMF = Math.round(8 + (state.rot - 10) * 0.3); // 8..20
+      const F_GMF2 = F_GMF * 2;
+      const F_ROT = Math.max(2, Math.round(F_GMF / 4));
+      const impactRate = F_ROT * 1.4;
+      const I = state.impact / 100;
+      const M = state.modulation / 100;
+      const noiseAmp = state.noise / 100;
+      for (let i = 0; i < N; i++) {
+        const x = i / N;
+        const tau = i * 2 * Math.PI / N;
+        let v = gmfAmp * 0.35 * Math.sin(F_GMF * tau)
+              + gmfAmp * 0.18 * Math.sin(F_GMF2 * tau)
+              + gmfAmp * 0.05 * Math.sin(F_ROT * tau);
+        if (M > 0) {
+          v *= 1 + M * 0.8 * Math.sin(F_ROT * tau);
+          v += M * 0.25 * Math.sin((F_GMF + F_ROT) * tau);
+          v += M * 0.25 * Math.sin((F_GMF - F_ROT) * tau);
+        }
+        if (I > 0) {
+          const ph = (x * impactRate) % 1;
+          if (ph < 0.05) v += I * 2.0 * Math.exp(-ph * 25);
+          v += I * 0.25 * Math.sin(54 * tau);
+          v += I * 0.20 * Math.sin(72 * tau);
+        }
+        v += (Math.random() - 0.5) * noiseAmp * 0.8;
+        sig[i] = v;
+      }
+      return sig;
+    }
+
+    function computeMixSpectrum(sig) {
+      const N = sig.length;
+      const K = 96;
+      const spec = new Float32Array(K);
+      const win = new Float32Array(N);
+      for (let n = 0; n < N; n++) win[n] = 0.5 - 0.5 * Math.cos(2 * Math.PI * n / (N - 1));
+      for (let k = 1; k <= K; k++) {
+        let re = 0, im = 0;
+        for (let n = 0; n < N; n++) {
+          const s = sig[n] * win[n];
+          const ang = 2 * Math.PI * k * n / N;
+          re += s * Math.cos(ang);
+          im -= s * Math.sin(ang);
+        }
+        spec[k - 1] = Math.sqrt(re * re + im * im) / N;
+      }
+      return spec;
+    }
+
+    function classify() {
+      const { impact, modulation, noise, gmf } = state;
+      // Simple heuristic mapping. Returns {label, color, confidence, hint}
+      if (impact > 55 && modulation < 40) {
+        return { label: 'Скол зуба', color: '#fb923c', confidence: 0.78 + impact / 500,
+                 hint: 'Ударные импульсы и боковые полосы вокруг GMF.' };
+      }
+      if (modulation > 55) {
+        return { label: 'Трещина', color: '#a78bfa', confidence: 0.75 + modulation / 500,
+                 hint: 'Амплитудная модуляция GMF — мощность «дышит».' };
+      }
+      if (noise > 65) {
+        return { label: 'Износ', color: '#fbbf24', confidence: 0.72 + noise / 600,
+                 hint: 'Поднимается широкополосный шумовой фон.' };
+      }
+      if (impact > 35 && gmf < 45) {
+        return { label: 'Дефект подшипника', color: '#60a5fa', confidence: 0.74,
+                 hint: 'Заметные ударные импульсы при ослабленном GMF.' };
+      }
+      if (impact < 15 && modulation < 15 && noise < 25) {
+        return { label: 'Норма', color: '#34d399', confidence: 0.96,
+                 hint: 'Сигнал ровный, без ударов и модуляции — норма.' };
+      }
+      return { label: 'Норма с шумом', color: '#34d399', confidence: 0.62,
+               hint: 'Смешанный сигнал — модель относит к норме с оговоркой.' };
+    }
+
+    function drawWaveform(ctx, sig, color) {
+      const w = ctx.canvas.clientWidth, h = ctx.canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      const cy = h / 2;
+      for (let i = 0; i < sig.length; i++) {
+        const x = (i / sig.length) * w;
+        const y = cy - sig[i] * h * 0.32;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    function drawSpectrum(ctx, spec, color) {
+      const w = ctx.canvas.clientWidth, h = ctx.canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+      const max = Math.max(...spec, 0.05);
+      const barW = w / spec.length;
+      ctx.fillStyle = color;
+      for (let i = 0; i < spec.length; i++) {
+        const norm = spec[i] / max;
+        const scaled = Math.pow(norm, 0.62);
+        const barH = scaled * h * 0.86;
+        if (barH < 0.4) continue;
+        ctx.fillRect(i * barW + 0.5, h - barH, Math.max(1, barW - 1.4), barH);
+      }
+    }
+
+    function render() {
+      const sig = genMixSignal();
+      const spec = computeMixSpectrum(sig);
+      const result = classify();
+      drawWaveform(wfCtx, sig, result.color);
+      drawSpectrum(sgCtx, spec, result.color);
+      verdictEl.innerHTML = `
+        <div class="mx-verdict-label">Диагноз модели</div>
+        <div class="mx-verdict-class" style="color:${result.color}">${result.label}</div>
+        <div class="mx-verdict-confidence">Уверенность · <strong>${Math.round(result.confidence * 100)}%</strong></div>
+        <div class="mx-verdict-hint">${result.hint}</div>
+      `;
+    }
+
+    sliders.forEach((slider) => {
+      const key = slider.dataset.mxParam;
+      const label = root.querySelector(`.mx-slider-val[data-mx-val="${key}"]`);
+      slider.value = state[key];
+      if (label) label.textContent = key === 'rot' ? state[key] + ' Гц' : state[key] + '%';
+      slider.addEventListener('input', () => {
+        state[key] = parseInt(slider.value, 10);
+        if (label) label.textContent = key === 'rot' ? state[key] + ' Гц' : state[key] + '%';
+        render();
+      });
+    });
+
+    // Preset buttons
+    root.querySelectorAll('.mx-preset').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const preset = btn.dataset.mxPreset;
+        const presets = {
+          normal: { gmf: 70, rot: 22, impact: 0,  noise: 10, modulation: 0  },
+          chip:   { gmf: 60, rot: 22, impact: 70, noise: 15, modulation: 10 },
+          crack:  { gmf: 60, rot: 22, impact: 15, noise: 12, modulation: 70 },
+          wear:   { gmf: 50, rot: 22, impact: 20, noise: 80, modulation: 5  },
+        };
+        Object.assign(state, presets[preset] || presets.normal);
+        sliders.forEach((s) => {
+          s.value = state[s.dataset.mxParam];
+          const lbl = root.querySelector(`.mx-slider-val[data-mx-val="${s.dataset.mxParam}"]`);
+          if (lbl) lbl.textContent = s.dataset.mxParam === 'rot' ? state[s.dataset.mxParam] + ' Гц' : state[s.dataset.mxParam] + '%';
+        });
+        render();
+      });
+    });
+
+    render();
+  }
+
+  // ═════════════════════════════════════════════════════════════
+  // 12) BEARING FREQUENCY CALCULATOR
+  // ═════════════════════════════════════════════════════════════
+  function initBearingCalc() {
+    const root = document.getElementById('bearingCalc');
+    if (!root) return;
+
+    const state = {
+      N: 9,
+      rpm: 1500,
+      d: 8,
+      D: 52,
+      alpha: 0,
+    };
+
+    function compute() {
+      const f = state.rpm / 60;             // shaft Hz
+      const cosA = Math.cos(state.alpha * Math.PI / 180);
+      const r = state.d / state.D;
+      return {
+        f,
+        bpfo: (state.N / 2) * (1 - r * cosA) * f,
+        bpfi: (state.N / 2) * (1 + r * cosA) * f,
+        bsf:  (state.D / (2 * state.d)) * (1 - r * r * cosA * cosA) * f,
+        ftf:  0.5 * (1 - r * cosA) * f,
+      };
+    }
+
+    const sliders = root.querySelectorAll('input[type="range"]');
+    sliders.forEach((slider) => {
+      const key = slider.dataset.bcParam;
+      slider.value = state[key];
+      const lbl = root.querySelector(`.bc-slider-val[data-bc-val="${key}"]`);
+      if (lbl) lbl.textContent = formatVal(key, state[key]);
+      slider.addEventListener('input', () => {
+        state[key] = parseFloat(slider.value);
+        if (lbl) lbl.textContent = formatVal(key, state[key]);
+        render();
+      });
+    });
+
+    function formatVal(key, v) {
+      if (key === 'rpm') return v + ' об/мин';
+      if (key === 'alpha') return v + '°';
+      if (key === 'N') return v;
+      return v + ' мм';
+    }
+
+    const svg = root.querySelector('.bc-svg');
+    function drawBearing() {
+      const SIZE = 220;
+      const cx = SIZE / 2, cy = SIZE / 2;
+      const Router = SIZE * 0.45;
+      const Rinner = Router * 0.55;
+      const ballR = (Router - Rinner) * 0.3;
+      const orbitR = (Router + Rinner) / 2;
+
+      let svgInner = `
+        <circle cx="${cx}" cy="${cy}" r="${Router}" fill="none" stroke="var(--border-hi)" stroke-width="1.5" />
+        <circle cx="${cx}" cy="${cy}" r="${Rinner}" fill="none" stroke="var(--border-hi)" stroke-width="1.5" />
+        <circle cx="${cx}" cy="${cy}" r="${orbitR}" fill="none" stroke="rgba(255,255,255,0.05)" stroke-dasharray="2 3" stroke-width="0.8" />
+      `;
+      // Inner race highlight (rotates)
+      svgInner += `<circle cx="${cx}" cy="${cy}" r="${Rinner * 0.78}" fill="rgba(96,165,250,0.06)" />`;
+      // Shaft
+      svgInner += `<circle cx="${cx}" cy="${cy}" r="${Rinner * 0.5}" fill="var(--surface2)" stroke="var(--border-hi)" stroke-width="1" />`;
+      svgInner += `<text x="${cx}" y="${cy + 4}" text-anchor="middle" fill="var(--muted)" font-family="JetBrains Mono" font-size="10">вал</text>`;
+      // Balls
+      const n = state.N;
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + Date.now() / 4000;
+        const bx = cx + Math.cos(a) * orbitR;
+        const by = cy + Math.sin(a) * orbitR;
+        const ballGrad = `<radialGradient id="ballGrad${i}"><stop offset="0%" stop-color="#aef3ff"/><stop offset="100%" stop-color="#22d3ee"/></radialGradient>`;
+        svgInner += ballGrad;
+        svgInner += `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="${ballR}" fill="url(#ballGrad${i})" stroke="rgba(0,0,0,0.3)" stroke-width="0.6" />`;
+      }
+      // Labels for races
+      svgInner += `<text x="${cx + Router * 0.7}" y="14" fill="#f472b6" font-family="JetBrains Mono" font-size="9" text-anchor="end">НАРУЖНАЯ ОБОЙМА</text>`;
+      svgInner += `<text x="${cx}" y="${cy - Rinner * 0.85}" fill="#60a5fa" font-family="JetBrains Mono" font-size="9" text-anchor="middle">ВНУТР.</text>`;
+      svg.innerHTML = svgInner;
+    }
+
+    function render() {
+      const r = compute();
+      drawBearing();
+      const setVal = (id, val, unit = ' Гц') => {
+        const node = root.querySelector(`[data-bc-out="${id}"]`);
+        if (node) node.textContent = val.toFixed(1) + unit;
+      };
+      setVal('f', r.f);
+      setVal('bpfo', r.bpfo);
+      setVal('bpfi', r.bpfi);
+      setVal('bsf', r.bsf);
+      setVal('ftf', r.ftf);
+
+      // Mini frequency strip
+      const stripEl = root.querySelector('.bc-strip');
+      if (stripEl) {
+        const maxF = Math.max(r.bpfi, r.bpfo, r.bsf, r.f) * 1.15;
+        const items = [
+          { label: 'fR',  val: r.f,    color: 'var(--cyan)'   },
+          { label: 'FTF', val: r.ftf,  color: 'var(--yellow)' },
+          { label: 'BSF', val: r.bsf,  color: 'var(--purple)' },
+          { label: 'BPFO',val: r.bpfo, color: 'var(--pink)'   },
+          { label: 'BPFI',val: r.bpfi, color: 'var(--blue)'   },
+        ];
+        stripEl.innerHTML = items.map(it => {
+          const left = (it.val / maxF * 100).toFixed(1);
+          return `<div class="bc-strip-tick" style="left:${left}%">
+                    <div class="bc-strip-bar" style="background:${it.color}"></div>
+                    <div class="bc-strip-label" style="color:${it.color}">${it.label}</div>
+                    <div class="bc-strip-freq">${it.val.toFixed(0)}</div>
+                  </div>`;
+        }).join('');
+      }
+    }
+
+    // Slow rotation animation
+    setInterval(() => drawBearing(), 80);
+    render();
+  }
+
+  // ═════════════════════════════════════════════════════════════
+  // 13) DEFECT QUIZ
+  // ═════════════════════════════════════════════════════════════
+  function initDefectQuiz() {
+    const root = document.getElementById('defectQuiz');
+    if (!root) return;
+    const canvas = root.querySelector('.quiz-spectrum');
+    const optionsEl = root.querySelector('.quiz-options');
+    const feedbackEl = root.querySelector('.quiz-feedback');
+    const scoreEl = root.querySelector('.quiz-score');
+    const nextBtn = root.querySelector('.quiz-next');
+    const questionLabel = root.querySelector('.quiz-question-num');
+
+    const CLASSES_Q = [
+      { id: 'normal',        label: 'Норма',                color: '#34d399' },
+      { id: 'tooth_miss',    label: 'Отсутствие зуба',      color: '#f87171' },
+      { id: 'tooth_chip',    label: 'Скол зуба',            color: '#fb923c' },
+      { id: 'gear_wear',     label: 'Износ',                color: '#fbbf24' },
+      { id: 'crack',         label: 'Трещина',              color: '#a78bfa' },
+      { id: 'bearing_inner', label: 'Внутренняя обойма',    color: '#60a5fa' },
+      { id: 'bearing_outer', label: 'Наружная обойма',      color: '#f472b6' },
+      { id: 'bearing_ball',  label: 'Дефект шарика',        color: '#22d3ee' },
+    ];
+
+    const QUESTIONS = [
+      { correct: 'normal',        explanation: 'Чистые гармоники GMF, без боковых полос — это классическая «норма».' },
+      { correct: 'tooth_miss',    explanation: 'Высокие узкие пики в высокочастотной области + сильные сайдбэнды — отсутствие зуба.' },
+      { correct: 'bearing_inner', explanation: 'Доминирующий пик на BPFI (~42 бин) + симметричные сайдбэнды — внутренняя обойма.' },
+      { correct: 'crack',         explanation: 'Сайдбэнды вокруг GMF (вверх и вниз) — амплитудная модуляция, признак трещины.' },
+      { correct: 'gear_wear',     explanation: 'Шум поднялся «по всему спектру» равномерно — типичный износ зубьев.' },
+      { correct: 'bearing_outer', explanation: 'Узкий стабильный пик на BPFO без модуляции — наружная обойма (она неподвижна).' },
+      { correct: 'tooth_chip',    explanation: 'Импульсы есть, но мягче чем при отсутствии зуба; сайдбэнды слабее — скол зуба.' },
+      { correct: 'normal',        explanation: 'GMF·1 и GMF·2 чистые, шумовой фон низкий, сайдбэндов нет — норма.' },
+    ];
+
+    let order = QUESTIONS.map((_, i) => i);
+    let qIdx = 0;
+    let answered = false;
+    let score = 0;
+    let total = 0;
+
+    // Reuse signal generators from fault slider via duck-typing class id
+    function genForClass(classId, N = 512) {
+      const sig = new Float32Array(N);
+      const F_GMF = 12, F_GMF2 = 24, F_ROT = 3;
+      for (let i = 0; i < N; i++) {
+        const x = i / N;
+        const tau = i * 2 * Math.PI / N;
+        let v = 0.30 * Math.sin(F_GMF * tau) + 0.16 * Math.sin(F_GMF2 * tau) + 0.04 * Math.sin(F_ROT * tau);
+        switch (classId) {
+          case 'tooth_miss': {
+            const ph = (x * F_ROT) % 1;
+            if (ph < 0.04) v += 2.4 * Math.exp(-ph * 28);
+            v += 0.55 * Math.sin((F_GMF + F_ROT) * tau);
+            v += 0.55 * Math.sin((F_GMF - F_ROT) * tau);
+            v += 0.35 * Math.sin(54 * tau);
+            v += 0.30 * Math.sin(72 * tau);
+            break;
+          }
+          case 'tooth_chip': {
+            const ph = (x * F_ROT) % 1;
+            if (ph < 0.04) v += 1.2 * Math.exp(-ph * 30);
+            v += 0.30 * Math.sin((F_GMF + F_ROT) * tau);
+            v += 0.30 * Math.sin((F_GMF - F_ROT) * tau);
+            v += 0.18 * Math.sin(54 * tau);
+            break;
+          }
+          case 'gear_wear':
+            for (let k = 6; k < 80; k += 2) v += 0.06 * Math.sin(k * tau + k * 0.7);
+            v += 0.25 * Math.sin(48 * tau);
+            break;
+          case 'crack': {
+            const m = 1 + 0.9 * Math.sin(F_ROT * tau);
+            v *= m;
+            v += 0.30 * Math.sin(F_GMF * tau) * m;
+            v += 0.18 * Math.sin(36 * tau);
+            break;
+          }
+          case 'bearing_inner':
+            v += 0.95 * Math.sin(42 * tau) * (0.7 + 0.3 * Math.sin(F_ROT * tau));
+            v += 0.50 * Math.sin(45 * tau);
+            v += 0.50 * Math.sin(39 * tau);
+            v += 0.30 * Math.sin(84 * tau);
+            break;
+          case 'bearing_outer':
+            v += 1.05 * Math.sin(34 * tau);
+            v += 0.40 * Math.sin(68 * tau);
+            break;
+          case 'bearing_ball':
+            v += 0.75 * Math.sin(28 * tau) * (0.7 + 0.3 * Math.sin(F_ROT * tau * 0.8));
+            break;
+          case 'normal':
+          default:
+            // Just keep base
+            break;
+        }
+        sig[i] = v + (Math.random() - 0.5) * 0.04;
+      }
+      return sig;
+    }
+
+    function spectrum(sig) {
+      const N = sig.length, K = 96;
+      const spec = new Float32Array(K);
+      const win = new Float32Array(N);
+      for (let n = 0; n < N; n++) win[n] = 0.5 - 0.5 * Math.cos(2 * Math.PI * n / (N - 1));
+      for (let k = 1; k <= K; k++) {
+        let re = 0, im = 0;
+        for (let n = 0; n < N; n++) {
+          const s = sig[n] * win[n];
+          const ang = 2 * Math.PI * k * n / N;
+          re += s * Math.cos(ang);
+          im -= s * Math.sin(ang);
+        }
+        spec[k - 1] = Math.sqrt(re * re + im * im) / N;
+      }
+      return spec;
+    }
+
+    function fitCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * dpr;
+      canvas.height = canvas.clientHeight * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      return ctx;
+    }
+    let ctx = fitCanvas();
+    window.addEventListener('resize', () => { ctx = fitCanvas(); drawQ(); });
+
+    function drawQ() {
+      const q = QUESTIONS[order[qIdx]];
+      const sig = genForClass(q.correct);
+      const spec = spectrum(sig);
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#cbd5e1';
+      const max = Math.max(...spec, 0.05);
+      const barW = w / spec.length;
+      for (let i = 0; i < spec.length; i++) {
+        const norm = spec[i] / max;
+        const scaled = Math.pow(norm, 0.62);
+        const barH = scaled * h * 0.86;
+        if (barH < 0.4) continue;
+        ctx.fillRect(i * barW + 0.5, h - barH, Math.max(1, barW - 1.4), barH);
+      }
+    }
+
+    function pickOptions(correctId) {
+      // 3 random decoys + correct
+      const decoys = CLASSES_Q.filter(c => c.id !== correctId).sort(() => Math.random() - 0.5).slice(0, 3);
+      const opts = [...decoys, CLASSES_Q.find(c => c.id === correctId)].sort(() => Math.random() - 0.5);
+      return opts;
+    }
+
+    let currentOptions = [];
+
+    function renderOptions() {
+      const q = QUESTIONS[order[qIdx]];
+      currentOptions = pickOptions(q.correct);
+      optionsEl.innerHTML = currentOptions.map(opt =>
+        `<button class="quiz-opt" type="button" data-quiz-cls="${opt.id}">
+          <span class="quiz-opt-dot" style="background:${opt.color}"></span>${opt.label}
+         </button>`
+      ).join('');
+      feedbackEl.classList.remove('show', 'is-correct', 'is-wrong');
+      feedbackEl.innerHTML = '';
+      answered = false;
+      nextBtn.disabled = true;
+      questionLabel.textContent = `Вопрос ${qIdx + 1} из ${order.length}`;
+      drawQ();
+    }
+
+    function loadNext() {
+      qIdx = (qIdx + 1) % order.length;
+      if (qIdx === 0) order = order.sort(() => Math.random() - 0.5);
+      renderOptions();
+    }
+
+    optionsEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.quiz-opt');
+      if (!btn || answered) return;
+      answered = true;
+      const q = QUESTIONS[order[qIdx]];
+      const picked = btn.dataset.quizCls;
+      total++;
+      optionsEl.querySelectorAll('.quiz-opt').forEach(b => {
+        b.classList.add('is-locked');
+        if (b.dataset.quizCls === q.correct) b.classList.add('is-correct');
+        if (b === btn && picked !== q.correct) b.classList.add('is-wrong');
+      });
+      const isRight = picked === q.correct;
+      if (isRight) score++;
+      feedbackEl.classList.add('show', isRight ? 'is-correct' : 'is-wrong');
+      const correctName = CLASSES_Q.find(c => c.id === q.correct)?.label || q.correct;
+      feedbackEl.innerHTML = `
+        <strong>${isRight ? '✓ Правильно!' : '✗ Не угадали'}</strong>
+        <p>Это «<b>${correctName}</b>». ${q.explanation}</p>
+      `;
+      scoreEl.textContent = `${score} / ${total}`;
+      nextBtn.disabled = false;
+      if (isRight && window.UIStates && UIStates.confettiBurst) {
+        const rect = btn.getBoundingClientRect();
+        UIStates.confettiBurst({ x: rect.left + rect.width / 2, y: rect.top, force: true });
+      }
+    });
+
+    nextBtn.addEventListener('click', loadNext);
+
+    // Shuffle initial order
+    order = order.sort(() => Math.random() - 0.5);
+    renderOptions();
+  }
+
   function init() {
     initRFVoting();
     initFeatureFlow();
@@ -1440,6 +1971,9 @@
     initRadarFingerprint();
     initGlossaryArrows();
     initStatusOscilloscope();
+    initSignalMixer();
+    initBearingCalc();
+    initDefectQuiz();
   }
 
   if (document.readyState === 'loading') {
