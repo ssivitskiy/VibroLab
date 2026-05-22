@@ -323,45 +323,120 @@ const Viz = (() => {
     resize();
     window.addEventListener('resize', resize);
 
-    let t = 0, fault = false, fc = 0;
+    // Scripted scenario: 5 phases on a loop ~ 12 seconds.
+    //   phase 0 (0–3s)  : normal — clean sine
+    //   phase 1 (3–4s)  : small impulses appear (warm-up)
+    //   phase 2 (4–8s)  : strong impulses + АНОМАЛИЯ label + vertical red line
+    //   phase 3 (8–10s) : verdict pill «Random Forest → Скол зуба · 98%»
+    //   phase 4 (10–12s): fade everything back to normal
+    let t = 0;
+    let startMs = performance.now();
+    function phaseInfo() {
+      const elapsed = (performance.now() - startMs) / 1000;
+      const cycle = elapsed % 12;
+      if (cycle < 3)        return { name: 'normal',  faultMag: 0,                       showAnom: false, showVerdict: false };
+      if (cycle < 4)        return { name: 'warmup',  faultMag: (cycle - 3) * 0.6,       showAnom: false, showVerdict: false };
+      if (cycle < 8)        return { name: 'fault',   faultMag: 0.6 + Math.sin((cycle - 4) * 1.4) * 0.15, showAnom: true,  showVerdict: cycle > 5.2 };
+      if (cycle < 10)       return { name: 'reveal',  faultMag: 0.45,                    showAnom: true,  showVerdict: true };
+      const k = (12 - cycle) / 2;
+      return                       { name: 'fade',    faultMag: 0.45 * k,                showAnom: k > 0.2, showVerdict: k > 0.3 };
+    }
 
     function draw() {
       const W = canvas.width, H = canvas.height;
       ctx.clearRect(0, 0, W, H);
       drawGrid(ctx, W, H, 8, 4);
 
+      const phase = phaseInfo();
+      const isFault = phase.faultMag > 0.02;
+      const A = H * 0.18;
+      const impulseX = W * 0.65;
+      const impulseColor = '#f87171';
+
+      // Base waveform colour (cyan, slightly red-tinted under fault)
       ctx.shadowBlur = 10;
-      ctx.shadowColor = '#00e5ff';
-      ctx.strokeStyle = '#00e5ff';
+      ctx.shadowColor = isFault ? '#f87171' : '#00e5ff';
+      ctx.strokeStyle = isFault ? '#ff7d8a' : '#00e5ff';
       ctx.lineWidth = 2;
       ctx.beginPath();
 
-      const A = H * 0.18;
       for (let x = 0; x < W; x++) {
         const p = x * 0.06 + t;
         let y = H/2 + Math.sin(p)*A + Math.sin(p*3.1)*A*0.3 +
                 Math.sin(p*5.7)*A*0.12 + Math.sin(p*0.4)*A*0.2;
-        if (Math.abs(x - W*0.65) < 3 && fault) y = H/2 + A*3.5;
+        // Three impulses near the right side, modulated by fault magnitude.
+        if (phase.faultMag > 0) {
+          [impulseX, impulseX - W*0.18, impulseX + W*0.12].forEach((cx, idx) => {
+            const dist = Math.abs(x - cx);
+            if (dist < 6) {
+              const spike = A * (3.5 - idx * 0.6) * phase.faultMag * Math.exp(-dist * dist / 4);
+              y = H/2 + spike;
+            }
+          });
+        }
         x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       }
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      if (fault) {
-        ctx.fillStyle = '#fb923c';
-        ctx.font = `${Math.max(12, W*0.012)}px "JetBrains Mono"`;
-        ctx.fillText('АНОМАЛИЯ', W*0.65-48, H*0.2);
-        ctx.strokeStyle = 'rgba(251,146,60,0.35)';
-        ctx.setLineDash([4,4]);
-        ctx.beginPath(); ctx.moveTo(W*0.65,0); ctx.lineTo(W*0.65,H); ctx.stroke();
+      if (phase.showAnom) {
+        const labelFont = `${Math.max(11, W*0.013)}px "JetBrains Mono"`;
+        // Red dashed line through impulse
+        ctx.strokeStyle = `rgba(248, 113, 113, ${0.35 + 0.25 * Math.sin(performance.now() / 220)})`;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath(); ctx.moveTo(impulseX, 0); ctx.lineTo(impulseX, H); ctx.stroke();
         ctx.setLineDash([]);
+
+        // Label pill
+        ctx.font = labelFont;
+        const label = 'АНОМАЛИЯ · 132 Гц';
+        const textW = ctx.measureText(label).width;
+        const px = Math.min(W - textW - 26, impulseX + 14);
+        const py = H * 0.18;
+        ctx.fillStyle = 'rgba(248, 113, 113, 0.18)';
+        ctx.strokeStyle = 'rgba(248, 113, 113, 0.7)';
+        ctx.lineWidth = 1;
+        roundRect(ctx, px - 10, py - 18, textW + 20, 26, 13);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = impulseColor;
+        ctx.fillText(label, px, py);
+      }
+
+      if (phase.showVerdict) {
+        const verdictFont = `600 ${Math.max(11, W*0.013)}px "JetBrains Mono"`;
+        ctx.font = verdictFont;
+        const v1 = 'RANDOM FOREST → Скол зуба';
+        const v2 = '98% уверенности · 2 мс';
+        const vw = Math.max(ctx.measureText(v1).width, ctx.measureText(v2).width);
+        const vx = 24;
+        const vy = H - 56;
+        ctx.fillStyle = 'rgba(15, 22, 35, 0.85)';
+        ctx.strokeStyle = 'rgba(52, 211, 153, 0.55)';
+        ctx.lineWidth = 1.2;
+        roundRect(ctx, vx - 12, vy - 22, vw + 24, 46, 8);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#34d399';
+        ctx.fillText(v1, vx, vy);
+        ctx.fillStyle = '#a8efd0';
+        ctx.font = `${Math.max(10, W*0.011)}px "JetBrains Mono"`;
+        ctx.fillText(v2, vx, vy + 18);
       }
 
       t += 0.04;
-      fc++;
-      if (fc % 140 === 0) fault = !fault;
       requestAnimationFrame(draw);
     }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y,     x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x,     y + h, r);
+      ctx.arcTo(x,     y + h, x,     y,     r);
+      ctx.arcTo(x,     y,     x + w, y,     r);
+      ctx.closePath();
+    }
+
     draw();
   }
 

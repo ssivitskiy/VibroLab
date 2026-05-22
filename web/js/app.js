@@ -5674,6 +5674,11 @@ const App = (() => {
       const ratio = Math.max(0.04, Math.min(1, (window.scrollY || root.scrollTop || 0) / maxScroll));
       progressNode.style.transform = `scaleX(${ratio})`;
     }
+    // Header frosted-glass + scroll-invite fade
+    const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    document.body.classList.toggle('is-scrolled', scrollY > 60);
+    const invite = el('scrollInvite');
+    if (invite) invite.style.opacity = scrollY > 40 ? '0' : '';
   }
 
   function goPage(id) {

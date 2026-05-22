@@ -1342,6 +1342,46 @@
     }, { passive: false });
   }
 
+  // ═════════════════════════════════════════════════════════════
+  // 10) STATUS MINI-OSCILLOSCOPE (header «В СЕТИ»)
+  // ═════════════════════════════════════════════════════════════
+  function initStatusOscilloscope() {
+    const canvas = document.getElementById('statusOsc');
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.clientWidth * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    let t = 0;
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      // baseline
+      ctx.strokeStyle = 'rgba(52, 211, 153, 0.18)';
+      ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2);
+      ctx.stroke();
+      // signal
+      ctx.strokeStyle = '#34d399';
+      ctx.lineWidth = 1.4;
+      ctx.shadowBlur = 4;
+      ctx.shadowColor = 'rgba(52, 211, 153, 0.55)';
+      ctx.beginPath();
+      for (let x = 0; x < W; x++) {
+        const p = (x / W) * Math.PI * 4 + t;
+        const y = H / 2 + Math.sin(p) * (H * 0.28) + Math.sin(p * 2.3) * (H * 0.10);
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      t += 0.10;
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
   function init() {
     initRFVoting();
     initFeatureFlow();
@@ -1352,6 +1392,7 @@
     initSpectrogram();
     initRadarFingerprint();
     initGlossaryArrows();
+    initStatusOscilloscope();
   }
 
   if (document.readyState === 'loading') {
