@@ -1317,6 +1317,31 @@
     updateDetail();
   }
 
+  // ═════════════════════════════════════════════════════════════
+  // 9) GLOSSARY ARROWS — left/right scroll
+  // ═════════════════════════════════════════════════════════════
+  function initGlossaryArrows() {
+    const carousel = document.getElementById('glossaryCarousel');
+    if (!carousel) return;
+    const wrap = carousel.parentElement;
+    if (!wrap) return;
+    const left = wrap.querySelector('.glossary-arrow--left');
+    const right = wrap.querySelector('.glossary-arrow--right');
+    const step = () => {
+      const card = carousel.querySelector('.glossary-card');
+      return card ? card.getBoundingClientRect().width + 14 : 300;
+    };
+    if (left) left.addEventListener('click', () => carousel.scrollBy({ left: -step(), behavior: 'smooth' }));
+    if (right) right.addEventListener('click', () => carousel.scrollBy({ left: step(), behavior: 'smooth' }));
+    // Optional: scroll with mouse wheel
+    carousel.addEventListener('wheel', (e) => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        carousel.scrollBy({ left: e.deltaY, behavior: 'auto' });
+      }
+    }, { passive: false });
+  }
+
   function init() {
     initRFVoting();
     initFeatureFlow();
@@ -1326,6 +1351,7 @@
     initClassSpace();
     initSpectrogram();
     initRadarFingerprint();
+    initGlossaryArrows();
   }
 
   if (document.readyState === 'loading') {

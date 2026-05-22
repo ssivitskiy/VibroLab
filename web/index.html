@@ -332,6 +332,68 @@
     </div>
   </section>
 
+  <!-- ═════════════════════════════════════════════════════════════
+       SHOWCASE: NUMBERS STORYTELLING
+       ═════════════════════════════════════════════════════════════ -->
+  <section class="section" id="section-numbers" style="padding-top:40px">
+    <div class="container">
+      <div class="numbers-shell">
+        <div class="numbers-intro">
+          <div class="numbers-kicker">ЗА ЭТИМИ ЦИФРАМИ</div>
+          <h2 class="numbers-title">Откуда берётся точность 98.4%</h2>
+          <p class="numbers-lead">
+            Это не «удачно подобрали гиперпараметры». За результатом стоят сотни мегабайт реальных
+            записей, тщательная разметка, физически интерпретируемые признаки и кросс-валидация
+            на честных данных. Ниже — ключевые цифры с одной строкой о том, что они значат.
+          </p>
+        </div>
+
+        <div class="numbers-grid">
+          <div class="number-card">
+            <div class="number-val"><span data-counter>20</span></div>
+            <div class="number-unit">файлов</div>
+            <div class="number-text">из открытого датасета Southeastern University. Каждый файл — реальная запись со стенда DDS.</div>
+          </div>
+          <div class="number-card">
+            <div class="number-val"><span data-counter>5120</span></div>
+            <div class="number-unit">Гц частоты</div>
+            <div class="number-text">дискретизации акселерометра — достаточно, чтобы разглядеть гармоники зубчатой передачи.</div>
+          </div>
+          <div class="number-card">
+            <div class="number-val"><span data-counter>2560</span></div>
+            <div class="number-unit">точек в окне</div>
+            <div class="number-text">~ полсекунды записи. Внутри — несколько оборотов вала и не менее одного цикла дефекта.</div>
+          </div>
+          <div class="number-card">
+            <div class="number-val"><span data-counter>7200</span></div>
+            <div class="number-unit">сегментов</div>
+            <div class="number-text">после сегментации с 50% перекрытием. На них и происходит обучение Random Forest.</div>
+          </div>
+          <div class="number-card">
+            <div class="number-val">5760<span class="number-divider">/</span>1440</div>
+            <div class="number-unit">обуч. / тест</div>
+            <div class="number-text">соотношение 80/20 со стратификацией. Тестовые данные модель не видит до финальной оценки.</div>
+          </div>
+          <div class="number-card">
+            <div class="number-val"><span data-counter>5</span></div>
+            <div class="number-unit">фолдов CV</div>
+            <div class="number-text">5-кратная кросс-валидация. Точность — это среднее по 5 независимым запускам, σ ± 0.21%.</div>
+          </div>
+          <div class="number-card">
+            <div class="number-val"><span data-counter>500</span></div>
+            <div class="number-unit">деревьев</div>
+            <div class="number-text">в Random Forest. Каждое — со своей подвыборкой признаков и сэмплов (bagging).</div>
+          </div>
+          <div class="number-card">
+            <div class="number-val">~ <span data-counter>2</span></div>
+            <div class="number-unit">мс инференс</div>
+            <div class="number-text">от вектора признаков до диагноза в браузере. Без серверного ML, без сети, без задержек.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
 
   <section class="section" id="section-method">
     <div class="container">
@@ -652,6 +714,137 @@
     </div>
   </section>
 
+  <!-- ═════════════════════════════════════════════════════════════
+       SHOWCASE: GLOSSARY CAROUSEL
+       ═════════════════════════════════════════════════════════════ -->
+  <section class="section" id="section-glossary" style="padding-top:40px">
+    <div class="container">
+      <div class="showcase-head">
+        <div class="showcase-kicker">СЛОВАРЬ ТЕРМИНОВ</div>
+        <h2 class="showcase-title">Если поднимаются непонятные сокращения — это сюда</h2>
+        <p class="showcase-lead">
+          BPFI, GMF, RMS, kurtosis — короткие подсказки с формулой и физическим смыслом.
+          Прокручивайте карточки боком: пальцем на мобиле, колесом мыши на десктопе.
+        </p>
+      </div>
+      <div class="glossary-wrap">
+        <button class="glossary-arrow glossary-arrow--left" type="button" aria-label="Влево">‹</button>
+        <div class="glossary-carousel" id="glossaryCarousel">
+          <article class="glossary-card">
+            <div class="glossary-term">GMF</div>
+            <div class="glossary-full">Gear Mesh Frequency</div>
+            <div class="glossary-formula">GMF = n × z</div>
+            <p class="glossary-desc">
+              Частота зацепления зубчатой пары. <b>n</b> — частота вращения вала,
+              <b>z</b> — число зубьев. При здоровой передаче спектр «звенит» именно на GMF и её гармониках.
+            </p>
+            <div class="glossary-example">SEU: 20 Hz × 20 зубьев = <strong>400 Гц</strong></div>
+          </article>
+
+          <article class="glossary-card">
+            <div class="glossary-term">BPFI</div>
+            <div class="glossary-full">Ball-Pass Frequency · Inner race</div>
+            <div class="glossary-formula">BPFI ≈ 5.2 × n</div>
+            <p class="glossary-desc">
+              Частота прохождения шарика по внутренней обойме. Появляется, когда на внутренней
+              обойме есть дефект. Видна в спектре огибающей (envelope spectrum).
+            </p>
+            <div class="glossary-example">SEU: 20 Hz × 5.2 ≈ <strong>104 Гц</strong></div>
+          </article>
+
+          <article class="glossary-card">
+            <div class="glossary-term">BPFO</div>
+            <div class="glossary-full">Ball-Pass Frequency · Outer race</div>
+            <div class="glossary-formula">BPFO ≈ 3.5 × n</div>
+            <p class="glossary-desc">
+              То же, но для наружной обоймы. Поскольку наружная обойма обычно неподвижна,
+              паттерн BPFO стабильнее, без амплитудной модуляции.
+            </p>
+            <div class="glossary-example">SEU: 20 Hz × 3.5 ≈ <strong>70 Гц</strong></div>
+          </article>
+
+          <article class="glossary-card">
+            <div class="glossary-term">BSF</div>
+            <div class="glossary-full">Ball-Spin Frequency</div>
+            <div class="glossary-formula">BSF ≈ 2.1 × n</div>
+            <p class="glossary-desc">
+              Частота вращения самого шарика подшипника. Дефекты тел качения дают
+              мягкий цикличный паттерн, отличный от обойм.
+            </p>
+            <div class="glossary-example">SEU: 20 Hz × 2.1 ≈ <strong>42 Гц</strong></div>
+          </article>
+
+          <article class="glossary-card">
+            <div class="glossary-term">RMS</div>
+            <div class="glossary-full">Root Mean Square</div>
+            <div class="glossary-formula">RMS = √(Σx² / N)</div>
+            <p class="glossary-desc">
+              Среднеквадратичный уровень сигнала — энергетический «громкий или тихий».
+              Растёт при любом дефекте, но не различает, какой именно.
+            </p>
+            <div class="glossary-example">Норма: ~ 0.08 g · Дефект: > 0.4 g</div>
+          </article>
+
+          <article class="glossary-card">
+            <div class="glossary-term">Kurtosis</div>
+            <div class="glossary-full">Эксцесс / острота пиков</div>
+            <div class="glossary-formula">K = E[(x−μ)⁴]/σ⁴ − 3</div>
+            <p class="glossary-desc">
+              Мера «ударности» сигнала. Гладкая синусоида ≈ 0, ударные пики поднимают его
+              до 3–10. Лучший быстрый детектор дефектов зацепления.
+            </p>
+            <div class="glossary-example">Норма: 0 · Скол зуба: 4–8</div>
+          </article>
+
+          <article class="glossary-card">
+            <div class="glossary-term">Крест-фактор</div>
+            <div class="glossary-full">Crest Factor</div>
+            <div class="glossary-formula">CF = пик / RMS</div>
+            <p class="glossary-desc">
+              Отношение максимального пика к среднеквадратичному уровню. У синуса ≈ 1.4,
+              у шума ≈ 3, у ударных дефектов — заметно больше.
+            </p>
+            <div class="glossary-example">Норма: ≈ 3 · Тяжёлый дефект: > 7</div>
+          </article>
+
+          <article class="glossary-card">
+            <div class="glossary-term">FFT</div>
+            <div class="glossary-full">Fast Fourier Transform</div>
+            <div class="glossary-formula">X(f) = Σ x(t)·e^(−2πift)</div>
+            <p class="glossary-desc">
+              Преобразование Фурье — переход от «времени» к «частоте». Превращает осциллограмму
+              в спектр, где видны конкретные частоты вибрации.
+            </p>
+            <div class="glossary-example">2560 точек → 1280 бинов спектра</div>
+          </article>
+
+          <article class="glossary-card">
+            <div class="glossary-term">Envelope</div>
+            <div class="glossary-full">Огибающая / Hilbert envelope</div>
+            <div class="glossary-formula">|x(t) + i·H(x(t))|</div>
+            <p class="glossary-desc">
+              Преобразование Гильберта вытаскивает «огибающую» сигнала. В её спектре чётче
+              видны частоты модуляции — там и живут BPFI / BPFO / BSF.
+            </p>
+            <div class="glossary-example">Главный инструмент диагностики подшипников</div>
+          </article>
+
+          <article class="glossary-card">
+            <div class="glossary-term">Random Forest</div>
+            <div class="glossary-full">Случайный лес</div>
+            <div class="glossary-formula">500 деревьев → мажоритарный голос</div>
+            <p class="glossary-desc">
+              Ансамбль из 500 решающих деревьев. Каждое обучается на своей подвыборке,
+              итог — мажоритарное голосование. Устойчив к шуму, легко объясним.
+            </p>
+            <div class="glossary-example">Точность 98.4% при максимальной глубине 30</div>
+          </article>
+        </div>
+        <button class="glossary-arrow glossary-arrow--right" type="button" aria-label="Вправо">›</button>
+      </div>
+    </div>
+  </section>
+
   <!-- TRAINING RESULTS -->
   <section class="section" id="section-results">
     <div class="container">
@@ -705,6 +898,92 @@
           низких и высоких частот и статистики ударности сигнала, а не на случайные корреляции.
         </div>
         <div id="fiBars"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════
+       FAQ
+       ═════════════════════════════════════════════════════════════ -->
+  <section class="section" id="section-faq" style="padding-top:40px">
+    <div class="container">
+      <div class="showcase-head">
+        <div class="showcase-kicker">ЧАСТЫЕ ВОПРОСЫ</div>
+        <h2 class="showcase-title">Что обычно спрашивают про VibroLab</h2>
+        <p class="showcase-lead">
+          Самые частые вопросы про модель, данные и работу платформы. Если ответа нет —
+          напишите автору проекта или загляните в исходники на GitHub.
+        </p>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary>Почему именно Random Forest, а не нейросеть?</summary>
+          <p>
+            На датасете SEU из ~7200 сегментов Random Forest даёт 98.4% точности — глубокая
+            сеть едва ли значимо больше, но требует на порядок больше данных и теряет
+            прозрачность. RF легко сериализуется в JSON (3.8 МБ), запускается прямо в браузере
+            и позволяет показать, на какие признаки модель опиралась.
+          </p>
+        </details>
+        <details class="faq-item">
+          <summary>Почему 53 признака, не 100 или не сырой сигнал?</summary>
+          <p>
+            53 — это физически интерпретируемый набор: 10 признаков во времени (RMS, эксцесс,
+            крест-фактор), 35 в частоте (GMF, гармоники, боковые полосы, энергии в полосах)
+            и 8 в огибающей (BPFI, BPFO, BSF). Каждый из них имеет понятный смысл, поэтому
+            ошибки модели можно объяснить, а не пожимать плечами.
+          </p>
+        </details>
+        <details class="faq-item">
+          <summary>Что делать, если сигнал длиннее 2560 точек?</summary>
+          <p>
+            Платформа автоматически нарежет его на сегменты по 2560 точек с 50% перекрытием,
+            проанализирует каждый и покажет результат по самому уверенному окну. Полную
+            раскладку по окнам можно посмотреть в описании под сигналом.
+          </p>
+        </details>
+        <details class="faq-item">
+          <summary>Нужен ли интернет, чтобы пользоваться?</summary>
+          <p>
+            После первой загрузки страницы — нет. ML-модель скачивается один раз (~3.8 МБ),
+            дальше анализ идёт целиком в браузере. Можно работать офлайн, в локальной сети,
+            на лекции без Wi-Fi. Сервер нужен только для синхронизации профиля и истории.
+          </p>
+        </details>
+        <details class="faq-item">
+          <summary>Куда уходят мои данные?</summary>
+          <p>
+            Никуда. Загруженный файл и его признаки остаются в вашем браузере. На сервер
+            уходит только то, что вы сами явно сохраняете в журнал после входа в аккаунт.
+            Никакой автоматической отправки телеметрии в платформе нет.
+          </p>
+        </details>
+        <details class="faq-item">
+          <summary>Можно ли использовать свои датасеты, не SEU?</summary>
+          <p>
+            Да, форматы TXT / WAV / CSV / MAT / NPY / UFF поддерживаются «из коробки».
+            Главное условие — частота дискретизации ≥ 2 кГц, иначе теряются высокочастотные
+            гармоники GMF. Если у вас другой стенд, можно переобучить модель на ваших данных
+            и заменить <code>rf_model.json</code>.
+          </p>
+        </details>
+        <details class="faq-item">
+          <summary>Что значит «инференс прямо в браузере»?</summary>
+          <p>
+            Сериализованный Random Forest — это просто структура данных (массив деревьев,
+            каждое — массив узлов). В JavaScript достаточно ~200 строк, чтобы пройти
+            каждое дерево, собрать голоса и выдать класс. Никаких WebAssembly, ONNX-runtime
+            или серверного API не требуется.
+          </p>
+        </details>
+        <details class="faq-item">
+          <summary>Кто разработал и зачем нужен VibroLab?</summary>
+          <p>
+            Платформа разработана как учебный инструмент для студентов и преподавателей
+            ИТМО: показать «живой» ML, который не магия, а понятный физический процесс.
+            Подходит как для лабораторных работ, так и для демо вибродиагностики на лекциях.
+          </p>
+        </details>
       </div>
     </div>
   </section>
@@ -996,7 +1275,7 @@
 <script src="js/viz.js?v=20260410-fft-fix"></script>
 <script src="js/uiStates.js?v=20260520-ui-states-3"></script>
 <script src="js/presentation.js?v=20260520-presentation-1"></script>
-<script src="js/homeShowcase.js?v=20260521-showcase-2"></script>
+<script src="js/homeShowcase.js?v=20260522-showcase-3"></script>
 <script src="js/analysisExtras.js?v=20260522-extras-1"></script>
 <script src="js/app.js?v=20260501-subpath-fix-1"></script>
 <!-- Notification toast container -->
