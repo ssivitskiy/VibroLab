@@ -311,44 +311,80 @@
 
     let currentFault = FAULT_OPTIONS[0];
 
+    // Signal frequencies are expressed in "cycles per signal length".
+    // With N=512 and K=96 bins, frequencies ≤ 96 are visible in the spectrum.
     function genSig(faultId, intensity, N = 512) {
       const sig = new Float32Array(N);
-      for (let i = 0; i < N; i++) {
-        const t = i / N * 4;
-        let v = 0.35 * Math.sin(2 * Math.PI * 30 * t)
-          + 0.15 * Math.sin(2 * Math.PI * 60 * t);
-        const ph = (t * 8) % 1;
+      // Base GMF + 2nd harmonic — both within visible spectrum range.
+      const F_GMF = 12;       // basic gear-mesh frequency (cycles per signal)
+      const F_GMF2 = 24;      // 2nd harmonic
+      const F_ROT = 3;        // shaft rotation (low, used for sideband modulation)
 
+      // Base amplitude fades slightly as fault grows so defect content shines.
+      const baseAtten = Math.max(0.45, 1 - intensity * 0.45);
+
+      for (let i = 0; i < N; i++) {
+        const x = i / N;                // 0..1 across signal
+        const tau = i * 2 * Math.PI / N; // phase increment per sample
+        let v = baseAtten * (
+          0.32 * Math.sin(F_GMF * tau) +
+          0.18 * Math.sin(F_GMF2 * tau) +
+          0.04 * Math.sin(F_ROT * tau)
+        );
         if (intensity > 0) {
           const I = intensity;
           if (faultId === 'tooth_miss') {
-            if (ph < 0.05) v += I * 1.4 * Math.exp(-ph / 0.012) * Math.sin(2 * Math.PI * 700 * t);
-            v += I * 0.15 * Math.sin(2 * Math.PI * 90 * t);
+            // Periodic impulses every 1/F_ROT cycles -> very broadband
+            const ph = (x * F_ROT) % 1;
+            if (ph < 0.04) v += I * 2.4 * Math.exp(-ph * 28);
+            // Strong sidebands GMF ± fR
+            v += I * 0.55 * Math.sin((F_GMF + F_ROT) * tau);
+            v += I * 0.55 * Math.sin((F_GMF - F_ROT) * tau);
+            // High-band «удары»
+            v += I * 0.35 * Math.sin(54 * tau);
+            v += I * 0.30 * Math.sin(72 * tau);
           } else if (faultId === 'bearing_inner') {
-            v += I * 0.45 * Math.sin(2 * Math.PI * 110 * t) * (0.5 + 0.5 * Math.sin(2 * Math.PI * 6 * t));
+            // BPFI peak + sidebands at very different frequency band
+            const FBP = 42;
+            v += I * 0.95 * Math.sin(FBP * tau) * (0.7 + 0.3 * Math.sin(F_ROT * tau));
+            v += I * 0.50 * Math.sin((FBP + F_ROT) * tau);
+            v += I * 0.50 * Math.sin((FBP - F_ROT) * tau);
+            v += I * 0.30 * Math.sin(84 * tau);  // 2nd harmonic of BPFI
           } else if (faultId === 'crack') {
-            v *= 1 + I * 0.6 * Math.sin(2 * Math.PI * 7 * t);
+            // Amplitude modulation of GMF -> sidebands around 12
+            const m = 1 + I * 0.9 * Math.sin(F_ROT * tau);
+            v *= m;
+            v += I * 0.30 * Math.sin(F_GMF * tau) * m;
+            v += I * 0.18 * Math.sin(36 * tau);   // higher modulated band
           } else if (faultId === 'wear') {
-            v += I * 0.4 * (Math.random() - 0.5);
-            v += I * 0.15 * Math.sin(2 * Math.PI * 45 * t);
+            // Broadband noise floor rises across all bins
+            for (let k = 6; k < 80; k += 2) {
+              v += I * 0.06 * Math.sin(k * tau + k * 0.7);
+            }
+            v += I * 0.25 * Math.sin(48 * tau);   // characteristic mid-band peak
           }
         }
-        sig[i] = v + (Math.random() - 0.5) * 0.03;
+        // Small background noise
+        sig[i] = v + (Math.random() - 0.5) * 0.04;
       }
       return sig;
     }
 
+    // Spectrum via Hann-windowed DFT. K=96 bins. Returns magnitudes 0..1.
     function computeSpectrum(sig) {
-      // Simple |DFT| approximation using sin/cos sums (not real FFT, fine for demo)
       const N = sig.length;
-      const K = 64; // bins
+      const K = 96;
       const spec = new Float32Array(K);
+      // Hann window for cleaner peaks
+      const win = new Float32Array(N);
+      for (let n = 0; n < N; n++) win[n] = 0.5 - 0.5 * Math.cos(2 * Math.PI * n / (N - 1));
       for (let k = 1; k <= K; k++) {
         let re = 0, im = 0;
         for (let n = 0; n < N; n++) {
+          const s = sig[n] * win[n];
           const ang = 2 * Math.PI * k * n / N;
-          re += sig[n] * Math.cos(ang);
-          im -= sig[n] * Math.sin(ang);
+          re += s * Math.cos(ang);
+          im -= s * Math.sin(ang);
         }
         spec[k - 1] = Math.sqrt(re * re + im * im) / N;
       }
@@ -390,12 +426,23 @@
     function drawSpectrum(ctx, spec, color) {
       const w = ctx.canvas.clientWidth, h = ctx.canvas.clientHeight;
       ctx.clearRect(0, 0, w, h);
-      ctx.fillStyle = color;
       const max = Math.max(...spec, 0.05);
       const barW = w / spec.length;
+      // Baseline grid for reading peaks
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      for (let g = 1; g < 4; g++) {
+        const y = h - (g / 4) * h * 0.85 - h * 0.05;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+      // Bars with mild log-ish scaling for dynamic range
+      ctx.fillStyle = color;
       for (let i = 0; i < spec.length; i++) {
-        const barH = (spec[i] / max) * h * 0.85;
-        ctx.fillRect(i * barW + 1, h - barH, barW - 2, barH);
+        const norm = spec[i] / max;
+        const scaled = Math.pow(norm, 0.62); // emphasise mid-low peaks
+        const barH = scaled * h * 0.86;
+        if (barH < 0.4) continue;
+        ctx.fillRect(i * barW + 0.5, h - barH, Math.max(1, barW - 1.4), barH);
       }
     }
 
