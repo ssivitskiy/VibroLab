@@ -60,17 +60,15 @@ def compute_mahalanobis_params(X, y, classes):
     except np.linalg.LinAlgError:
         precision = np.linalg.pinv(cov)
 
-    # Вычисляем расстояния для training данных (чтобы найти порог)
-    distances = []
-    for i in range(len(X)):
-        min_dist = float('inf')
-        for cls in classes:
-            diff = X[i] - class_means[cls]
-            dist = float(diff @ precision @ diff)
-            min_dist = min(min_dist, dist)
-        distances.append(min_dist)
-
-    distances = np.array(distances)
+    # Вычисляем расстояния (vectorized) — для каждой точки минимум по классам
+    n_samples = X.shape[0]
+    distances = np.full(n_samples, np.inf, dtype=np.float64)
+    for cls in classes:
+        diff = X - class_means[cls]                # (n, d)
+        # Mahalanobis: diag(diff @ precision @ diff.T)
+        # → sum(diff * (diff @ precision), axis=1)
+        dist_cls = np.einsum('ij,jk,ik->i', diff, precision, diff)
+        distances = np.minimum(distances, dist_cls)
     percentile = CALIBRATION_PARAMS['ood_percentile']
     threshold = float(np.percentile(distances, percentile))
 

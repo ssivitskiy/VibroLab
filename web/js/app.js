@@ -6164,13 +6164,14 @@ const App = (() => {
     if (typeof Model !== 'undefined' && Model.checkOOD) {
       try {
         const oodResult = Model.checkOOD(features || signal);
-        const isOOD = oodResult && oodResult.ood;
+        const isOOD = oodResult && oodResult.isOOD;
+        if (!oodResult || !oodResult.available) { /* no calibration data loaded */ } else
         oodHtml = `<div style="margin-top:10px;padding:6px 12px;border-radius:6px;font-family:var(--mono);font-size:11px;display:inline-block;${
           isOOD
             ? 'background:rgba(251,146,60,0.15);color:#fb923c;border:1px solid #fb923c'
             : 'background:rgba(52,211,153,0.15);color:#34d399;border:1px solid #34d399'
         }">${isOOD ? '\u26a0 ВНЕ РАСПРЕДЕЛЕНИЯ' : 'В ОБЛАСТИ ОБУЧЕНИЯ \u2713'}${
-          oodResult.score != null ? ` (score: ${oodResult.score.toFixed(3)})` : ''
+          oodResult.distance != null ? ` · Mahalanobis ${oodResult.distance.toFixed(1)} / порог ${(oodResult.threshold || 0).toFixed(1)}` : ''
         }</div>`;
       } catch (e) { console.warn('[APP] OOD check failed:', e); }
     }
