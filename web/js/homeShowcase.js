@@ -1960,6 +1960,495 @@
     renderOptions();
   }
 
+  // ═════════════════════════════════════════════════════════════
+  // 14) INFERENCE BENCHMARK
+  // ═════════════════════════════════════════════════════════════
+  function initInferenceBench() {
+    const root = document.getElementById('inferenceBench');
+    if (!root) return;
+    const btn = root.querySelector('.bench-run');
+    const progressFill = root.querySelector('.bench-progress-fill');
+    const counterEl = root.querySelector('.bench-counter');
+    const statsEl = root.querySelector('.bench-stats');
+    const sparkCanvas = root.querySelector('.bench-spark');
+    let running = false;
+
+    function fitSpark() {
+      const dpr = window.devicePixelRatio || 1;
+      sparkCanvas.width = sparkCanvas.clientWidth * dpr;
+      sparkCanvas.height = sparkCanvas.clientHeight * dpr;
+      const ctx = sparkCanvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      return ctx;
+    }
+    let sparkCtx = fitSpark();
+    window.addEventListener('resize', () => { sparkCtx = fitSpark(); });
+
+    function fakeInference() {
+      // Simulate per-sample work that roughly matches a small RF traversal.
+      const features = new Float64Array(53);
+      for (let i = 0; i < 53; i++) features[i] = Math.random();
+      const votes = new Int32Array(9);
+      for (let t = 0; t < 500; t++) {
+        let pos = 0;
+        for (let depth = 0; depth < 12; depth++) {
+          const fi = (t * 7 + depth * 11) % 53;
+          pos = features[fi] > 0.5 ? pos * 2 + 1 : pos * 2 + 2;
+        }
+        votes[pos % 9]++;
+      }
+      let best = 0;
+      for (let i = 1; i < 9; i++) if (votes[i] > votes[best]) best = i;
+      return best;
+    }
+
+    function drawSpark(latencies) {
+      const w = sparkCanvas.clientWidth, h = sparkCanvas.clientHeight;
+      sparkCtx.clearRect(0, 0, w, h);
+      if (!latencies.length) return;
+      const max = Math.max(...latencies, 1);
+      sparkCtx.strokeStyle = 'rgba(0, 229, 255, 0.7)';
+      sparkCtx.lineWidth = 1.2;
+      sparkCtx.beginPath();
+      for (let i = 0; i < latencies.length; i++) {
+        const x = (i / (latencies.length - 1 || 1)) * w;
+        const y = h - (latencies[i] / max) * h * 0.9;
+        if (i === 0) sparkCtx.moveTo(x, y); else sparkCtx.lineTo(x, y);
+      }
+      sparkCtx.stroke();
+      sparkCtx.fillStyle = 'rgba(0, 229, 255, 0.1)';
+      sparkCtx.lineTo(w, h); sparkCtx.lineTo(0, h); sparkCtx.closePath(); sparkCtx.fill();
+    }
+
+    function showStats(latencies) {
+      const sorted = [...latencies].sort((a, b) => a - b);
+      const avg = latencies.reduce((s, v) => s + v, 0) / latencies.length;
+      const median = sorted[Math.floor(sorted.length / 2)];
+      const p95 = sorted[Math.floor(sorted.length * 0.95)];
+      const max = sorted[sorted.length - 1];
+      const min = sorted[0];
+      const throughput = 1000 / avg;
+      statsEl.innerHTML = `
+        <div class="bench-stat"><span>СРЕДНЕЕ</span><strong>${avg.toFixed(2)} мс</strong></div>
+        <div class="bench-stat"><span>МЕДИАНА</span><strong>${median.toFixed(2)} мс</strong></div>
+        <div class="bench-stat"><span>P95</span><strong>${p95.toFixed(2)} мс</strong></div>
+        <div class="bench-stat"><span>МИН</span><strong>${min.toFixed(2)} мс</strong></div>
+        <div class="bench-stat"><span>МАКС</span><strong>${max.toFixed(2)} мс</strong></div>
+        <div class="bench-stat bench-stat--accent"><span>RPS</span><strong>${throughput.toFixed(0)}</strong></div>
+      `;
+      statsEl.classList.add('show');
+    }
+
+    function runBenchmark(N) {
+      if (running) return;
+      running = true;
+      btn.disabled = true;
+      btn.textContent = 'РАБОТАЕМ…';
+      statsEl.classList.remove('show');
+      const latencies = [];
+      let i = 0;
+
+      function batch() {
+        const BATCH = 30;
+        for (let j = 0; j < BATCH && i < N; j++, i++) {
+          const start = performance.now();
+          fakeInference();
+          latencies.push(performance.now() - start);
+        }
+        const pct = (i / N) * 100;
+        progressFill.style.width = pct + '%';
+        counterEl.textContent = `${i} / ${N}`;
+        drawSpark(latencies.slice(-200));
+        if (i < N) {
+          requestAnimationFrame(batch);
+        } else {
+          running = false;
+          btn.disabled = false;
+          btn.textContent = 'ПРОГНАТЬ СНОВА';
+          showStats(latencies);
+        }
+      }
+      requestAnimationFrame(batch);
+    }
+
+    btn.addEventListener('click', () => runBenchmark(1000));
+  }
+
+  // ═════════════════════════════════════════════════════════════
+  // 15) 3D ROTATING CLASS SPACE
+  // ═════════════════════════════════════════════════════════════
+  function initClassSpace3D() {
+    const root = document.getElementById('classSpace3D');
+    if (!root) return;
+    const canvas = root.querySelector('canvas');
+    const legendEl = root.querySelector('.cs3-legend');
+    const hintEl = root.querySelector('.cs3-hint');
+
+    const CLASSES_3D = [
+      { id: 'normal',        label: 'Норма',          color: '#34d399', cx: -2.4, cy:  1.5, cz: -0.6 },
+      { id: 'tooth_miss',    label: 'Нет зуба',       color: '#f87171', cx:  2.4, cy:  1.8, cz:  0.8 },
+      { id: 'tooth_chip',    label: 'Скол зуба',      color: '#fb923c', cx:  1.7, cy:  2.4, cz:  0.2 },
+      { id: 'gear_wear',     label: 'Износ',          color: '#fbbf24', cx: -0.7, cy:  2.2, cz: -1.0 },
+      { id: 'crack',         label: 'Трещина',        color: '#a78bfa', cx: -1.4, cy: -0.8, cz:  1.4 },
+      { id: 'bearing_inner', label: 'Вн.обойма',      color: '#60a5fa', cx:  1.6, cy: -1.6, cz: -0.4 },
+      { id: 'bearing_outer', label: 'Нар.обойма',     color: '#f472b6', cx:  2.4, cy: -2.4, cz:  0.8 },
+      { id: 'bearing_ball',  label: 'Шарик',          color: '#22d3ee', cx:  0.6, cy: -2.0, cz: -1.6 },
+      { id: 'combo',         label: 'Комбин.',        color: '#fb7185', cx:  0.0, cy:  0.3, cz:  0.5 },
+    ];
+    const POINTS_PER_CLASS = 45;
+    const SPREAD = 0.5;
+    const points = [];
+    CLASSES_3D.forEach((c, classIdx) => {
+      for (let i = 0; i < POINTS_PER_CLASS; i++) {
+        const u1 = Math.random(), u2 = Math.random();
+        const u3 = Math.random(), u4 = Math.random();
+        const z0 = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+        const z1 = Math.sqrt(-2 * Math.log(u1)) * Math.sin(2 * Math.PI * u2);
+        const z2 = Math.sqrt(-2 * Math.log(u3)) * Math.cos(2 * Math.PI * u4);
+        points.push({
+          x: c.cx + z0 * SPREAD,
+          y: c.cy + z1 * SPREAD,
+          z: c.cz + z2 * SPREAD,
+          ci: classIdx,
+          color: c.color,
+        });
+      }
+    });
+
+    let angleY = 0.3, angleX = 0.25;
+    let dragging = false, lastX = 0, lastY = 0;
+    let lastInteract = 0;
+    let activeClass = null;
+    let rafId = null;
+
+    function fitCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * dpr;
+      canvas.height = canvas.clientHeight * dpr;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      return ctx;
+    }
+    let ctx = fitCanvas();
+    window.addEventListener('resize', () => { ctx = fitCanvas(); });
+
+    canvas.addEventListener('mousedown', e => {
+      dragging = true;
+      lastX = e.clientX; lastY = e.clientY;
+      lastInteract = performance.now();
+      canvas.style.cursor = 'grabbing';
+    });
+    window.addEventListener('mouseup', () => {
+      dragging = false;
+      canvas.style.cursor = 'grab';
+    });
+    window.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      angleY += dx * 0.008;
+      angleX = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, angleX + dy * 0.008));
+      lastX = e.clientX; lastY = e.clientY;
+      lastInteract = performance.now();
+    });
+    canvas.style.cursor = 'grab';
+
+    function project(p) {
+      const cy = Math.cos(angleY), sy = Math.sin(angleY);
+      const cx = Math.cos(angleX), sx = Math.sin(angleX);
+      let x = p.x * cy + p.z * sy;
+      let z = -p.x * sy + p.z * cy;
+      let y = p.y * cx - z * sx;
+      const zz = p.y * sx + z * cx;
+      const dist = 9;
+      const scale = dist / (dist + zz);
+      return { sx: x * scale, sy: y * scale, depth: zz, scale };
+    }
+
+    function render() {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+      // Auto-rotate after idle
+      if (performance.now() - lastInteract > 2000) {
+        angleY += 0.0035;
+      }
+      const cx0 = w / 2, cy0 = h / 2;
+      const projected = points.map(p => ({ p, pr: project(p) }));
+      projected.sort((a, b) => b.pr.depth - a.pr.depth);
+      // Axes — simple cross at origin
+      const ax = project({ x: 0, y: 0, z: 0 });
+      ['x', 'y', 'z'].forEach(axis => {
+        const end = project({ x: axis === 'x' ? 3 : 0, y: axis === 'y' ? 3 : 0, z: axis === 'z' ? 3 : 0 });
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cx0 + ax.sx * 50, cy0 - ax.sy * 50);
+        ctx.lineTo(cx0 + end.sx * 50, cy0 - end.sy * 50);
+        ctx.stroke();
+      });
+      // Points
+      projected.forEach(({ p, pr }) => {
+        const isActive = activeClass === null || p.ci === activeClass;
+        const r = (2.5 + 1.5 * pr.scale) * (isActive ? 1 : 0.6);
+        const x = cx0 + pr.sx * 50;
+        const y = cy0 - pr.sy * 50;
+        ctx.globalAlpha = isActive ? (0.4 + 0.5 * pr.scale) : 0.07;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      // Centroid labels
+      CLASSES_3D.forEach((c, i) => {
+        if (activeClass !== null && activeClass !== i) return;
+        const pr = project({ x: c.cx, y: c.cy, z: c.cz });
+        ctx.font = '600 11px "JetBrains Mono", monospace';
+        ctx.fillStyle = c.color;
+        ctx.textAlign = 'center';
+        ctx.fillText(c.label, cx0 + pr.sx * 50, cy0 - pr.sy * 50 - 14);
+      });
+      rafId = requestAnimationFrame(render);
+    }
+
+    legendEl.innerHTML = CLASSES_3D.map((c, i) =>
+      `<button class="cs3-legend-item" data-cs3-class="${i}" type="button">
+        <span class="cs3-legend-dot" style="background:${c.color}"></span>${c.label}
+       </button>`
+    ).join('');
+    legendEl.addEventListener('click', e => {
+      const btn = e.target.closest('.cs3-legend-item');
+      if (!btn) return;
+      const idx = +btn.dataset.cs3Class;
+      if (activeClass === idx) {
+        activeClass = null;
+        legendEl.querySelectorAll('.cs3-legend-item').forEach(b => b.classList.remove('is-active', 'is-dim'));
+      } else {
+        activeClass = idx;
+        legendEl.querySelectorAll('.cs3-legend-item').forEach(b => {
+          b.classList.toggle('is-active', +b.dataset.cs3Class === idx);
+          b.classList.toggle('is-dim', +b.dataset.cs3Class !== idx);
+        });
+      }
+    });
+
+    // Pause animation when not in viewport
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting && !rafId) rafId = requestAnimationFrame(render);
+          else if (!e.isIntersecting && rafId) { cancelAnimationFrame(rafId); rafId = null; }
+        });
+      }, { threshold: 0.2 });
+      io.observe(root);
+    } else {
+      rafId = requestAnimationFrame(render);
+    }
+  }
+
+  // ═════════════════════════════════════════════════════════════
+  // 16) DECISION TREE PATH ANIMATION
+  // ═════════════════════════════════════════════════════════════
+  function initTreePath() {
+    const root = document.getElementById('treePath');
+    if (!root) return;
+    const svgEl = root.querySelector('svg.tp-svg');
+    const logEl = root.querySelector('.tp-log');
+    const verdictEl = root.querySelector('.tp-verdict');
+    const samplesEl = root.querySelector('.tp-samples');
+    const restartBtn = root.querySelector('.tp-restart');
+
+    const SAMPLES = [
+      { id: 'normal',        label: 'Норма',                color: '#34d399',
+        features: { 'Env.BPFI': 0.12, 'Эксцесс': 0.4, 'RMS': 0.18, 'Крест-фактор': 3.1, 'GMF·1': 0.62 } },
+      { id: 'tooth_miss',    label: 'Отсутствие зуба',      color: '#f87171',
+        features: { 'Env.BPFI': 0.18, 'Эксцесс': 8.2, 'RMS': 0.62, 'Крест-фактор': 7.5, 'GMF·1': 0.30 } },
+      { id: 'crack',         label: 'Трещина',              color: '#a78bfa',
+        features: { 'Env.BPFI': 0.15, 'Эксцесс': 2.1, 'RMS': 0.30, 'Крест-фактор': 4.0, 'GMF·1': 0.55 } },
+      { id: 'bearing_inner', label: 'Внутренняя обойма',    color: '#60a5fa',
+        features: { 'Env.BPFI': 0.91, 'Эксцесс': 3.8, 'RMS': 0.45, 'Крест-фактор': 4.8, 'GMF·1': 0.42 } },
+      { id: 'bearing_outer', label: 'Наружная обойма',      color: '#f472b6',
+        features: { 'Env.BPFI': 0.78, 'Эксцесс': 2.4, 'RMS': 0.40, 'Крест-фактор': 4.2, 'GMF·1': 0.40 } },
+    ];
+
+    // Decision tree — each non-leaf has feature/threshold/left/right; leaf has {leaf, color}
+    const TREE = {
+      feature: 'Env.BPFI', threshold: 0.5,
+      left: {
+        feature: 'Эксцесс', threshold: 5,
+        left: {
+          feature: 'RMS', threshold: 0.4,
+          left: {
+            feature: 'GMF·1', threshold: 0.5,
+            left:  { leaf: 'Износ',    color: '#fbbf24' },
+            right: { leaf: 'Норма',    color: '#34d399' },
+          },
+          right: {
+            feature: 'Крест-фактор', threshold: 4.5,
+            left:  { leaf: 'Трещина',  color: '#a78bfa' },
+            right: { leaf: 'Скол зуба', color: '#fb923c' },
+          },
+        },
+        right: { leaf: 'Отсутствие зуба', color: '#f87171' },
+      },
+      right: {
+        feature: 'Эксцесс', threshold: 3,
+        left:  { leaf: 'Наружная обойма', color: '#f472b6' },
+        right: { leaf: 'Внутренняя обойма', color: '#60a5fa' },
+      },
+    };
+
+    // Layout
+    const SVG_W = 780, SVG_H = 380;
+    svgEl.setAttribute('viewBox', `0 0 ${SVG_W} ${SVG_H}`);
+
+    function layoutTree(node, depth = 0, slot = 0, slotsAtDepth = []) {
+      slotsAtDepth[depth] = (slotsAtDepth[depth] || 0) + 1;
+      node._depth = depth;
+      if (node.leaf) return;
+      layoutTree(node.left, depth + 1, 0, slotsAtDepth);
+      layoutTree(node.right, depth + 1, 1, slotsAtDepth);
+    }
+    layoutTree(TREE);
+    // Assign x positions per depth row
+    const byDepth = {};
+    function collect(node) {
+      if (!byDepth[node._depth]) byDepth[node._depth] = [];
+      byDepth[node._depth].push(node);
+      if (node.leaf) return;
+      collect(node.left); collect(node.right);
+    }
+    collect(TREE);
+    Object.keys(byDepth).forEach(depth => {
+      const row = byDepth[depth];
+      const yRow = 40 + depth * 70;
+      row.forEach((node, idx) => {
+        node._x = ((idx + 1) / (row.length + 1)) * SVG_W;
+        node._y = yRow;
+      });
+    });
+
+    let pathNodes = [];
+    let currentNode = null;
+    let cancelled = false;
+
+    function nodeMatches(node) {
+      return pathNodes.indexOf(node) >= 0;
+    }
+    function edgeActive(a, b) {
+      const i = pathNodes.indexOf(a);
+      return i >= 0 && pathNodes[i + 1] === b;
+    }
+
+    function renderTree() {
+      let svg = '';
+      function drawEdges(node) {
+        if (node.leaf) return;
+        const eLeft  = edgeActive(node, node.left)  ? 'tp-edge tp-edge--active' : 'tp-edge';
+        const eRight = edgeActive(node, node.right) ? 'tp-edge tp-edge--active' : 'tp-edge';
+        svg += `<line class="${eLeft}"  x1="${node._x}" y1="${node._y}" x2="${node.left._x}"  y2="${node.left._y}"  />`;
+        svg += `<line class="${eRight}" x1="${node._x}" y1="${node._y}" x2="${node.right._x}" y2="${node.right._y}" />`;
+        drawEdges(node.left); drawEdges(node.right);
+      }
+      drawEdges(TREE);
+      function drawNodes(node) {
+        const isActive = nodeMatches(node);
+        const isCurrent = node === currentNode;
+        if (node.leaf) {
+          svg += `<g class="tp-node tp-leaf${isActive ? ' is-active' : ''}" transform="translate(${node._x},${node._y})">
+            <circle r="20" fill="${node.color}" opacity="${isActive ? 0.35 : 0.10}" />
+            <circle r="14" fill="${node.color}" opacity="${isActive ? 1 : 0.35}" />
+            <text x="0" y="34" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="${isActive ? node.color : '#7c8a9c'}" font-weight="600">${node.leaf}</text>
+          </g>`;
+        } else {
+          const strokeWidth = isCurrent ? 2 : 1;
+          const stroke = isActive ? '#00e5ff' : '#324159';
+          svg += `<g class="tp-node tp-decision${isActive ? ' is-active' : ''}${isCurrent ? ' is-current' : ''}" transform="translate(${node._x},${node._y})">
+            <rect x="-58" y="-16" width="116" height="32" rx="6" fill="#141c2e" stroke="${stroke}" stroke-width="${strokeWidth}" />
+            <text x="0" y="-3" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="${isActive ? '#00e5ff' : '#cbd5e1'}" font-weight="700">${node.feature}</text>
+            <text x="0" y="10" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#7c8a9c">&gt; ${node.threshold}?</text>
+          </g>`;
+          drawNodes(node.left); drawNodes(node.right);
+        }
+      }
+      drawNodes(TREE);
+      svgEl.innerHTML = svg;
+    }
+
+    function sleep(ms) {
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    async function runSample(sample) {
+      cancelled = true;
+      await sleep(20);
+      cancelled = false;
+      pathNodes = [];
+      currentNode = TREE;
+      verdictEl.classList.remove('show');
+      verdictEl.innerHTML = '';
+      logEl.innerHTML = `<div class="tp-log-features">Признаки сэмпла: ${Object.entries(sample.features).map(([k, v]) => `<span><b>${k}</b> = ${v.toFixed(2)}</span>`).join('')}</div>`;
+      renderTree();
+
+      let depth = 0;
+      while (!currentNode.leaf) {
+        if (cancelled) return;
+        pathNodes.push(currentNode);
+        renderTree();
+        await sleep(950);
+        if (cancelled) return;
+
+        const value = sample.features[currentNode.feature] || 0;
+        const goLeft = value <= currentNode.threshold;
+        const dir = goLeft ? 'налево' : 'направо';
+        const op = goLeft ? '≤' : '>';
+
+        const stepDiv = document.createElement('div');
+        stepDiv.className = 'tp-log-step';
+        stepDiv.innerHTML = `<span class="tp-log-num">${depth + 1}</span>
+          <strong>${currentNode.feature}</strong> = <b>${value.toFixed(2)}</b>
+          ${op} <b>${currentNode.threshold}</b> → идём <em>${dir}</em>`;
+        logEl.appendChild(stepDiv);
+
+        currentNode = goLeft ? currentNode.left : currentNode.right;
+        depth++;
+      }
+      pathNodes.push(currentNode);
+      renderTree();
+      verdictEl.innerHTML = `Лист дерева: <strong style="color:${currentNode.color}">${currentNode.leaf}</strong> · принято за ${depth} проверок`;
+      verdictEl.style.borderLeftColor = currentNode.color;
+      verdictEl.classList.add('show');
+    }
+
+    samplesEl.innerHTML = SAMPLES.map((s, i) =>
+      `<button class="tp-sample${i === 0 ? ' is-active' : ''}" type="button" data-tp-sample="${i}">
+        <span class="tp-sample-dot" style="background:${s.color}"></span>${s.label}
+       </button>`
+    ).join('');
+    samplesEl.addEventListener('click', e => {
+      const btn = e.target.closest('.tp-sample');
+      if (!btn) return;
+      samplesEl.querySelectorAll('.tp-sample').forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+      runSample(SAMPLES[+btn.dataset.tpSample]);
+    });
+    restartBtn?.addEventListener('click', () => {
+      const active = samplesEl.querySelector('.tp-sample.is-active');
+      const idx = active ? +active.dataset.tpSample : 0;
+      runSample(SAMPLES[idx]);
+    });
+
+    renderTree();
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries, obs) => {
+        entries.forEach(e => { if (e.isIntersecting) { runSample(SAMPLES[0]); obs.unobserve(e.target); } });
+      }, { threshold: 0.25 });
+      io.observe(root);
+    } else {
+      runSample(SAMPLES[0]);
+    }
+  }
+
   function init() {
     initRFVoting();
     initFeatureFlow();
@@ -1974,6 +2463,9 @@
     initSignalMixer();
     initBearingCalc();
     initDefectQuiz();
+    initInferenceBench();
+    initClassSpace3D();
+    initTreePath();
   }
 
   if (document.readyState === 'loading') {

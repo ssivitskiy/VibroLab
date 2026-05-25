@@ -693,6 +693,34 @@
   </section>
 
   <!-- ═════════════════════════════════════════════════════════════
+       SHOWCASE: DECISION TREE PATH
+       ═════════════════════════════════════════════════════════════ -->
+  <section class="section showcase-section" id="section-tree" style="padding-top:40px">
+    <div class="container">
+      <div class="showcase-head">
+        <div class="showcase-kicker">ОДНО ДЕРЕВО ИЗ 500</div>
+        <h2 class="showcase-title">Как Random Forest принимает решение — без магии</h2>
+        <p class="showcase-lead">
+          Выберите образец — и проследите, как одно из 500 деревьев пробегает по признакам и доходит до диагноза.
+          Каждый узел задаёт один вопрос про один признак.
+        </p>
+      </div>
+      <div class="tp-shell" id="treePath">
+        <div class="tp-controls">
+          <span class="tp-controls-label">Образец:</span>
+          <div class="tp-samples"></div>
+          <button class="tp-restart" type="button" title="Прогнать снова">↻ снова</button>
+        </div>
+        <div class="tp-canvas-wrap">
+          <svg class="tp-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div class="tp-log"></div>
+        <div class="tp-verdict"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════
        SHOWCASE: CLASS SPACE
        ═════════════════════════════════════════════════════════════ -->
   <section class="section showcase-section" id="section-class-space" style="padding-top:40px">
@@ -711,6 +739,32 @@
           <div class="cs-side-kicker">КЛАССЫ</div>
           <div class="cs-legend"></div>
           <div class="cs-summary"></div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════
+       SHOWCASE: 3D CLASS SPACE
+       ═════════════════════════════════════════════════════════════ -->
+  <section class="section showcase-section" id="section-class-space-3d" style="padding-top:40px">
+    <div class="container">
+      <div class="showcase-head">
+        <div class="showcase-kicker">ТО ЖЕ В 3D</div>
+        <h2 class="showcase-title">9 кластеров, теперь в трёх измерениях</h2>
+        <p class="showcase-lead">
+          Тот же набор сэмплов, но третья ось добавляет глубину — облака классов лучше различимы.
+          Камера медленно вращается; зажмите мышь, чтобы повернуть вручную.
+        </p>
+      </div>
+      <div class="cs3-shell" id="classSpace3D">
+        <div class="cs3-canvas-wrap">
+          <canvas></canvas>
+          <div class="cs3-hint">↩ зажмите и тяните, чтобы повернуть</div>
+        </div>
+        <aside class="cs3-side">
+          <div class="cs3-side-kicker">КЛАССЫ</div>
+          <div class="cs3-legend"></div>
         </aside>
       </div>
     </div>
@@ -845,6 +899,34 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═════════════════════════════════════════════════════════════
+       SHOWCASE: INFERENCE BENCHMARK
+       ═════════════════════════════════════════════════════════════ -->
+  <section class="section showcase-section" id="section-bench" style="padding-top:40px">
+    <div class="container">
+      <div class="showcase-head">
+        <div class="showcase-kicker">ПРОВЕРИТЬ СКОРОСТЬ</div>
+        <h2 class="showcase-title">Прогоните 1000 предсказаний прямо здесь</h2>
+        <p class="showcase-lead">
+          Никаких внешних серверов — модель уже в вашем браузере. Нажмите кнопку, и платформа
+          сделает 1000 синтетических предсказаний, замеряя задержку на каждом.
+        </p>
+      </div>
+      <div class="bench-shell" id="inferenceBench">
+        <div class="bench-top">
+          <button class="bench-run" type="button">ПРОГНАТЬ 1000 ИНФЕРЕНСОВ</button>
+          <div class="bench-progress"><div class="bench-progress-fill"></div></div>
+          <div class="bench-counter">0 / 1000</div>
+        </div>
+        <div class="bench-spark-wrap">
+          <div class="bench-spark-label">Задержка на каждом предсказании · мс</div>
+          <canvas class="bench-spark"></canvas>
+        </div>
+        <div class="bench-stats"></div>
       </div>
     </div>
   </section>
@@ -1413,7 +1495,7 @@
 <script src="js/viz.js?v=20260522-hero-script"></script>
 <script src="js/uiStates.js?v=20260520-ui-states-3"></script>
 <script src="js/presentation.js?v=20260520-presentation-1"></script>
-<script src="js/homeShowcase.js?v=20260522-showcase-6"></script>
+<script src="js/homeShowcase.js?v=20260522-showcase-7"></script>
 <script src="js/analysisExtras.js?v=20260522-extras-1"></script>
 <script src="js/app.js?v=20260501-subpath-fix-1"></script>
 <!-- Notification toast container -->
