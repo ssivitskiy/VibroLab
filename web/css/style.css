@@ -10461,3 +10461,258 @@ body.is-scrolled .header {
   from { opacity: 0; transform: scale(0.95); }
   to   { opacity: 1; transform: scale(1); }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   FILE REQUIREMENTS BLOCK (analysis page)
+   ═══════════════════════════════════════════════════════════════ */
+.file-req {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin: 16px 0 24px;
+  overflow: hidden;
+}
+.file-req-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 16px 22px;
+  background: linear-gradient(180deg, var(--surface3) 0%, var(--surface) 100%);
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s;
+}
+.file-req-summary::-webkit-details-marker { display: none; }
+.file-req[open] .file-req-summary { border-bottom-color: var(--border); }
+.file-req[open] .file-req-toggle { transform: rotate(180deg); }
+.file-req-kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.file-req-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: 0.5px;
+  color: var(--text-strong);
+}
+.file-req-toggle {
+  margin-left: auto;
+  font-family: var(--mono);
+  color: var(--cyan);
+  font-size: 16px;
+  transition: transform .25s;
+}
+.file-req-body { padding: 18px 22px 22px; }
+.file-req-lead {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+  margin: 0 0 18px;
+  max-width: 720px;
+}
+.file-req-lead strong { color: var(--cyan); font-weight: 600; }
+
+/* 4-card requirements grid */
+.file-req-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.file-req-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.file-req-card-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface3);
+  border: 1px solid var(--border-hi);
+  border-radius: 6px;
+  color: var(--cyan);
+}
+.file-req-card-icon .icon { width: 16px; height: 16px; }
+.file-req-card-body { flex: 1; min-width: 0; }
+.file-req-card-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.file-req-card-body strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-strong);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.file-req-card-body p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted-hi);
+}
+.file-req-card-body code {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: var(--bg);
+  color: var(--cyan);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+
+/* Format examples */
+.file-req-formats {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 20px;
+}
+.file-req-formats-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.file-req-formats-head strong {
+  font-size: 14px;
+  color: var(--text-strong);
+}
+.file-req-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+  padding-bottom: 4px;
+}
+.file-req-tab {
+  background: none;
+  border: 1px solid transparent;
+  padding: 6px 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--muted-hi);
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  transition: color .2s, background .2s, border-color .2s;
+  margin-bottom: -1px;
+}
+.file-req-tab:hover { color: var(--text); background: var(--surface3); }
+.file-req-tab.is-active {
+  color: var(--cyan);
+  border-color: var(--border);
+  border-bottom-color: var(--surface2);
+  background: var(--surface2);
+}
+.file-req-snippet { display: none; }
+.file-req-snippet.is-active { display: block; }
+.file-req-snippet pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 0 0 8px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text);
+}
+.file-req-snippet pre code { color: inherit; background: none; padding: 0; }
+.file-req-snippet-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-hi);
+  line-height: 1.5;
+}
+
+/* Quality rows */
+.file-req-quality {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.file-req-quality-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border-left: 3px solid var(--border);
+  background: var(--surface2);
+}
+.file-req-quality--good    { border-left-color: var(--green); }
+.file-req-quality--limited { border-left-color: var(--orange); }
+.file-req-quality--bad     { border-left-color: var(--red); }
+.file-req-quality-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.file-req-quality-icon .icon { width: 16px; height: 16px; }
+.file-req-quality-row strong {
+  display: block;
+  font-size: 13px;
+  color: var(--text-strong);
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+.file-req-quality-row p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted-hi);
+  line-height: 1.5;
+}
+.file-req-quality-row p strong {
+  display: inline;
+  font-size: inherit;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.file-req-foot {
+  padding: 12px 14px;
+  background: var(--tint-cyan-weak);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--cyan);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+@media (max-width: 880px) {
+  .file-req-grid { grid-template-columns: repeat(2, 1fr); }
+  .file-req-title { font-size: 17px; }
+}
+@media (max-width: 560px) {
+  .file-req-grid { grid-template-columns: 1fr; }
+  .file-req-body { padding: 14px 16px 16px; }
+  .file-req-summary { padding: 14px 16px; }
+}

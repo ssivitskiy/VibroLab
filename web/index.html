@@ -1231,9 +1231,142 @@
         </div>
       </div>
 
+      <!-- ═════════════════════════════════════════════════════════════
+           FILE REQUIREMENTS BLOCK — explains what the model expects
+           ═════════════════════════════════════════════════════════════ -->
+      <details class="file-req" id="fileRequirements" open>
+        <summary class="file-req-summary">
+          <span class="file-req-kicker">Перед загрузкой</span>
+          <span class="file-req-title">Что должно быть в файле</span>
+          <span class="file-req-toggle" aria-hidden="true">▾</span>
+        </summary>
 
+        <div class="file-req-body">
+          <p class="file-req-lead">
+            Модель обучена на стенде SEU (Southeast University Gearbox Dataset). Чтобы получить осмысленный диагноз,
+            файл должен содержать <strong>один канал акселерометра</strong>, снятый с вращающегося редуктора или
+            подшипникового узла. Ниже — конкретные требования и примеры.
+          </p>
 
+          <div class="file-req-grid">
+            <div class="file-req-card">
+              <div class="file-req-card-icon"><svg class="icon" aria-hidden="true"><use href="#ic-broadcast"/></svg></div>
+              <div class="file-req-card-body">
+                <div class="file-req-card-label">1. Канал</div>
+                <strong>Один канал вибрации</strong>
+                <p>Сигнал ускорения (мм/с² или g) с акселерометра, установленного на корпусе редуктора или подшипниковой опоры. Многоканальные WAV/CSV — берём первый канал.</p>
+              </div>
+            </div>
 
+            <div class="file-req-card">
+              <div class="file-req-card-icon"><svg class="icon" aria-hidden="true"><use href="#ic-chart"/></svg></div>
+              <div class="file-req-card-body">
+                <div class="file-req-card-label">2. Частота дискретизации</div>
+                <strong>≥ 2 кГц, идеально 5 кГц</strong>
+                <p>SEU использует <code>5120 Гц</code>. Нужно минимум 2 кГц, чтобы по теореме Котельникова уловить ударные частоты подшипниковых дефектов (BPFI/BPFO до ~600 Гц).</p>
+              </div>
+            </div>
+
+            <div class="file-req-card">
+              <div class="file-req-card-icon"><svg class="icon" aria-hidden="true"><use href="#ic-wave"/></svg></div>
+              <div class="file-req-card-body">
+                <div class="file-req-card-label">3. Длительность</div>
+                <strong>≥ 0.5 секунды</strong>
+                <p>Минимум 2560 отсчётов (полсекунды при 5 кГц) — это длина окна, на котором обучалась модель. Чем длиннее запись, тем стабильнее усреднение признаков.</p>
+              </div>
+            </div>
+
+            <div class="file-req-card">
+              <div class="file-req-card-icon"><svg class="icon" aria-hidden="true"><use href="#ic-gear"/></svg></div>
+              <div class="file-req-card-body">
+                <div class="file-req-card-label">4. Источник</div>
+                <strong>Зубчатая передача или подшипник</strong>
+                <p>Лучше всего на оборотах <code>15–35 Гц</code> (как в SEU). Сигнал должен «видеть» дефект — то есть датчик стоит близко к узлу.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="file-req-formats">
+            <div class="file-req-formats-head">
+              <span class="file-req-kicker">Примеры форматов</span>
+              <strong>Как должен выглядеть файл изнутри</strong>
+            </div>
+            <div class="file-req-tabs" role="tablist">
+              <button class="file-req-tab is-active" type="button" data-format="txt">TXT / TSV</button>
+              <button class="file-req-tab" type="button" data-format="csv">CSV</button>
+              <button class="file-req-tab" type="button" data-format="wav">WAV</button>
+              <button class="file-req-tab" type="button" data-format="mat">MAT / NPY</button>
+            </div>
+
+            <div class="file-req-snippet is-active" data-format-pane="txt">
+              <pre><code> 0.002341
+-0.001892
+ 0.003457
+ 0.005112
+-0.002009
+ 0.000874
+&#8230;</code></pre>
+              <p class="file-req-snippet-note">Один столбец чисел — амплитуды акселерометра. SEU использует tab-separated TXT с 8 колонками; платформа сама вытащит CH6 (основной канал).</p>
+            </div>
+
+            <div class="file-req-snippet" data-format-pane="csv">
+              <pre><code>time,acceleration
+0.0000, 0.002341
+0.0002,-0.001892
+0.0004, 0.003457
+0.0006, 0.005112
+&#8230;</code></pre>
+              <p class="file-req-snippet-note">CSV с заголовком или без. Если две колонки — первая считается временем, вторая — сигналом. Если одна — целая колонка сигнала. Запятая или точка с запятой.</p>
+            </div>
+
+            <div class="file-req-snippet" data-format-pane="wav">
+              <pre><code>RIFF&#8230;.WAVEfmt&#8230;
+sample_rate: 5120 Hz
+channels:    1 (mono)
+bit_depth:   16 / 24 / float32
+duration:    &#8805; 0.5 s</code></pre>
+              <p class="file-req-snippet-note">Стандартный WAV. Моно предпочтительнее. Если стерео — берём первый канал. Частота берётся из заголовка файла.</p>
+            </div>
+
+            <div class="file-req-snippet" data-format-pane="mat">
+              <pre><code>// MAT (MATLAB):
+data = struct('signal', [N&#215;1 array], 'fs', 5120)
+
+// NPY (NumPy):
+np.save('signal.npy', signal)   # shape: (N,)</code></pre>
+              <p class="file-req-snippet-note">MAT: одна переменная с массивом N&#215;1 (или N&#215;8 — возьмём первую колонку). NPY: одномерный массив float32/float64.</p>
+            </div>
+          </div>
+
+          <div class="file-req-quality">
+            <div class="file-req-quality-row file-req-quality--good">
+              <div class="file-req-quality-icon"><svg class="icon" aria-hidden="true" style="color:var(--green)"><use href="#ic-check"/></svg></div>
+              <div>
+                <strong>Лучший результат</strong>
+                <p>Запись с SEU-стенда или похожего лабораторного редуктора · 5120 Гц · одноступенчатая или двухступенчатая передача · обороты 20 или 30 Гц.</p>
+              </div>
+            </div>
+            <div class="file-req-quality-row file-req-quality--limited">
+              <div class="file-req-quality-icon"><svg class="icon" aria-hidden="true" style="color:var(--orange)"><use href="#ic-alert"/></svg></div>
+              <div>
+                <strong>Сработает с оговоркой</strong>
+                <p>Другая частота вращения, иная геометрия редуктора, иные подшипники. Модель выдаст диагноз, но <strong>OOD-индикатор</strong> подсветит «вне распределения» — относитесь к ответу как к гипотезе.</p>
+              </div>
+            </div>
+            <div class="file-req-quality-row file-req-quality--bad">
+              <div class="file-req-quality-icon"><svg class="icon" aria-hidden="true" style="color:var(--red)"><use href="#ic-warning"/></svg></div>
+              <div>
+                <strong>Не подойдёт</strong>
+                <p>Музыка или речь, синтетический шум, токи двигателя, видеосигнал, изображения. Это не вибрация — диагноз будет случайным.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="file-req-foot">
+            Нет своего файла? Воспользуйтесь одним из трёх готовых сигналов справа от зоны загрузки — они проверят, что весь контур работает.
+          </div>
+        </div>
+      </details>
 
       <div class="analysis-source-grid">
         <div class="upload-zone" id="uploadZone" role="button" tabindex="0" aria-label="Загрузить файл для анализа">
@@ -1496,7 +1629,7 @@
 <script src="js/uiStates.js?v=20260520-ui-states-3"></script>
 <script src="js/presentation.js?v=20260520-presentation-1"></script>
 <script src="js/homeShowcase.js?v=20260522-showcase-7"></script>
-<script src="js/analysisExtras.js?v=20260522-extras-1"></script>
+<script src="js/analysisExtras.js?v=20260526-extras-2"></script>
 <script src="js/app.js?v=20260501-subpath-fix-1"></script>
 <!-- Notification toast container -->
 <div id="toastContainer" class="toast-container"></div>

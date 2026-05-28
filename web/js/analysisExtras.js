@@ -459,9 +459,25 @@
     if (global.Viz) global.Viz.__extrasPatched = true;
   }
 
+  // ════════════════════════════════════════════════════════════
+  // File-requirements tab switcher
+  // ════════════════════════════════════════════════════════════
+  function initFileReqTabs() {
+    const tabs = document.querySelectorAll('.file-req-tab');
+    if (!tabs.length) return;
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const fmt = tab.dataset.format;
+        document.querySelectorAll('.file-req-tab').forEach(t => t.classList.toggle('is-active', t.dataset.format === fmt));
+        document.querySelectorAll('.file-req-snippet').forEach(p => p.classList.toggle('is-active', p.dataset.formatPane === fmt));
+      });
+    });
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', installVizHooks);
+    document.addEventListener('DOMContentLoaded', () => { installVizHooks(); initFileReqTabs(); });
   } else {
     installVizHooks();
+    initFileReqTabs();
   }
 })(window);
